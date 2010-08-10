@@ -1,0 +1,348 @@
+From: rshipley@illuminati.io.com (Rich Shipley)
+Date:  6-DEC-1993  13:44:13
+Description: Warp War - The Campaign Game
+
+This is reprinted with permission from Steve Jackson. I just scanned it
+in today, if you find any scan errors, let me know.
+
+From The Space Gamer #33:
+
+			 WARP WAR The Campaign Game
+
+		  by Joseph R. Power and Steve Jackson
+		   copyright 1980, Steve Jackson Games
+
+After playing several games of WarpWar, many people hate to give up
+their favorite ships. Now they don't have to. The following rules allow
+for a multi-player "campaign" version of the game. They work best for
+three to six players, though more can be handled if the referee is
+patient.
+
+Campaign WarpWar is a very slow game - natural, since it simulates
+exploration and conflict over light-years of space and decades of time.
+As a face-to-face game, it is best suited for club play (doing two or
+three turns each meeting) or tournament play (where one heroic referee,
+or better yet, a team, accepts one move per hour every couple of hours
+for many hours of play). Campaign WarpWar also lends itself well to
+privately run play-by-mail gaming.
+
+The basic WarpWar rules will require the following additions:
+
+			     I. The Referee
+
+A referee (and, possibly, assistants) will be required to create the
+galaxy, keep records on the ships and worlds, and give information to
+the players as they earn it. The best record-keeping system is simply
+to establish one 3 X 5 file card for each world or ship, keeping all
+relevant information on it and updating it turn by turn. For a world,
+the card should include name, hex number, owner, BP value, and
+accumulated BPs at that world. For a ship, the card should include ship
+name, configuration, missiles carried, tech level, and current
+location.  If the referee has access to a personal computer, this
+record-keeping may be simplified enormously.  If the game is being
+played by mail, the referee will also have to handle combat; see PBM
+Combat, below.
+
+			  II. Creating the Galaxy
+
+The WarpWar map is much too small for a campaign game. The referee will
+need to get a large sheet of hex paper (preferably numbered) with at
+least 400 hexes.
+  Stars: Each hex has a 1 in 12 chance of containing a star; roll 1dl2
+for each hex, or roll 2d6 and give it a star only on a roll of 11 or
+12.  However, do not roll for a hex adjacent to an existing star; stars
+are never adjacent.
+  Warplines: Give each star a 1 in 4 chance of having a warpline to each
+of the 4 nearest stars. No star will ever have more than 4 warplines.
+  Home Worlds: Players' home worlds should be assigned in one of two
+ways.  Either spread them more or less evenly throughout the map, or
+distribute them around the periphery of the map with none in the
+center. A purely random distribution of home worlds may lead to unfair
+disadvantages. All home worlds have 10 BP.
+  Other Worlds: Each star may be assumed to have one useful world. For
+each world, roll two 6-sided dice and subtract 1 from the total to
+determine BPs. Thus, each world will have a BP value of from I to 11,
+averaging 6. BP value of a world does not change during the game.
+  Home Defenses: There is a 1 in 6 chance that a world will have its own
+defenses when discovered. If a world has home defenses, multiply its BP
+value by 3 and give it one Systemship of that strength. Defenses will
+always be hostile toward the players. It is suggested that damaged home
+defenses NOT repair themselves--but if the referee wants to keep track
+of neutral world ship repair, he can.
+
+		       III. Movement and Exploration
+
+Each turn, each player writes down his moves and gives them to the GM.
+This is why the hexes should be numbered; if a ship has a movement
+value of 20, its movement may be a string of 20 numbers.  Since a
+player does not know what is in any hex until he enters it, he is
+likely to encounter a star in the course of any long move. He should
+therefore specify what the ship is to do if it finds a new star: either
+continue moving or end its turn there.  If a ship enters a hex occupied
+by another player's ship, it must stop; the referee will end its turn
+there. However, a ship does not have to stop for a star, even if the
+star is owned by another player. If you pass through a star hex owned
+by another player, but do not stop, you will learn that there is a star
+there, and that the system is owned by another player.  You will not
+know what its BP value is or who owns it.  Movement is sequential. The
+referee determines the movement sequence randomly each turn. He moves
+all the ships belonging to one player before he moves any ships
+belonging to the next player.
+
+			    IV. Star Possession
+
+A player is said to own a star hex if he can keep a ship on that hex
+for one full turn without having any enemy ships present. If the star
+was previously owned by another player, he must destroy or drive off
+all defending ships and then keep a ship there for one full turn
+without combat. When a player takes possession of a star, he controls
+its BPs. He is told what its BP value is, and how many BPs (if any) are
+accumulated there. (A star does not begin to accumulate BPs until it is
+first owned by a player.) He is also told how many warplines that star
+has - but NOT necessarily where they go. Once a player has visited both
+ends of a warpline, he has charted the warpline itself and may use it
+in a normal fashion.
+
+                           V. Referees' Reports
+
+Each turn, after all movement has been finished but before combat takes
+place, the referee gives a written report to each player. This report
+includes:
+  FOR EACH WORLD WHERE HE HAS SHIPS: ships present; their owners; number of
+warplines out.
+  FOR EACH WORLD HE OWNS: all the above, plus its BP value and stockpiled
+BPs.
+  FOR EACH SHIP HE HAS: its present position; any other ships in the hex;
+and who owns them.
+  HEX POSITIONS for any new stars his ships discovered that turn. If the
+ship stopped to explore, he gets information as per (1) above. If it just
+passed through, all he finds out is that there's a star there.
+  HEX POSITIONS for any allied ships whose hexes his ships passed through.
+  WARPLINES that he has now learned about by visiting both ends.
+  Anything else the referee feels he should know about - but treat all
+players equally.
+  After reading their reports, those players having combat to resolve may
+do so.
+  If the game is being played by mail, the referee's report will include an
+account of each combat the player's ships participated in that turn. The
+amount of information a referee allows a ship to report on the turn it is
+destroyed in combat is up to the referee. He may assume that it beamed all
+new data back to base before its destruction--or that NONE of the
+information it collected that turn, even to the combat, is relayed to the
+player . . . the ship simply vanishes if no allies survive to report. The
+latter option makes for a cloudy but interesting game.
+ 
+                            VI. Building Ships
+
+A player may build ships at any star he owns, in normal WarpWar
+fashion.  However, BPs may never be transferred from star to star. The
+BPs a given system produces must be used there or not at all. You may
+find it expedient to use smaller, less productive systems as "repair
+bases" and save the more productive systems to build new ships.
+
+                      VII. Tech Levels and Scrapping
+
+New technological levels do not come automatically; they must be
+bought, traded for, or stolen. All players start at Level 0.  To buy a
+tech level, you must have the next lower tech level, and then spend 10
+BPs times the desired tech level. To get from 0 to 1 costs 10. To get
+from I to 2 costs 20--and so on. The BPs spent to earn a higher tech
+level do NOT all have to be spent at the same time, or come from the
+same place.  To trade for a tech level, you simply have to convince
+another player to give it to you (see Alliances, below). Once you have
+a given tech level, you can give it (or any lower level) to any player
+you like.  To steal a tech level, you must capture a world owned by a
+player who has a higher tech level. The greater the difference between
+your tech level and his, the less you will learn from the devices you
+find. If the difference between your levels is only 1, you get 5 BP
+free toward your next tech level. If the difference is 2, you get only
+4 BP, and so on. If you capture more than one high-tech world, you get
+an extra BP toward your level each time.  A player may never advance
+more than one tech level per turn.
+
+                   VIII. The Diplomacy Option; Alliances
+
+This is an added option which may be chosen on any round of combat. If,
+on any round, all ships in a combat choose "diplomacy," then fighting
+is ended there for that turn and the two players may form an alliance.
+As allies, they may give each other worlds and/or ships as they see
+fit, share technology, etc. As long as two players remain allies, their
+ships may travel together. A ship passing through a hex with an allied
+ship does not automatically stop unless its owner has given contingency
+orders "stop for allied ships," or unless the allied ship's owner has
+commanded that it stop any ship passing through its hex.  Alliances may
+only be formed by players when they have ships in a hex to gether.
+Alliances may be broken at any time.  If not all ships in a combat
+choose the diplomacy option on a given round, the ships that did choose
+diplomacy are considered to have chosen the "attack" option with a
+speed of zero. They may not fire weapons, but may have screens up.
+
+                            IX. Scrapping Ships
+
+A ship may be "scrapped" at any time it is at a friendly world. It turns
+into BPs equivalent to 1/4 of its present BP total. The BPs enter the
+planet's stockpile and may be used on that or any later turn.
+ 
+                               X. PBM Combat
+
+If the game is being conducted by mail, it is impractical to have
+players choose options each round of a long combat--it would require
+months to resolve each combat. Instead, the referee should recruit
+assistants -- one for each player -- who know the game. The assistant
+referees represent the ship captains of their respective players. The
+players may write standing orders of as much complexity as they wish,
+to be followed by the captains when battle is joined. Captains are free
+to use their own judgment on any matters not covered by the standing
+orders. Thus, on a turn when players A and B have a battle, the referee
+will meet with his assistants who captain for A and B, and work out the
+battle. (If the standing orders include provisions for attempting
+diplomacy, the battle may be unnecessary; the referee himself will be
+familiar with all standing orders and will know this.) Of course, no
+captain is familiar with the standing orders the other players have
+given their own captains.
+
+All in all, a complex and long-running game. The general system
+outlined above could be used with other games besides WarpWar. Any
+exploration-type space game - for instance, Stellar Conquest, Starfall,
+StarForce, et al -- could be played by mail or in a tournament with
+similar rules.
+
+From: str@qdot.qld.gov.au (Shaun Travers)
+Date:  8-DEC-1993  18:30:05
+Description: WarpWar Rules (More!)
+
+ WarpWar Additional Rules
+========================
+ 
+Warpwar PBEM would be fun [but slow]. I am willing to play. Anybody?
+ 
+I did like some of the rules posted previously, especially
+slowing down Warp Line usage based on PD and cannon. I haven't 
+had a good look at them yet.
+ 
+These ideas are all tested except the fighters as the person I
+used to play WarpWar against has moved away. If you don't like
+them, well, flame me :-)
+ 
+Fighters
+--------
+ 
+I always thought fighters would make a nice addition to
+WarpWar.
+ 
+Fighters are similar to a combined missile and system ship.
+they are denoted by an F.
+ 
+Launching Fighters:
+ 
+Fighters require a launch tube to launch or be retrieved. Up
+to two fighters may use a launch tube in any combat turn.
+Launch tubes are denoted by an L and cost 1BP.
+ 
+It costs one Drive point to power an L (unless using fighters
+as systemships - see below under alternatives).
+ 
+Fighters cost 1BP to build and cost nothing to store on a
+ship. However a ship can never carry more fighters than
+originally designed for.
+ 
+Beams and Shields cannot be used while launching or retrieving
+fighters (unless fighters are launched during the systemship
+phase). Missiles can be used.
+ 
+Fighters always use the Attack option and my select any Drive
+number greater than 0 (just like missiles).
+ 
+Fighters do 2 points of damage.
+ 
+The same fighter cannot launch and be retrieved in the same
+turn. However one fighter may be launched while another is 
+retrieved though the same launch tube.
+ 
+Any fighters left behind after all other friendly ships with
+Launch tubes have left will be destroyed after 3 combat turns
+(life support is limited). Fighters can never be left in a
+system alone. They must be stored on a ship at the end of a
+turn.
+ 
+Firing at Fighters:
+ 
+A ship/fighter may fire a fighter or fire missiles at
+fighters. Any hit destroys a fighter.
+ 
+Normally a ship can only fire its Beam at one other target
+ship. to alleviate this, a ship can be built with more than
+one Beam Weapon. This means it can select more than one
+target. To build an extra Beam costs 1BP. There is nothing to
+stop the Beams combining to fire on a single ship. This rule
+simply makes it possible to defend against fighters at a
+slight cost. e.g. B=3 B=2 S=4 D=10. Cost is 25, not 24 (it has
+a Warp Generator). Or, System ship B=1 B=1 B=1 S=2 D=7. cost
+is 14, not 12.
+ 
+Alternatives for fighters:
+ 
+As the above rules are just ideas, I have other ones floating
+in my head. The above rules still have the 'missiles that hang
+around' feel.
+ 
+1.    Fighters do one point of damage and cost 1/2BP each.
+2.    Fighters are launched similar to Systemships (and during
+      system ship phase) i.e. Ship must select D=0, S=0 to
+      launch fighters. need Launch tubes but obviously they
+      don't need power (I like this one as an alternative).
+      with this rule, it may be better having fighters do 1
+      point of damage, or systemships go by the wayside.
+3.    Ignore the rule of Beams firing at one target if fighters
+      are the only target.
+4.    Fighters  cost 1BP, do one point of damage but select TWO
+      drive numbers. Of course, this makes them easier to kill.
+5.    Only one fighter per launch tube.
+6.    Different classes of fighters: Anti-fighter fighters,
+      Beam fighters (1 Point of damage), Missile fighters (2
+      points of damage, two drive numbers, one-shot only but
+      can be retrieved and reloaded from a ship).
+ 
+After writing all this the ideas I like the most are: fighters
+like system ships. One launch tube launches two fighters
+during the systemship phase. F cost 1BP and do one point of
+damage. They select two drive numbers. Beam weapons can split
+their fire against fighters ONLY. Missiles can be fired at
+fighters. different classes of fighters may complicate the
+game. I wonder how well this works. Any ideas or preferences?
+ 
+ 
+Tech Levels
+-----------
+ 
+At about Tech Level 4 I tended to build a 4 ships PD=2 B=1
+and a carrier PD=4 SR=4 [conveniently adds up to 20 BPs - two
+turns worth]. With +4 on each B and the ability to select 0 or
+1 as a drive number AND have four targets for the enemy seemed
+to be effective for a while. By this stage though the person
+ahead tended to win.
+ 
+To slow down Tech level increases we had a tech level increase
+every two turns. TL1 Bs only were +1. at TL2 S were also +1,
+TL3 M +1, TL 4 B at +2 etc. It made jumps at smaller intervals
+and ships were often disadvantaged by other ships only two
+turns older.
+ 
+BPs
+---
+ 
+We used to play you required a system ship on each system to
+obtain BPs. The centre 'home planet' gives 3 BPs, the 2 side
+'home planets' give 2 BPs each, and each other system gives 1
+BP. Obviously the systems ships on outer planets did not
+cost much :-).
+ 
+A connection of Warp Lines or a hex gap of no more than a
+total of three hexes is required to any home planet.
+[resources are assumed to travel via a freighter network]. If
+a path was not available, BPs from that system were not
+collected. BPs from outer planet could not be stored. [too
+much paperwork]  Ships still had to be built at any of the
+home planets.
+ 
+-shaun
