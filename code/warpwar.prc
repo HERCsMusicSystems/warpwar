@@ -6,24 +6,21 @@ import f1
 
 program warpwar
 	[
-		human earth moon hohd hohdan bizh vul
+		human sun earth moon hohd hohdan bizh vul
+		barracuda piranha
 		era race location build_points
-		starship systemship base
+		starship systemship base star route
 		warp_generator power_drive beams screens tubes missiles systemship_racks empty damaged
 		create add_features add_feature
-		disp
+		disp disp_features
 		;save load
 	]
 
-[[starship]]
-[[systemship]]
 
-[[create race *race]
-	[var [*era 0]] [addcl [[era *race *era]]]
-]
-[[create base *race *location]
-	[var [*bp 64]] [addcl [[build_points *race *location *bp]]]
-]
+[[create race *race] [var [*era 0]] [addcl [[era *race *era]]]]
+[[create base *race *location] [var [*bp 64]] [addcl [[build_points *race *location *bp]]]]
+[[create star *star : *location] [addcl [[star *star *location]]]]
+[[create route *from *to] [addcl [[route *from *to]]]]
 
 [[create starship *name *location : *features]
 	[build_points *race *location *bp]
@@ -43,7 +40,6 @@ program warpwar
 			[starship *s location *loc] [*loc : *bp_location]
 			[*dock : *status] [eq *status empty] [*dock *name]
 			[build_points *race *bp_location *bp]
-			[show "BUILD POINTS => " *bp]
 		]
 	]
 	[addcl [[systemship *name race *race]]]
@@ -72,28 +68,43 @@ program warpwar
 [[disp *x] [disp race *x]]
 [[disp *x] [disp starship *x]]
 [[disp *x] [disp systemship *x]]
+[[disp *x] [disp location *x]]
 
 [[disp race *race]
 	[era *race *era] [*era : *e]
-	[show *race " era = " *e]
+	[nl] [show *race " era = " *e]
 	[show "Locations:"]
-	[build_points *race *location *bp]
-	[*bp : *v]
-	[show "	" *location " = " *v]
-	fail
+	[TRY [build_points *race *location *bp] [*bp : *v] [show "	" *location " = " *v] fail]
 ]
 
 [[disp starship *name]
-	[starship *name *race]
-	[starship *name *location]
-	[show *name ": " *race "'s starship on " *location]
+	[starship *name race *race]
+	[starship *name location *location] [*location : *l]
+	[nl] [show *name ": " *race "'s starship on " *l]
+	[disp_features starship *name]
 ]
 
 [[disp systemship *name]
 	[systemship *name race *race]
 	[systemship *name location *location] [*location : *l]
-	[show *name ": " *race "'s systemship on " *l]
+	[nl] [show *name ": " *race "'s systemship on " *l]
+	[disp_features systemship *name]
 ]
+
+[[disp location *star]
+	[nl] [show "STAR: " *star]
+	[TRY [star *star *xy] [show "LOCATION: " *xy]]
+	[TRY [build_points *race *star *bp] [*bp : *bpv] [show "PRESENCE: " *race " (" *bpv ")"]]
+	[write "STARSHIPS: "] [TRY [starship *starship location *la] [*la : *x] [eq *x *star] [write [*starship] " "] fail] [nl]
+]
+
+[[disp_features *type *name]
+	[*type *name *feature *initial *current]
+	[*current : *c]
+	[show "	" *feature " = " *initial " <" *c ">"]
+	fail
+]
+[[disp_features : *]]
 
 [[disp *x]]
 
@@ -103,6 +114,9 @@ end := [ [auto_atoms] [preprocessor f1]
 		[create race human]
 		[create base human earth]
 		[create base human moon]
+		[create starship barracuda moon [beams 4] [screens 4] [tubes 2] [missiles 2] [systemship_racks 4]]
+		[create systemship piranha [barracuda 3] [beams 6] [screens 6]]
+		[create star sun 127 128]
 		[create race hohd]
 		[create base hohd hohdan]
 
