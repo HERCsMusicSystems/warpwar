@@ -10,7 +10,9 @@ program warpwar
 		barracuda piranha
 		era race location build_points
 		starship systemship base star route
-		warp_generator power_drive beams screens tubes missiles systemship_racks empty damaged
+		warp_generator power_drive beams screens tubes missiles
+		systemship_racks empty damaged
+		ecm armor cannons shells holds repair_bays
 		create add_features add_feature
 		disp disp_features
 		;save load
@@ -56,13 +58,23 @@ program warpwar
 [[add_feature *type *name power_drive *x] [var [*c *x]] [addcl [[*type *name power_drive *x *c]]]]
 [[add_feature *type *name beams *x] [var [*c *x]] [addcl [[*type *name beams *x *c]]]]
 [[add_feature *type *name screens *x] [var [*c *x]] [addcl [[*type *name screens *x *c]]]]
+[[add_feature *type *name ecm *x] [var [*c *x]] [addcl [[*type *name ecm *x *c]]]]
 [[add_feature *type *name tubes *x] [var [*c *x]] [addcl [[*type *name tubes *x *c]]]]
 [[add_feature *type *name missiles *x] [times *x 3 *m] [var [*c *m]] [addcl [[*type *name missiles *x *c]]]]
+[[add_feature *type *name armor *x] [times *x 2 *a] [var [*c *a]] [addcl [[*type *name armor *x *a]]]]
+[[add_feature *type *name cannons *x] [var [*c *x]] [addcl [[*type *name cannons *x *c]]]]
+[[add_feature *type *name shells *x] [times *x 6 *s] [var [*c *s]] [addcl [[*type *name shells *s *a]]]]
 [[add_feature starship *name systemship_racks *x]
 	[less 0 *x] [var [*c empty]] [addcl [[starship *name systemship_racks *x *c]]]
 	[sub *x 1 *next] / [add_feature starship *name systemship_racks *next]
 ]
 [[add_feature starship *name systemship_racks *x] [less_eq *x 0]]
+[[add_feature starship *name holds *x]
+	[less 0 *x] [var [*c 0]] [addcl [[starship *name holds *x *c]]]
+	[sub *x 1 *next] / [add_feature starship *name holds *next]
+]
+[[add_feature starship *name holds *x] [less_eq *x 0]]
+[[add_feature starship *name repair_bays 5] [var [*c 5]] [addcl [[starship *name repair_bays 5 *c]]]]
 
 
 [[disp *x] [disp race *x]]
