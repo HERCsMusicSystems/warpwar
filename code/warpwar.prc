@@ -1,5 +1,5 @@
 
-
+import star_names
 import studio
 import store
 import f1
@@ -8,20 +8,20 @@ program warpwar
 	[
 		human sun earth moon hohd hohdan bizh vul
 		barracuda piranha
-		era race location build_points
+		era race location build_points economy
 		starship systemship base star route
 		warp_generator power_drive beams screens tubes missiles
 		systemship_racks empty damaged
 		ecm armor cannons shells holds repair_bays
 		create add_features add_feature
 		disp disp_features
+		near
 		;save load
 	]
 
-
 [[create race *race] [var [*era 0]] [addcl [[era *race *era]]]]
 [[create base *race *location] [var [*bp 64]] [addcl [[build_points *race *location *bp]]]]
-[[create star *star : *location] [addcl [[star *star *location]]]]
+[[create star *star *economy : *location] [addcl [[star *star *location]]] [addcl [[economy *star *economy]]]]
 [[create route *from *to] [addcl [[route *from *to]]]]
 
 [[create starship *name *location : *features]
@@ -107,6 +107,7 @@ program warpwar
 	[nl] [show "STAR: " *star]
 	[TRY [star *star *xy] [show "LOCATION: " *xy]]
 	[TRY [build_points *race *star *bp] [*bp : *bpv] [show "PRESENCE: " *race " (" *bpv ")"]]
+	[TRY [economy *star *economy] [show "ECONOMY: " *economy]]
 	[write "STARSHIPS: "] [TRY [starship *starship location *la] [*la : *x] [eq *x *star] [write [*starship] " "] fail] [nl]
 ]
 
@@ -120,6 +121,14 @@ program warpwar
 
 [[disp *x]]
 
+[[near [*x *y] [*x *y1]] [sum *y 1 *y1]]
+[[near [*x *y] [*x *y1]] [sum *y -1 *y1]]
+[[near [*x *y] [*x1 *y]] [sum *x 1 *x1]]
+[[near [*x *y] [*x1 *y]] [sum *x -1 *x1]]
+[[near [*x *y] [*x1 *y1]] [sum *x 1 *x1] [sum *y 1 *y1]]
+[[near [*x *y] [*x1 *y1]] [sum *x -1 *x1] [sum *y -1 *y1]]
+[[near *star *near] [star *star *location] [near *location *near]]
+[[near *starship *near] [starship *starship location *atom] [*atom : *location] [show [*atom *location]] [near *location *near]]
 
 end := [ [auto_atoms] [preprocessor f1]
 
@@ -128,8 +137,10 @@ end := [ [auto_atoms] [preprocessor f1]
 		[create base human moon]
 		[create starship barracuda moon [beams 4] [screens 4] [tubes 2] [missiles 2] [systemship_racks 4]]
 		[create systemship piranha [barracuda 3] [beams 6] [screens 6]]
-		[create star sun 127 128]
+		[create star sun 4 127 128]
+		[create star moon 7 127 129]
 		[create race hohd]
 		[create base hohd hohdan]
+		[create star hohdan 4 22 21]
 
 		[command] ] .
