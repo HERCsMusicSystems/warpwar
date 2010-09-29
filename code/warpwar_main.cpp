@@ -19,29 +19,45 @@ public:
 		galaxy_dc = new wxMemoryDC (* galaxy_bitmap);
 	}
 	void setCellSide (int side) {this -> cell_side = side;}
-	WarpwarWindow (wxWindow * parent) : wxWindow (parent, -1) {reSizeGalaxy (300, 200); setCellSide (30);}
+	WarpwarWindow (wxWindow * parent) : wxWindow (parent, -1) {reSizeGalaxy (300, 200); setCellSide (50);}
 	~ WarpwarWindow (void) {deleteGalaxy ();}
 	void draw_cell (double x, double y) {
-		int point1 = (int) y - cell_side;
-		int point2 = point1 - (cell_side / 2);
-		int point3 = (int) (x + (double) cell_side * 0.866025404);
-		int point4 = (int) (x + (double) cell_side * 2.0 * 0.866025404);
-		galaxy_dc -> DrawLine ((int) x, (int) y, (int) x, point1);
-		galaxy_dc -> DrawLine ((int) x, point1, point3, point2);
-		galaxy_dc -> DrawLine (point3, point2, point4, point1);
+		double shift60 = (double) cell_side * 0.866025404;
+		double shift30 = (double) cell_side * 0.5;
+		int x1 = (int) (x - (double) cell_side);
+		int x2 = (int) (x - shift30);
+		int x3 = (int) (x + shift30);
+		int y1 = (int) (y + shift60);
+		int y2 = (int) y;
+		int y3 = (int) (y - shift60);
+		galaxy_dc -> DrawLine (x1, y2, x2, y1);
+		galaxy_dc -> DrawLine (x1, y2, x2, y3);
+		galaxy_dc -> DrawLine (x2, y3, x3, y3);
+//		galaxy_dc -> DrawText (wxString :: Format (_T ("%02i%02i"), row, column), x2, y3);
 	}
-	void draw_cells (void) {
-		for (int row = 0; row < 10; row++) {
-			for (int ind = 0; ind < 10 + row; ind++) {
-				draw_cell (200.0 + (double) ind * 1.732050808 * (double) cell_side - (double) row * (double) cell_side * 0.866025404, 50.0 + (double) cell_side * 1.5 * (double) row);
+	void draw_cells (int rows, int columns) {
+		double shift60 = (double) cell_side * 0.866025404;
+		double shift30 = (double) cell_side * 0.5;
+		for (int column = 0; column < columns; column++) {
+			for (int row = 0; row < rows; row++) {
+				int location_x = (double) cell_side + (double) column * (double) cell_side * 1.5;
+				int location_y = 200.0 + (double) row * (shift60 + shift60) - (double) column * shift60;
+				draw_cell (location_x, location_y);
+				galaxy_dc -> DrawText (wxString :: Format (_T ("%02i%02i"), row, column), location_x - (int) shift30, location_y - (int) shift60);
 			}
 		}
 	}
 	void draw (void) {
-		galaxy_dc -> SetBackground (wxBrush (wxColour (0, 0, 255)));
+		galaxy_dc -> SetBackground (wxBrush (wxColour (0, 0, 0)));
+		galaxy_dc -> SetPen (wxPen (wxColour (128, 128, 128)));
 		galaxy_dc -> Clear ();
-		//galaxy_dc -> DrawRectangle (100, 100, 40, 40);
-		draw_cells ();
+		wxFont f = galaxy_dc -> GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (12);
+		galaxy_dc -> SetFont (f);
+		galaxy_dc -> SetTextForeground (wxColour (128, 128, 128));
+//		dc . SetTextForeground (reversed ? wxColour (red_lp -> r0, red_lp -> g0, red_lp -> b0) : wxColour (lcp -> r0, lcp -> g0, lcp -> b0));
+		draw_cells (30, 30);
 	}
 	void OnPaint (wxPaintEvent & event) {
 		reSizeGalaxy (this -> GetSize() . x, this -> GetSize () . y);
