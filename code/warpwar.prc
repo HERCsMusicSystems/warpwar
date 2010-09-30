@@ -5,7 +5,7 @@ import store
 import f1
 import help
 
-program warpwar
+program warpwar #machine := "galaxy"
 	[
 		human sun earth moon hohd hohdan bizh vul
 		barracuda piranha
@@ -21,7 +21,16 @@ program warpwar
 		;save load
 		addvarcl save clear
 		; era build_points starship systemship
+		grid erase hexside zero draw_star star_colour
+		draw_galaxy
 	]
+
+#machine grid := "grid"
+#machine erase := "erase"
+#machine hexside := "hexside"
+#machine zero := "zero"
+#machine draw_star := "draw_star"
+#machine star_colour := "star_colour"
 
 [[addvarcl *clause *x] [var [*v *x]] [APPEND *clause [*v] *clv] [addcl [*clv]]]
 
@@ -188,7 +197,7 @@ program warpwar
 
 [[insert_star]
 	[get_star *name]
-	[rnd *x 10 30] [rnd *y 10 30]
+	[rnd *x 2 24] [rnd *y 2 24]
 	[not res
 		[star *other_star *other_location]
 		[near *other_location [*x *y]]		
@@ -198,6 +207,14 @@ program warpwar
 	[economy_table *econ *economy]
 	[create star *name *economy *x *y]
 	[show "Inserting " *name " at " [*x *y]]
+]
+
+[[draw_galaxy]
+	[erase] [grid] [star_colour 255 0 0] /
+	[star *star *location]
+	[show [draw_star *star : *location]]
+	[draw_star *star : *location]
+	fail
 ]
 
 end := [ [auto_atoms] [preprocessor f1]
@@ -215,5 +232,12 @@ end := [ [auto_atoms] [preprocessor f1]
 		[create race hohd]
 		[create base hohd hohdan]
 		[create star hohdan 4 22 21]
+
+		[insert_star]
+		[insert_star]
+		[insert_star]
+		[insert_star]
+		[insert_star]
+		[insert_star]
 
 		[command] ] .
