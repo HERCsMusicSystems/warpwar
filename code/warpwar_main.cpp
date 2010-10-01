@@ -127,11 +127,12 @@ public:
 		galaxy_dc -> DrawCircle (xx, yy, 7);
 		wxString star = wxString :: From8BitData (name);
 		wxSize extent = galaxy_dc -> GetTextExtent (star);
+		galaxy_dc -> SetTextForeground (wxColour (128, 128, 128));
 		galaxy_dc -> DrawText (star, xx - extent . x / 2, yy + 9);
 	}
 	void clear (void) {
 		galaxy_dc -> SetBackground (wxBrush (wxColour (0, 0, 0)));
-		galaxy_dc -> SetPen (wxPen (wxColour (128, 128, 128)));
+		galaxy_dc -> SetPen (wxPen (wxColour (32, 32, 32)));
 		galaxy_dc -> Clear ();
 	}
 	void draw_grid (void) {
@@ -139,7 +140,7 @@ public:
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (7);
 		galaxy_dc -> SetFont (f);
-		galaxy_dc -> SetTextForeground (wxColour (128, 128, 128));
+		galaxy_dc -> SetTextForeground (wxColour (32, 32, 32));
 		draw_cells (26, 26);
 	}
 	void OnPaint (wxPaintEvent & event) {
@@ -293,7 +294,7 @@ WarpwarWindow :: WarpwarWindow (wxWindow * parent) : wxWindow (parent, -1) {
 	galaxy = this;
 	new PrologThread ();
 	setCellSide (30);
-	setZero (0.0, 12.0);
+	setZero (0.0, 13.0);
 	reSizeGalaxy (2048, 2048);
 }
 WarpwarWindow :: ~ WarpwarWindow (void) {galaxy = NULL; deleteGalaxy ();}
