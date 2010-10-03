@@ -16,20 +16,22 @@ program warpwar #machine := "galaxy"
 		ecm armor cannons shells holds repair_bays
 		create add_features add_feature
 		disp disp_features
-		near
+		near near_eq
 		get_star insert_star economy_table
 		;save load
 		addvarcl save clear
 		; era build_points starship systemship
-		grid erase hexside zero draw_star star_colour
+		grid orientation erase hexside zero draw_star star_colour draw_route
 		draw_galaxy
 	]
 
 #machine grid := "grid"
+#machine orientation := "orientation"
 #machine erase := "erase"
 #machine hexside := "hexside"
 #machine zero := "zero"
 #machine draw_star := "draw_star"
+#machine draw_route := "draw_route"
 #machine star_colour := "star_colour"
 
 [[addvarcl *clause *x] [var [*v *x]] [APPEND *clause [*v] *clv] [addcl [*clv]]]
@@ -174,7 +176,10 @@ program warpwar #machine := "galaxy"
 ]
 [[disp_features : *]]
 
-[[disp : *]]
+[[disp *]]
+
+[[near_eq *x *x]]
+[[near_eq *x *y] [near *x *y]]
 
 [[near [*x *y] [*x *y1]] [sum *y 1 *y1]]
 [[near [*x *y] [*x *y1]] [sum *y -1 *y1]]
@@ -200,7 +205,7 @@ program warpwar #machine := "galaxy"
 	[rnd *x 2 24] [rnd *y 2 24]
 	[not res
 		[star *other_star *other_location]
-		[near *other_location [*x *y]]		
+		[near_eq *other_location [*x *y]]		
 		[show [*other_star *other_location [*x *y]]]
 	]
 	[rnd *econ 0 28]
@@ -210,11 +215,23 @@ program warpwar #machine := "galaxy"
 ]
 
 [[draw_galaxy]
-	[erase] [grid] [star_colour 255 0 0] /
-	[star *star *location]
-	[show [draw_star *star : *location]]
-	[draw_star *star : *location]
-	fail
+	[erase] [grid]
+	[star_colour 0 0 255]
+	[PROBE
+		[route *s1 *s2]
+		[star *s1 *location1]
+		[star *s2 *location2]
+		;[show [*location1 *location2]]
+		[draw_route *location1 *location2]
+		fail
+	]
+	[star_colour 255 0 0]
+	[PROBE
+		[star *star *location] [economy *star *e]
+		[add *star ":" *e *star_name]
+		[draw_star *star_name : *location]
+		fail
+	]
 ]
 
 end := [ [auto_atoms] [preprocessor f1]
@@ -227,17 +244,24 @@ end := [ [auto_atoms] [preprocessor f1]
 		[create base human moon]
 		[create starship barracuda moon [beams 4] [screens 4] [tubes 2] [missiles 2] [systemship_racks 4]]
 		[create systemship piranha [barracuda 3] [beams 6] [screens 6]]
-		[create star sun 4 127 128]
-		[create star moon 7 127 129]
+		[create star sun 4 12 12]
+		[create star moon 7 12 11]
 		[create race hohd]
 		[create base hohd hohdan]
 		[create star hohdan 4 22 21]
 
-		[insert_star]
-		[insert_star]
-		[insert_star]
-		[insert_star]
-		[insert_star]
-		[insert_star]
+		[FOR *x 1 36 1 [pp *x] [write ": "] [insert_star]]
+		;[PROBE
+		;	[star *star1 *]
+		;	[star *star2 *]
+		;	[not eq *star1 *star2]
+		;	[not route *star1 *star2]
+		;	[not route *star2 *star1]
+		;	[create route *star1 *star2]
+		;	fail
+		;]
+
+		[orientation]
+		[draw_galaxy]
 
 		[command] ] .

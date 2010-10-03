@@ -73,6 +73,7 @@ public:
 	int zero_x, zero_y;
 	int bitmap_position_x, bitmap_position_y;
 	int captured_x, captured_y;
+	bool orientation;
 	void setStarColour (int r, int g, int b) {
 		galaxy_dc -> SetPen (wxPen (wxColour (r, g, b)));
 		galaxy_dc -> SetBrush (wxBrush (wxColour (r, g, b)));
@@ -97,15 +98,27 @@ public:
 	void draw_cell (double x, double y) {
 		double shift60 = (double) cell_side * 0.866025404;
 		double shift30 = (double) cell_side * 0.5;
-		int x1 = (int) (x - (double) cell_side);
-		int x2 = (int) (x - shift30);
-		int x3 = (int) (x + shift30);
-		int y1 = (int) (y + shift60);
-		int y2 = (int) y;
-		int y3 = (int) (y - shift60);
-		galaxy_dc -> DrawLine (x1, y2, x2, y1);
-		galaxy_dc -> DrawLine (x1, y2, x2, y3);
-		galaxy_dc -> DrawLine (x2, y3, x3, y3);
+		if (orientation) {
+			int x1 = (int) (x - shift60);
+			int x2 = (int) x;
+			int x3 = (int) (x + shift60);
+			int y1 = (int) (y + shift30);
+			int y2 = (int) (y - shift30);
+			int y3 = (int) (y - (double) cell_side);
+			galaxy_dc -> DrawLine (x1, y1, x1, y2);
+			galaxy_dc -> DrawLine (x1, y2, x2, y3);
+			galaxy_dc -> DrawLine (x2, y3, x3, y2);
+		} else {
+			int x1 = (int) (x - (double) cell_side);
+			int x2 = (int) (x - shift30);
+			int x3 = (int) (x + shift30);
+			int y1 = (int) (y + shift60);
+			int y2 = (int) y;
+			int y3 = (int) (y - shift60);
+			galaxy_dc -> DrawLine (x1, y2, x2, y1);
+			galaxy_dc -> DrawLine (x1, y2, x2, y3);
+			galaxy_dc -> DrawLine (x2, y3, x3, y3);
+		}
 	}
 	int getX (int ind) {return (int) ((double) zero_x + (double) ind * (double) cell_side * 1.5);}
 	int getY (int y, int x) {return (int) ((double) zero_y + (double) y * cell_side * 0.866025404 * 2.0 - (double) x * cell_side * 0.866025404);}
@@ -114,21 +127,32 @@ public:
 		double shift30 = (double) cell_side * 0.5;
 		for (int column = 0; column < columns; column++) {
 			for (int row = 0; row < rows; row++) {
-				int location_x = getX (column); //(double) zero_x + (double) column * (double) cell_side * 1.5;
-				int location_y = getY (row, column); //(double) zero_y + (double) row * (shift60 + shift60) - (double) column * shift60;
+				int location_x = orientation ? getY (row, column) : getX (column); //(double) zero_x + (double) column * (double) cell_side * 1.5;
+				int location_y = orientation ? getX (column) : getY (row, column); //(double) zero_y + (double) row * (shift60 + shift60) - (double) column * shift60;
 				draw_cell (location_x, location_y);
-				galaxy_dc -> DrawText (wxString :: Format (_T ("%02i%02i"), row, column), location_x - (int) shift30, location_y - (int) shift60);
+				wxString grid = wxString :: Format (_T ("%02i%02i"), row, column);
+				wxSize extent = galaxy_dc -> GetTextExtent (grid);
+				galaxy_dc -> DrawText (grid, location_x - extent . x / 2, location_y - (int) shift60);
 			}
 		}
 	}
 	void draw_star (char * name, int x, int y) {
-		int xx = getX (x);
-		int yy = getY (y, x);
+		if (galaxy_dc == NULL) return;
+		int xx = orientation ? getY (y, x) : getX (x);
+		int yy = orientation ? getX (x) : getY (y, x);
 		galaxy_dc -> DrawCircle (xx, yy, 7);
 		wxString star = wxString :: From8BitData (name);
 		wxSize extent = galaxy_dc -> GetTextExtent (star);
 		galaxy_dc -> SetTextForeground (wxColour (128, 128, 128));
 		galaxy_dc -> DrawText (star, xx - extent . x / 2, yy + 9);
+	}
+	void draw_route (int x1, int y1, int x2, int y2) {
+		if (galaxy_dc == NULL) return;
+		int xx1 = orientation ? getY (y1, x1) : getX (x1);
+		int yy1 = orientation ? getX (x1) : getY (y1, x1);
+		int xx2 = orientation ? getY (y2, x2) : getX (x2);
+		int yy2 = orientation ? getX (x2) : getY (y2, x2);
+		galaxy_dc -> DrawLine (xx1, yy1, xx2, yy2);
 	}
 	void clear (void) {
 		galaxy_dc -> SetBackground (wxBrush (wxColour (0, 0, 0)));
@@ -202,6 +226,15 @@ public:
 	}
 };
 
+class orientation : public PrologNativeCode {
+public:
+	virtual bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (galaxy == NULL) return false;
+		galaxy -> orientation = ! galaxy -> orientation;
+		return true;
+	}
+};
+
 class hexside : public PrologNativeCode {
 public:
 	virtual bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -250,6 +283,34 @@ public:
 	}
 };
 
+class draw_route : public PrologNativeCode {
+public:
+	virtual bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (galaxy == NULL) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * l1 = parameters -> getLeft ();
+		if (! l1 -> isPair ()) return false;
+		parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * l2 = parameters -> getLeft ();
+		if (! l2 -> isPair ()) return false;
+		PrologElement * x1 = l1 -> getLeft ();
+		if (! x1 -> isInteger ()) return false;
+		l1 = l1 -> getRight ();
+		if (! l1 -> isPair ()) return false;
+		PrologElement * y1 = l1 -> getLeft ();
+		if (! y1 -> isInteger ()) return false;
+		PrologElement * x2 = l2 -> getLeft ();
+		if (! x2 -> isInteger ()) return false;
+		l2 = l2 -> getRight ();
+		if (! l2 -> isPair ()) return false;
+		PrologElement * y2 = l2 -> getLeft ();
+		if (! y2 -> isInteger ()) return false;
+		galaxy -> draw_route (x1 -> getInteger (), y1 -> getInteger (), x2 -> getInteger (), y2 -> getInteger ());
+		return true;
+	}
+};
+
 class star_colour : public PrologNativeCode {
 public:
 	virtual bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -277,9 +338,11 @@ public:
 	virtual PrologNativeCode * getNativeCode (char * name) {
 		if (strcmp (name, "erase") == 0) return new erase_galaxy ();
 		if (strcmp (name, "grid") == 0) return new draw_grid ();
+		if (strcmp (name, "orientation") == 0) return new orientation ();
 		if (strcmp (name, "hexside") == 0) return new hexside ();
 		if (strcmp (name, "zero") == 0) return new zero ();
 		if (strcmp (name, "draw_star") == 0) return new draw_star ();
+		if (strcmp (name, "draw_route") == 0) return new draw_route ();
 		if (strcmp (name, "star_colour") == 0) return new star_colour ();
 		return NULL;
 	}
@@ -290,12 +353,13 @@ public:
 PrologServiceClass * galaxy_return (void) {return new galaxy_service_class ();}
 
 WarpwarWindow :: WarpwarWindow (wxWindow * parent) : wxWindow (parent, -1) {
+	orientation = false;
 	captured_x = captured_y = bitmap_position_x = bitmap_position_y = 0;
 	galaxy = this;
-	new PrologThread ();
 	setCellSide (30);
 	setZero (0.0, 13.0);
 	reSizeGalaxy (2048, 2048);
+	new PrologThread ();
 }
 WarpwarWindow :: ~ WarpwarWindow (void) {galaxy = NULL; deleteGalaxy ();}
 
