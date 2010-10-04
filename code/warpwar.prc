@@ -23,6 +23,7 @@ program warpwar #machine := "galaxy"
 		; era build_points starship systemship
 		grid orientation erase hexside zero draw_star star_colour draw_route
 		draw_galaxy
+		sort divide route_less distance choose_greater d
 	]
 
 #machine grid := "grid"
@@ -33,6 +34,45 @@ program warpwar #machine := "galaxy"
 #machine draw_star := "draw_star"
 #machine draw_route := "draw_route"
 #machine star_colour := "star_colour"
+
+
+[[divide *less *x [] *lt *lt *gt *gt]/]
+[[divide *less *x [*h : *t] *lt *lta [*h : *gt] *gta] [*less *x *h] / [divide *less *x *t *lt *lta *gt *gta]]
+[[divide *less *x [*h : *t] [*h : *lt] *lta *gt *gta] / [divide *less *x *t *lt *lta *gt *gta]]
+
+[[sort *less [] *gs *gs]/]
+[[sort *less [*h : *t] *gts *gtsa]
+	[divide *less *h *t *lt *lta *gt *gta]/
+	[sort *less *lt *gts [*h : *gs]]/
+	[sort *less *gt *gs *gtsa]/
+;	[eq *gtsa *gsa] [eq *gts *ls] [eq *lsa [*h : *gs]]
+]
+
+[[route_less [[**] *d1] [[**] *d2]] [less *d1 *d2]]
+[[choose_greater *x *y *x] [less *y *x]/]
+[[choose_greater *x *y *y]/]
+[[distance [*x1 *y1] [*x2 *y2] *d]/
+	[sub *x2 *x1 *dx] [sub *y2 *y1 *dy]
+	[SELECT
+		[[less_eq 0 *dx]
+			[SELECT
+				[[less_eq 0 *dy] [choose_greater *dx *dy *d]]
+				[[sub *dx *dy *d]]
+			]
+		]
+		[[SELECT
+			[[less *dy 0] [abs *dx *adx] [abs *dy *ady] [choose_greater *adx *ady *d]]
+			[[sub *dy *dx *d]]
+		]]
+	]/
+]
+[[distance *s1 *s2 *d]/
+	[star *s1 *l1]
+	[star *s2 *l2]
+	[distance *l1 *l2 *d]/
+]
+[[d *s1 *s2] [distance *s1 *s2 *d] [show *d]]
+
 
 [[addvarcl *clause *x] [var [*v *x]] [APPEND *clause [*v] *clv] [addcl [*clv]]]
 
@@ -73,7 +113,12 @@ program warpwar #machine := "galaxy"
 [[create race *race] [var [*era 0]] [addcl [[era *race *era]]]]
 [[create base *race *location] [var [*bp 64]] [addcl [[build_points *race *location *bp]]]]
 [[create star *star *economy : *location] [addcl [[star *star *location]]] [addcl [[economy *star *economy]]]]
-[[create route *from *to] [addcl [[route *from *to]]]]
+[[create route *from *to]
+	[not route *from *to]
+	[not route *to *from]
+	[addcl [[route *from *to]]]
+]
+[[create route * *]]
 
 [[create starship *name *location : *features]
 	[build_points *race *location *bp]
@@ -202,6 +247,7 @@ program warpwar #machine := "galaxy"
 
 [[insert_star]
 	[get_star *name]
+	[not star *name : *]
 	[rnd *x 2 24] [rnd *y 2 24]
 	[not res
 		[star *other_star *other_location]
@@ -251,6 +297,16 @@ end := [ [auto_atoms] [preprocessor f1]
 		[create star hohdan 4 22 21]
 
 		[FOR *x 1 36 1 [pp *x] [write ": "] [insert_star]]
+		[PROBE
+			[star *s1 :*]
+			[isall *l [[*s1 *s2] *d] [star *s2 *] [distance *s1 *s2 *d]]
+			[sort route_less *l [[*r0 *] [*r1 *] [*r2 *] [*r3 *] [*r4 *] : *] []]
+			[create route : *r1]
+			[create route : *r2]
+			[create route : *r3]
+			[create route : *r4]
+			fail
+		]
 		;[PROBE
 		;	[star *star1 *]
 		;	[star *star2 *]
