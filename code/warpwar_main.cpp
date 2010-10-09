@@ -159,13 +159,13 @@ public:
 		galaxy_dc -> SetPen (wxPen (wxColour (32, 32, 32)));
 		galaxy_dc -> Clear ();
 	}
-	void draw_grid (void) {
+	void draw_grid (int x, int y) {
 		wxFont f = galaxy_dc -> GetFont ();
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (7);
 		galaxy_dc -> SetFont (f);
 		galaxy_dc -> SetTextForeground (wxColour (32, 32, 32));
-		draw_cells (26, 26);
+		draw_cells (x, y);
 	}
 	void OnPaint (wxPaintEvent & event) {
 		wxBufferedPaintDC dc (this);
@@ -221,7 +221,15 @@ class draw_grid : public PrologNativeCode {
 public:
 	virtual bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (galaxy == NULL) return false;
-		galaxy -> draw_grid ();
+		if (parameters -> isEarth ()) {galaxy -> draw_grid (26, 26); return true;}
+		if (! parameters -> isPair ()) return false;
+		PrologElement * x = parameters -> getLeft ();
+		if (! x -> isInteger ()) return false;
+		parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * y = parameters -> getLeft ();
+		if (! y -> isInteger ()) return false;
+		galaxy -> draw_grid (x -> getInteger (), y -> getInteger ());
 		return true;
 	}
 };
