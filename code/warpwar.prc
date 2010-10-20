@@ -131,6 +131,7 @@ program warpwar #machine := "galaxy"
 [[create route * *]]
 
 [[create starship *name *location : *features]
+	[base *race *location : *]
 	[build_points *race *location *bp]
 	[addcl [[starship *name race *race]]]
 	[var [*loc *location]] [addcl [[starship *name location *loc]]]
@@ -140,13 +141,14 @@ program warpwar #machine := "galaxy"
 
 [[create systemship *name *location : *features]
 	[SELECT
-		[[build_points *race *location *bp]]
+		[[base *race *location : *] [build_points *race *location *bp]]
 		[
 			[eq *location [*s *d]]
 			[starship *s race *race]
 			[starship *s systemship_racks *d *dock]
 			[starship *s location *loc] [*loc : *bp_location]
 			[*dock : *status] [eq *status empty] [*dock *name]
+			[base *race *bp_location : *]
 			[build_points *race *bp_location *bp]
 		]
 	]
@@ -197,15 +199,30 @@ program warpwar #machine := "galaxy"
 	[era *race *era] [*era : *e]
 	[nl] [show *race " era = " *e]
 	[show "Locations:"]
-	[build_points *race *location *bp] [*bp : *v]
-	[economy *location *economy]
-	[ONE
+	[PROBE
+		[build_points *race *location *bp] [*bp : *v]
 		[SELECT
-			[[base *race *location *m] [show "	" *location " BP:" *v " BASE:" *m " ECONOMY:" *economy]]
-			[[show "	" *location " BP:" *v " ECONOMY:" *economy]]
+			[[is_var *location] /
+				[show "	TOTAL BP: " *v]
+				[base *race *location *m]
+				[economy *location *economy]
+				[show "	" *location " BASE:" *m " ECONOMY:" *economy]
+			]
+			[
+				[economy *location *economy]
+				[ONE [SELECT
+					[[base *race *location *m] [show "	" *location " BP:" *v " BASE:" *m " ECONOMY:" *economy]]
+					[[show "	" *location " BP:" *v " ECONOMY:" *economy]]
+				]]
+			]
 		]
+;		[economy *location *economy]
+		fail
 	]
-	fail
+	[show "Starships:"]
+	[PROBE [starship *s race *race] [starship *s location *l] [*l : *loc] [show "	" *s " on " *loc] fail]
+	[show "Systemships:"]
+	[PROBE [systemship *s race *race] [systemship *s location *l] [*l : *loc] [show "	" *s " on " *loc] fail]
 ]
 
 [[disp location *star]
@@ -216,6 +233,7 @@ program warpwar #machine := "galaxy"
 	[PROBE [base *race *star *m] [show "BASE: " *race " (" *m ")"]]
 	[PROBE [economy *star *economy] [show "ECONOMY: " *economy]]
 	[write "STARSHIPS: "] [PROBE [starship *starship location *la] [*la : *x] [eq *x *star] [write [*starship] " "] fail] [nl]
+	[write "SYSTEMSHIPS: "] [PROBE [systemship *systemship location *lsa] [*lsa : *sx] [eq *sx *star] [write [*systemship] " "] fail] [nl]
 ]
 
 [[disp starship *name]
@@ -283,7 +301,31 @@ program warpwar #machine := "galaxy"
 [[economy_table *x 4] [less 23 *x 26]]
 [[economy_table *x 5] [less 25 *x 28]]
 
-[[fetch_bp]
+[[fetch_bp] /
+	[PROBE
+		[era *race : *]
+		[fetch_bp *race]
+		fail
+	]
+]
+
+[[fetch_bp *race]
+	[build_points *race *location *bp]
+	[is_var *location] /
+	[PROBE
+		[economy *location *e]
+		[ONE [SELECT
+			[[base *race *location *m]]
+			[[starship *s race *race] [starship *s location *loc] [*loc : *l] [eq *l *location] [eq *m 1]]
+		]]
+		[times *e *m *em]
+		[show [*race *location *e *em]]
+		[inc *bp *em]
+		fail
+	]
+]
+
+[[fetch_bp *race] /
 	[PROBE
 		[build_points *race *location *bp]
 		[economy *location *e]
@@ -296,6 +338,7 @@ program warpwar #machine := "galaxy"
 		fail
 	]
 ]
+
 
 [[insert_star] / [insert_star 2 24 2 24]]
 [[insert_star *low_x *high_x *low_y *high_y]
@@ -364,12 +407,14 @@ end := [ [auto_atoms] [preprocessor f1]
 		[create race human]
 		[create presence human earth 64]
 		[create presence human moon 64]
+		[create base human moon 1]
 		[create starship barracuda moon [beams 4] [screens 4] [tubes 2] [missiles 2] [systemship_racks 4]]
 		[create systemship piranha [barracuda 3] [beams 6] [screens 6]]
 		[create star sun 4 12 12]
 		[create star moon 7 12 11]
 		[create race hohd]
 		[create presence hohd hohdan 64]
+		[create base hohd hohdan 1]
 		[create star hohdan 4 22 21]
 
 		[generate_galaxy]
