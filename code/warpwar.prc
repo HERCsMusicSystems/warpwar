@@ -10,7 +10,7 @@ program warpwar #machine := "galaxy"
 		human sun earth moon hohd hohdan bizh vul
 		barracuda piranha
 		era race location build_points economy
-		starship systemship base star route
+		starship systemship presence base star route
 		warp_generator power_drive beams screens tubes missiles
 		systemship_racks empty damaged
 		ecm armor cannons shells holds repair_bays
@@ -25,6 +25,8 @@ program warpwar #machine := "galaxy"
 		draw_galaxy
 		sort divide route_less distance choose_greater route_eligible
 		fetch_bp
+		possible_move move onlist
+		generate_galaxy
 	]
 
 #machine grid := "grid"
@@ -79,6 +81,7 @@ program warpwar #machine := "galaxy"
 	[file_writer *tc *file_name]
 	[save *tc era] [*tc "\n"]
 	[save *tc build_points] [*tc "\n"]
+	[save *tc base] [*tc "\n"]
 	[save *tc star] [*tc "\n"]
 	[save *tc economy] [*tc "\n"]
 	[save *tc route] [*tc "\n"]
@@ -110,8 +113,15 @@ program warpwar #machine := "galaxy"
 ]
 
 [[create race *race] [var [*era 0]] [addcl [[era *race *era]]]]
-[[create base *race *location] / [create base *race *location 0]]
-[[create base *race *location *initial] [var [*bp *initial]] [addcl [[build_points *race *location *bp]]]]
+[[create presence *race *location] / [create presence *race *location 0]]
+[[create presence *race *location *initial] [var [*bp *initial]] [addcl [[build_points *race *location *bp]]]]
+[[create base *race *location *multiplier]
+	[build_points *race *location *bp]
+	[times *multiplier 15 *cost]
+	[*bp : *bpc] [less_eq *cost *bpc]
+	[dec *bp *cost]
+	[addcl [[base *race *location *multiplier]]]
+]
 [[create star *star *economy : *location] [addcl [[star *star *location]]] [addcl [[economy *star *economy]]]]
 [[create route *from *to]
 	[not route *from *to]
@@ -187,7 +197,15 @@ program warpwar #machine := "galaxy"
 	[era *race *era] [*era : *e]
 	[nl] [show *race " era = " *e]
 	[show "Locations:"]
-	[PROBE [build_points *race *location *bp] [*bp : *v] [show "	" *location " = " *v] fail]
+	[build_points *race *location *bp] [*bp : *v]
+	[economy *location *economy]
+	[ONE
+		[SELECT
+			[[base *race *location *m] [show "	" *location " BP:" *v " BASE:" *m " ECONOMY:" *economy]]
+			[[show "	" *location " BP:" *v " ECONOMY:" *economy]]
+		]
+	]
+	fail
 ]
 
 [[disp location *star]
@@ -195,6 +213,7 @@ program warpwar #machine := "galaxy"
 	[nl] [show "STAR: " *star]
 	[PROBE [star *star *xy] [show "LOCATION: " *xy]]
 	[PROBE [build_points *race *star *bp] [*bp : *bpv] [show "PRESENCE: " *race " (" *bpv ")"]]
+	[PROBE [base *race *star *m] [show "BASE: " *race " (" *m ")"]]
 	[PROBE [economy *star *economy] [show "ECONOMY: " *economy]]
 	[write "STARSHIPS: "] [PROBE [starship *starship location *la] [*la : *x] [eq *x *star] [write [*starship] " "] fail] [nl]
 ]
@@ -225,6 +244,7 @@ program warpwar #machine := "galaxy"
 
 [[near_eq *x *x]]
 [[near_eq *x *y] [near *x *y]]
+[[near_eq *star *near] [star *star *location] [near_eq *location *near]]
 
 [[near [*x *y] [*x *y1]] [sum *y 1 *y1]]
 [[near [*x *y] [*x *y1]] [sum *y -1 *y1]]
@@ -232,8 +252,26 @@ program warpwar #machine := "galaxy"
 [[near [*x *y] [*x1 *y]] [sum *x -1 *x1]]
 [[near [*x *y] [*x1 *y1]] [sum *x 1 *x1] [sum *y 1 *y1]]
 [[near [*x *y] [*x1 *y1]] [sum *x -1 *x1] [sum *y -1 *y1]]
-[[near *star *near] [star *star *location] [near *location *near]]
-[[near *starship *near] [starship *starship location *atom] [*atom : *location] [show [*atom *location]] [near *location *near]]
+;[[near *star *near] [star *star *location] [near *location *near]]
+;[[near *starship *near] [starship *starship location *atom] [*atom : *location] [show [*atom *location]] [near *location *near]]
+
+[[possible_move *s1 *s2] [route *s1 *s2]]
+[[possible_move *s1 *s2] [route *s2 *s1]]
+[[possible_move *s1 *s2] [star *s1 *l1] [star *s2 *l2] [near *l1 *l2]]
+[[possible_move *l1 *l2] [near *l1 *l2] [not star * *l1] [not star * *l2]]
+[[possible_move *star *location] [star *star *l] [near *l *location]]
+[[possible_move *location *star] [star *star *l] [near *l *location]]
+
+[[onlist *x [*x : *]]/]
+[[onlist *x [* : *l]] / [onlist *x *l]]
+
+[[move *from *from [*from]]]
+[[move *from *to [*from : *tail]]
+	[move *somewhere *to *tail]
+	[possible_move *somewhere *from]
+	[not onlist *from *tail]
+	[show [*from : *tail]]
+]
 
 [[get_star *star] [rnd *x 0 1024] [star_name *star *x]]
 [[get_star *star] / [get_star *star]]
@@ -245,12 +283,16 @@ program warpwar #machine := "galaxy"
 [[economy_table *x 4] [less 23 *x 26]]
 [[economy_table *x 5] [less 25 *x 28]]
 
-[[fetch_bp] / [fetch_bp 1]]
-[[fetch_bp *m]
+[[fetch_bp]
 	[PROBE
 		[build_points *race *location *bp]
 		[economy *location *e]
-		[inc *bp *e]
+		[ONE [SELECT
+			[[base *race *location *m] [times *e *m *em]]
+			[[div *e 2 *em]]
+		]]
+		[show [*race *location *e *em]]
+		[inc *bp *em]
 		fail
 	]
 ]
@@ -300,39 +342,39 @@ program warpwar #machine := "galaxy"
 ]
 [[route_eligible : *]]
 
+[[generate_galaxy]
+	[FOR *x 1 36 1 [pp *x] [write ": "] [insert_star]]
+	[PROBE
+		[star *s1 :*]
+		[isall *l [[*s1 *s2] *d] [star *s2 *] [distance *s1 *s2 *d]]
+		[sort route_less *l [*r0 *r1 *r2 *r3 *r4 : *] []]
+		[route_eligible 70 : *r1]
+		[route_eligible 40 : *r2]
+		[route_eligible 20 : *r3]
+		[route_eligible 10 : *r4]
+		fail
+	]
+]
+
 end := [ [auto_atoms] [preprocessor f1]
 
 		[wait *seed] [rnd_control *seed]
 		[get_star *star] [show *star]
 
 		[create race human]
-		[create base human earth 64]
-		[create base human moon 64]
+		[create presence human earth 64]
+		[create presence human moon 64]
 		[create starship barracuda moon [beams 4] [screens 4] [tubes 2] [missiles 2] [systemship_racks 4]]
 		[create systemship piranha [barracuda 3] [beams 6] [screens 6]]
 		[create star sun 4 12 12]
 		[create star moon 7 12 11]
 		[create race hohd]
-		[create base hohd hohdan 64]
+		[create presence hohd hohdan 64]
 		[create star hohdan 4 22 21]
 
-		[FOR *x 1 36 1 [pp *x] [write ": "] [insert_star]]
-		[PROBE
-			[star *s1 :*]
-			[isall *l [[*s1 *s2] *d] [star *s2 *] [distance *s1 *s2 *d]]
-			[sort route_less *l [*r0 *r1 *r2 *r3 *r4 : *] []]
-			[route_eligible 70 : *r1]
-			[route_eligible 40 : *r2]
-			[route_eligible 20 : *r3]
-			[route_eligible 10 : *r4]
-			;[PROBE [rnd *p1 0 90] [less *p1 40] [show [*p1 4 : *r1]] [create route : *r1]]
-			;[PROBE [rnd *p2 0 90] [less *p2 30] [show [*p2 3 : *r2]] [create route : *r2]]
-			;[PROBE [rnd *p3 0 90] [less *p3 20] [show [*p3 2 : *r3]] [create route : *r3]]
-			;[PROBE [rnd *p4 0 90] [less *p4 10] [show [*p4 1 : *r4]] [create route : *r4]]
-			fail
-		]
-
-		[orientation]
+		[generate_galaxy]
 		[draw_galaxy]
 
 		[command] ] .
+
+

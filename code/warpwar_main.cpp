@@ -130,7 +130,7 @@ public:
 				int location_x = orientation ? getY (row, column) : getX (column); //(double) zero_x + (double) column * (double) cell_side * 1.5;
 				int location_y = orientation ? getX (column) : getY (row, column); //(double) zero_y + (double) row * (shift60 + shift60) - (double) column * shift60;
 				draw_cell (location_x, location_y);
-				wxString grid = wxString :: Format (_T ("%02i%02i"), row, column);
+				wxString grid = wxString :: Format (_T ("%02i%02i"), column, row);
 				wxSize extent = galaxy_dc -> GetTextExtent (grid);
 				galaxy_dc -> DrawText (grid, location_x - extent . x / 2, location_y - (int) shift60);
 			}
@@ -156,7 +156,7 @@ public:
 	}
 	void clear (void) {
 		galaxy_dc -> SetBackground (wxBrush (wxColour (0, 0, 0)));
-		galaxy_dc -> SetPen (wxPen (wxColour (32, 32, 32)));
+		galaxy_dc -> SetPen (wxPen (wxColour (48, 48, 48)));
 		galaxy_dc -> Clear ();
 	}
 	void draw_grid (int x, int y) {
@@ -164,7 +164,7 @@ public:
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (7);
 		galaxy_dc -> SetFont (f);
-		galaxy_dc -> SetTextForeground (wxColour (32, 32, 32));
+		galaxy_dc -> SetTextForeground (wxColour (48, 48, 48));
 		draw_cells (x, y);
 	}
 	void OnPaint (wxPaintEvent & event) {
