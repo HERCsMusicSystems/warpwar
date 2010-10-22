@@ -22,7 +22,7 @@ program warpwar #machine := "galaxy"
 		addvarcl save clear
 		; era build_points starship systemship
 		grid orientation erase hexside zero draw_star star_colour draw_route
-		draw_galaxy
+		draw_galaxy draw_base draw_presence
 		sort divide route_less distance choose_greater route_eligible
 		fetch_bp
 		possible_move move onlist
@@ -37,6 +37,8 @@ program warpwar #machine := "galaxy"
 #machine draw_star := "draw_star"
 #machine draw_route := "draw_route"
 #machine star_colour := "star_colour"
+#machine draw_base := "draw_base"
+#machine draw_presence := "draw_presence"
 
 
 [[divide *less *x [] *lt *lt *gt *gt]/]
@@ -374,6 +376,7 @@ program warpwar #machine := "galaxy"
 		[draw_star *star_name : *location]
 		fail
 	]
+	[PROBE [base *race *star : *] [star *star *location] [draw_base *race : *location] fail]
 ]
 
 [[route_eligible [*star1 *star2] *distance] / [route_eligible 25 [*star1 *star2] *distance]]

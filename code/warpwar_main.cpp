@@ -146,6 +146,55 @@ public:
 		galaxy_dc -> SetTextForeground (wxColour (128, 128, 128));
 		galaxy_dc -> DrawText (star, xx - extent . x / 2, yy + 9);
 	}
+	void draw_base (char * name, int x, int y) {
+		if (galaxy_dc == NULL) return;
+		int xx = orientation ? getY (y, x) : getX (x);
+		int yy = orientation ? getX (x) : getY (y, x);
+		wxString race = wxString :: From8BitData (name);
+		wxSize extent = galaxy_dc -> GetTextExtent (race);
+		galaxy_dc -> DrawText (race, xx - extent . x / 2, yy + 20);
+		double shift60 = (double) cell_side * 0.866025404 * 0.8;
+		double shift30 = (double) cell_side * 0.5 * 0.8;
+		if (orientation) {
+			int x1 = (int) (xx - shift60);
+			int x2 = (int) xx;
+			int x3 = (int) (xx + shift60);
+			int y1 = (int) (yy + shift30);
+			int y2 = (int) (yy - shift30);
+			int y3 = (int) (yy - (double) cell_side * 0.8);
+			int y4 = (int) (yy + (double) cell_side * 0.8);
+			galaxy_dc -> DrawLine (x1, y1, x1, y2);
+			galaxy_dc -> DrawLine (x1, y2, x2, y3);
+			galaxy_dc -> DrawLine (x2, y3, x3, y2);
+			galaxy_dc -> DrawLine (x1, y1, x2, y4);
+			galaxy_dc -> DrawLine (x2, y4, x3, y1);
+			galaxy_dc -> DrawLine (x3, y1, x3, y2);
+		} else {
+			int x1 = (int) (xx - (double) cell_side * 0.8);
+			int x2 = (int) (xx - shift30);
+			int x3 = (int) (xx + shift30);
+			int x4 = (int) (xx + (double) cell_side * 0.8);
+			int y1 = (int) (yy + shift60);
+			int y2 = (int) yy;
+			int y3 = (int) (yy - shift60);
+			galaxy_dc -> DrawLine (x1, y2, x2, y1);
+			galaxy_dc -> DrawLine (x1, y2, x2, y3);
+			galaxy_dc -> DrawLine (x2, y3, x3, y3);
+			galaxy_dc -> DrawLine (x2, y1, x3, y1);
+			galaxy_dc -> DrawLine (x3, y1, x4, y2);
+			galaxy_dc -> DrawLine (x3, y3, x4, y2);
+		}
+	}
+	void draw_presence (char * name, int x, int y) {
+		if (galaxy_dc == NULL) return;
+		int xx = orientation ? getY (y, x) : getX (x);
+		int yy = orientation ? getX (x) : getY (y, x);
+		galaxy_dc -> SetBrush (wxBrush (wxColour (0, 0, 0)));
+		galaxy_dc -> DrawCircle (xx, yy, 12);
+		wxString race = wxString :: From8BitData (name);
+		wxSize extent = galaxy_dc -> GetTextExtent (race);
+		galaxy_dc -> DrawText (race, xx + 14, yy - extent . y / 2);
+	}
 	void draw_route (int x1, int y1, int x2, int y2) {
 		if (galaxy_dc == NULL) return;
 		int xx1 = orientation ? getY (y1, x1) : getX (x1);
@@ -319,6 +368,46 @@ public:
 	}
 };
 
+class draw_base : public PrologNativeCode {
+public:
+	virtual bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (galaxy == NULL) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * name = parameters -> getLeft ();
+		if (! name -> isText () && ! name -> isAtom ()) return false;
+		parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * x = parameters -> getLeft ();
+		if (! x -> isInteger ()) return false;
+		parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * y = parameters -> getLeft ();
+		if (! y -> isInteger ()) return false;
+		galaxy -> draw_base (name -> isText () ? name -> getText () : name -> getAtom () -> name (), x -> getInteger (), y -> getInteger ());
+		return true;
+	}
+};
+
+class draw_presence : public PrologNativeCode {
+public:
+	virtual bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (galaxy == NULL) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * name = parameters -> getLeft ();
+		if (! name -> isText () && ! name -> isAtom ()) return false;
+		parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * x = parameters -> getLeft ();
+		if (! x -> isInteger ()) return false;
+		parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * y = parameters -> getLeft ();
+		if (! y -> isInteger ()) return false;
+		galaxy -> draw_presence (name -> isText () ? name -> getText () : name -> getAtom () -> name (), x -> getInteger (), y -> getInteger ());
+		return true;
+	}
+};
+
 class star_colour : public PrologNativeCode {
 public:
 	virtual bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -351,6 +440,8 @@ public:
 		if (strcmp (name, "zero") == 0) return new zero ();
 		if (strcmp (name, "draw_star") == 0) return new draw_star ();
 		if (strcmp (name, "draw_route") == 0) return new draw_route ();
+		if (strcmp (name, "draw_base") == 0) return new draw_base ();
+		if (strcmp (name, "draw_presence") == 0) return new draw_presence ();
 		if (strcmp (name, "star_colour") == 0) return new star_colour ();
 		return NULL;
 	}
