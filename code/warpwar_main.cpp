@@ -10,6 +10,7 @@
 
 #include "neural.h"
 
+#ifdef LINUX_OPERATING_SYSTEM
 extern char resource_0 [];
 extern char resource_1 [];
 extern char resource_2 [];
@@ -29,6 +30,29 @@ public:
 		return ret;
 	}
 } resource_loader;
+#endif
+
+#ifdef WINDOWS_OPERATING_SYSTEM
+#include "resource.h"
+class resource_loader_class : public PrologResourceLoader {
+public:
+	char * load (char * name) {
+		HRSRC resource = NULL;
+		if (strcmp (name, "studio.prc") == 0) resource = FindResource (NULL, MAKEINTRESOURCE (STUDIO_PRC), RT_RCDATA);
+		if (strcmp (name, "store.prc") == 0) resource = FindResource (NULL, MAKEINTRESOURCE (STORE_PRC), RT_RCDATA);
+		if (strcmp (name, "help.prc") == 0) resource = FindResource (NULL, MAKEINTRESOURCE (HELP_PRC), RT_RCDATA);
+		if (strcmp (name, "keyboard.prc") == 0) resource = FindResource (NULL, MAKEINTRESOURCE (KEYBOARD_PRC), RT_RCDATA);
+		if (strcmp (name, "record.prc") == 0) resource = FindResource (NULL, MAKEINTRESOURCE (RECORD_PRC), RT_RCDATA);
+		if (strcmp (name, "scala_reader.prc") == 0) resource = FindResource (NULL, MAKEINTRESOURCE (SCALA_READER_PRC), RT_RCDATA);
+		if (strcmp (name, "neural.prc") == 0) resource = FindResource (NULL, MAKEINTRESOURCE (NEURAL_PRC), RT_RCDATA);
+		if (strcmp (name, "f1.prc") == 0) resource = FindResource (NULL, MAKEINTRESOURCE (F1_PRC), RT_RCDATA);
+		if (! resource) return NULL;
+		HGLOBAL loader = LoadResource (NULL, resource);
+		if (! loader) return NULL;
+		return (char *) LockResource (loader);
+	}
+} resource_loader;
+#endif
 
 extern PrologServiceClass * galaxy_return (void);
 
@@ -52,7 +76,12 @@ public:
 		root -> setResourceLoader (& resource_loader);
 		root -> setServiceClassLoader (& service_class_loader);
 		root -> set_uap32_captions ();
+#ifdef LINUX_OPERATING_SYSTEM
 		PrologLinuxConsole * console = new PrologLinuxConsole (10);
+#endif
+#ifdef WINDOWS_OPERATING_SYSTEM
+		PrologWindowsConsole * console = new PrologWindowsConsole (10);
+#endif
 		console -> open ();
 		root -> insertCommander (console);
 		root -> resolution ("warpwar.prc");
@@ -125,6 +154,7 @@ public:
 	void draw_cells (int rows, int columns) {
 		double shift60 = (double) cell_side * 0.866025404;
 		double shift30 = (double) cell_side * 0.5;
+		galaxy_dc -> SetPen (wxPen (wxColour (48, 48, 48)));
 		for (int column = 0; column < columns; column++) {
 			for (int row = 0; row < rows; row++) {
 				int location_x = orientation ? getY (row, column) : getX (column); //(double) zero_x + (double) column * (double) cell_side * 1.5;
@@ -152,6 +182,7 @@ public:
 		int yy = orientation ? getX (x) : getY (y, x);
 		wxString race = wxString :: From8BitData (name);
 		wxSize extent = galaxy_dc -> GetTextExtent (race);
+		galaxy_dc -> SetTextForeground (wxColour (128, 128, 128));
 		galaxy_dc -> DrawText (race, xx - extent . x / 2, yy + 20);
 		double shift60 = (double) cell_side * 0.866025404 * 0.8;
 		double shift30 = (double) cell_side * 0.5 * 0.8;
@@ -193,6 +224,7 @@ public:
 		galaxy_dc -> DrawCircle (xx, yy, 12);
 		wxString race = wxString :: From8BitData (name);
 		wxSize extent = galaxy_dc -> GetTextExtent (race);
+		galaxy_dc -> SetTextForeground (wxColour (128, 128, 128));
 		galaxy_dc -> DrawText (race, xx + 14, yy - extent . y / 2);
 	}
 	void draw_route (int x1, int y1, int x2, int y2) {
@@ -220,7 +252,10 @@ public:
 		wxBufferedPaintDC dc (this);
 		dc . SetBackground (wxBrush (wxColour (0, 0, 0)));
 		dc . Clear ();
-		dc . DrawBitmap (* galaxy_bitmap, bitmap_position_x, bitmap_position_y, true);
+		//dc . DrawBitmap (* galaxy_bitmap, bitmap_position_x, bitmap_position_y, true);
+		dc . Blit (bitmap_position_x, bitmap_position_y, galaxy_bitmap -> GetWidth (), galaxy_bitmap -> GetHeight (), galaxy_dc, 0, 0);
+		dc . SetPen (wxPen (wxColour (255, 255, 255)));
+		//dc . DrawLine (0, 0, 300, 300);
 		//if (galaxy_dc == NULL) return;
 		//dc . Blit (0, 0, galaxy_width, galaxy_height, galaxy_dc, 0, 0);
 	}
@@ -452,6 +487,8 @@ public:
 PrologServiceClass * galaxy_return (void) {return new galaxy_service_class ();}
 
 WarpwarWindow :: WarpwarWindow (wxWindow * parent) : wxWindow (parent, -1) {
+	galaxy_dc = NULL; galaxy_bitmap = NULL;
+	SetBackgroundStyle (wxBG_STYLE_CUSTOM);
 	orientation = false;
 	captured_x = captured_y = bitmap_position_x = bitmap_position_y = 0;
 	galaxy = this;

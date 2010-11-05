@@ -22,11 +22,12 @@ program warpwar #machine := "galaxy"
 		addvarcl save clear
 		; era build_points starship systemship
 		grid orientation erase hexside zero draw_star star_colour draw_route
-		draw_galaxy draw_base draw_presence
-		sort divide route_less distance choose_greater route_eligible
+		draw_galaxy draw_base draw_bases draw_presence draw_presences
+		route_less distance choose_greater route_eligible
 		fetch_bp
-		possible_move move onlist
+		possible_move move
 		generate_galaxy
+		locate_ship
 	]
 
 #machine grid := "grid"
@@ -40,18 +41,6 @@ program warpwar #machine := "galaxy"
 #machine draw_base := "draw_base"
 #machine draw_presence := "draw_presence"
 
-
-[[divide *less *x [] *lt *lt *gt *gt]/]
-[[divide *less *x [*h : *t] *lt *lta [*h : *gt] *gta] [*less *x *h] / [divide *less *x *t *lt *lta *gt *gta]]
-[[divide *less *x [*h : *t] [*h : *lt] *lta *gt *gta] / [divide *less *x *t *lt *lta *gt *gta]]
-
-[[sort *less [] *gs *gs]/]
-[[sort *less [*h : *t] *gts *gtsa]
-	[divide *less *h *t *lt *lta *gt *gta]/
-	[sort *less *lt *gts [*h : *gs]]/
-	[sort *less *gt *gs *gtsa]/
-;	[eq *gtsa *gsa] [eq *gts *ls] [eq *lsa [*h : *gs]]
-]
 
 [[route_less [[**] *d1] [[**] *d2]] [less *d1 *d2]]
 [[choose_greater *x *y *x] [less *y *x]/]
@@ -282,14 +271,11 @@ program warpwar #machine := "galaxy"
 [[possible_move *star *location] [star *star *l] [near *l *location]]
 [[possible_move *location *star] [star *star *l] [near *l *location]]
 
-[[onlist *x [*x : *]]/]
-[[onlist *x [* : *l]] / [onlist *x *l]]
-
 [[move *from *from [*from]]]
 [[move *from *to [*from : *tail]]
 	[move *somewhere *to *tail]
 	[possible_move *somewhere *from]
-	[not onlist *from *tail]
+	[not ONLIST *from *tail]
 	[show [*from : *tail]]
 ]
 
@@ -360,12 +346,13 @@ program warpwar #machine := "galaxy"
 
 [[draw_galaxy]
 	[erase] [grid]
+	[star_colour 0 255 0] [draw_presences]
+	[star_colour 255 255 0] [draw_bases]
 	[star_colour 0 0 255]
 	[PROBE
 		[route *s1 *s2]
 		[star *s1 *location1]
 		[star *s2 *location2]
-		;[show [*location1 *location2]]
 		[draw_route *location1 *location2]
 		fail
 	]
@@ -376,7 +363,62 @@ program warpwar #machine := "galaxy"
 		[draw_star *star_name : *location]
 		fail
 	]
+	[show "GALAXY DRAWED."]
+]
+
+[[draw_bases]
 	[PROBE [base *race *star : *] [star *star *location] [draw_base *race : *location] fail]
+]
+
+[[draw_presences]
+	[isall *starships [*race : *location] [starship *starship race *race] [starship *starship location *l] [*l : *lx]
+		[SELECT
+			[[is_atom *lx] [star *lx *location]]
+			[[eq *lx [*x *y]] [is_integer *x] [eq *lx *location]]
+		]
+	]
+	[isall *systemships [*race : *location] [systemship *systemship race *race] [systemship *systemship location *l] [*l : *lx]
+		[SELECT
+			[[is_atom *lx] [star *lx *location]]
+			[[eq *lx [*x *y]] [is_integer *x] [eq *lx *location]]
+		]
+	]
+;	[show "starships => " *starships]
+;	[show "systemships => " *systemships]
+	[APPEND *starships *systemships *all]
+;	[show "all => " *all]
+	[NODUP *all *no_dup]
+;	[show "to print: " *no_dup]
+	[draw_presences *no_dup]
+]
+[[draw_presences []]]
+[[draw_presences [*p : *t]]
+	[draw_presence : *p]
+	/ [draw_presences *t]
+]
+
+[[locate_ship *ship *location]
+	[starship *ship location *l]
+	[*l *location]
+]
+[[locate_ship *ship [*starship *dock]]
+	[systemship *ship location *l]
+	[starship *starship systemship_racks *dock *h]
+	[*h : *hold] [eq *hold empty] /
+	[*h *ship]
+	[*l [*starship *dock]]
+]
+[[locate_ship *ship *location]
+	[systemship *ship location *l]
+	[*l : *bay]
+	[eq *bay [*starship *dock]]
+	[starship *starship systemship_racks *dock *h]/
+	[*l *location]
+	[*h empty]
+]
+[[locate_ship *ship *location]
+	[systemship *ship location *l]
+	[*l *location]
 ]
 
 [[route_eligible [*star1 *star2] *distance] / [route_eligible 25 [*star1 *star2] *distance]]
