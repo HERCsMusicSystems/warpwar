@@ -1,4 +1,5 @@
 pi = ../../hercs-studio-gm/linux/
+pc = ../../hercs-studio-gm/code/prolog
 
 
 objects = \
@@ -20,4 +21,11 @@ objects = \
 	-Wno-write-strings warpwar_main.cpp -o ~/bin/warpwar `wx-config --cxxflags` `wx-config --libs`
 
 warpwar: ~/bin/warpwar
+
+
+~/bin/polygoon: gridder.cpp
+	g++ -I$(pi) -I$(pc) $(pi)prolog_resources.o $(objects) $(pi)encoder.o $(pi)neural.o \
+	-Wno-write-strings gridder.cpp -o ~/bin/polygoon `wx-config --cxxflags` `wx-config --libs`
+
+polygoon: ~/bin/polygoon
 
