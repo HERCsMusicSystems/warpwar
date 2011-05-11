@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-#define PROTECT
+//#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -88,8 +88,8 @@ public:
 		SetBackgroundStyle (wxBG_STYLE_CUSTOM);
 		tokens = 0;
 		dragToken = 0;
-		board . LoadFile (_T ("board.png"), wxBITMAP_TYPE_PNG);
-		tokens = new BoardToken (_T ("token.png"), wxPoint (20, 20));
+		//board . LoadFile (_T ("board.png"), wxBITMAP_TYPE_PNG);
+		//tokens = new BoardToken (_T ("token.png"), wxPoint (20, 20));
 		lastRightClickPosition = capturedPosition = wxPoint (10, 10);
 	}
 	~ BoardWindow (void) {
@@ -109,8 +109,8 @@ public:
 	}
 	void OnLeftDown (wxMouseEvent & event) {
 		CaptureMouse ();
-		if (tokens == 0) return;
 		capturedPosition = event . GetPosition ();
+		if (tokens == 0) {dragToken = 0; return;}
 		dragToken = tokens -> hitFind (capturedPosition);
 		Refresh ();
 	}
@@ -130,7 +130,7 @@ public:
 	}
 	void OnRightDown (wxMouseEvent & event) {
 		lastRightClickPosition = event . GetPosition ();
-		dragToken = tokens -> hitFind (lastRightClickPosition);
+		dragToken = tokens == 0 ? 0 : tokens -> hitFind (lastRightClickPosition);
 		wxMenu menu;
 		if (dragToken == 0) menu . Append (4001, _T ("New Token"));
 		if (dragToken != 0) menu . Append (4101, _T ("Rotate right"));
@@ -153,6 +153,14 @@ public:
 		if (dragToken != 0) dragToken -> rotateLeft ();
 		Refresh ();
 	}
+	void OnNewBoard (wxCommandEvent & event) {
+		wxFileDialog picker (this);
+		picker . SetWildcard (_T ("PNG pictures (*.png)|*.png"));
+		if (picker . ShowModal () == wxID_OK) {
+			board . LoadFile (picker . GetDirectory () + _T ("/") + picker . GetFilename (), wxBITMAP_TYPE_PNG);
+			Refresh ();			
+		}
+	}
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -173,6 +181,9 @@ public:
 	BoardFrame (wxWindow * parent) : wxFrame (parent, -1, _T ("TABLE TOP"), BOARD_POSITION, BOARD_SIZE) {
 		board = new BoardWindow (this, -1);
 		wxMenuBar * bar = new wxMenuBar ();
+		wxMenu * board_menu = new wxMenu ();
+		board_menu -> Append (4201, _T ("New board	B"));
+		bar -> Append (board_menu, _T ("Board"));
 		wxMenu * token_menu = new wxMenu ();
 		token_menu -> Append (4101, _T ("Rotate right	]"));
 		token_menu -> Append (4102, _T ("Rotate left	["));
@@ -183,12 +194,14 @@ public:
 	}
 	void OnRotateRight (wxCommandEvent & event) {board -> OnRotateRight (event);}
 	void OnRotateLeft (wxCommandEvent & event) {board -> OnRotateLeft (event);}
+	void OnNewBoard (wxCommandEvent & event) {board -> OnNewBoard (event);}
 private:
 	DECLARE_EVENT_TABLE()
 };
 BEGIN_EVENT_TABLE(BoardFrame, wxFrame)
 EVT_MENU(4101, BoardFrame :: OnRotateRight)
 EVT_MENU(4102, BoardFrame :: OnRotateLeft)
+EVT_MENU(4201, BoardFrame :: OnNewBoard)
 END_EVENT_TABLE()
 
 class BoardClass : public wxApp {

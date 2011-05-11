@@ -29,3 +29,8 @@ warpwar: ~/bin/warpwar
 
 polygoon: ~/bin/polygoon
 
+~/bin/tabletop: board.cpp
+	g++ -Wno-write-strings board.cpp -o ~/bin/tabletop `wx-config --cxxflags` `wx-config --libs`
+
+tabletop: ~/bin/tabletop
+
