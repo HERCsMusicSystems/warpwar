@@ -23,6 +23,7 @@ public:
 	wxBitmap token;
 	wxBitmap rotated;
 	wxPoint position;
+	wxPoint rotatedShift;
 	wxSize token_size;
 	int choosenRotation;
 	void rotate (int angle) {
@@ -30,6 +31,8 @@ public:
 		while (angle < 0) angle += 360;
 		rotated = wxBitmap (token . ConvertToImage () . Rotate (M_PI * (double) angle / 180.0, wxPoint (token . GetWidth () / 2, token . GetHeight () / 2)));
 		token_size = wxSize (rotated . GetWidth (), rotated . GetHeight ());
+		//rotatedPosition = wxPoint (token_size . GetWidth () / 2, token_size . GetHeight () / 2);
+		rotatedShift = wxPoint ((token . GetWidth () - rotated . GetWidth ()) / 2, (token . GetHeight () - rotated . GetHeight ()) / 2);
 		choosenRotation = angle;
 	}
 	void rotateRight (void) {
@@ -54,7 +57,7 @@ public:
 		if (next != 0) next -> moveAll (delta);
 	}
 	BoardToken * draw (wxDC & dc) {
-		dc . DrawBitmap (rotated, position, true);
+		dc . DrawBitmap (rotated, position + rotatedShift, true);
 		return next;
 	}
 	BoardToken * hitFind (wxPoint position) {
@@ -67,10 +70,10 @@ public:
 		return next -> hitFind (position);
 	}
 	BoardToken (wxString file_name, wxPoint position, BoardToken * next = 0) {
-		token . LoadFile (file_name, wxBITMAP_TYPE_PNG);
-		rotate (0);
 		this -> position = position;
 		this -> next = next;
+		token . LoadFile (file_name, wxBITMAP_TYPE_PNG);
+		rotate (0);
 	}
 	BoardToken * next;
 };
@@ -104,7 +107,7 @@ public:
 		if (dragToken != 0) {
 			dc . SetPen (wxPen (wxColour (255, 255, 255), 1, wxDOT));
 			dc . SetBrush (* wxTRANSPARENT_BRUSH);
-			dc . DrawRectangle (dragToken -> position, dragToken -> token_size);
+			dc . DrawRectangle (dragToken -> position + dragToken -> rotatedShift, dragToken -> token_size);
 		}
 	}
 	void OnLeftDown (wxMouseEvent & event) {
@@ -154,6 +157,7 @@ public:
 		Refresh ();
 	}
 	void OnNewBoard (wxCommandEvent & event) {
+		boardLocation = wxPoint (10, 10);
 		wxFileDialog picker (this);
 		picker . SetWildcard (_T ("PNG pictures (*.png)|*.png"));
 		if (picker . ShowModal () == wxID_OK) {
