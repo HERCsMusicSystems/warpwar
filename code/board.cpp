@@ -79,25 +79,11 @@ public:
 	BoardToken * next;
 };
 
-class BoardWindow;
-
-class GridMenuDialogClass : public wxDialog {
-public:
-	BoardWindow * board;
-	wxComboBox * gridType;
-	wxSpinCtrl * sideCtrl;
-	GridMenuDialogClass (BoardWindow * board);
-	void OnSize (wxSpinEvent & event);
-private: DECLARE_EVENT_TABLE();
-};
-BEGIN_EVENT_TABLE(GridMenuDialogClass, wxDialog)
-EVT_SPINCTRL(102, GridMenuDialogClass :: OnSize)
-END_EVENT_TABLE()
-
 class BoardWindow : public wxWindow {
 public:
 	wxBitmap board;
 	wxPoint boardLocation;
+	wxPoint gridLocation;
 	BoardToken * tokens;
 	wxPoint lastRightClickPosition;
 	BoardToken * dragToken;
@@ -107,25 +93,41 @@ public:
 	int gridSide;
 	int gridWidth, gridHeight, gridStartX, gridStartY;
 	bool gridIndexing;
+	bool moveGrid;
+	bool moveBoard;
+	bool moveTokens;
+	void buildSquareGrid (void) {
+		grid = wxBitmap (gridSide * gridWidth + 1, gridSide * gridHeight + 1);
+		wxMemoryDC gridDC (grid);
+		gridDC . SetBackground (* wxBLACK);
+		gridDC . Clear ();
+		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
+		for (int x = 0; x <= gridWidth; x++) {
+			gridDC . DrawLine (x * gridSide, 0, x * gridSide, gridHeight * gridSide);
+		}
+		for (int y = 0; y <= gridHeight; y++) {
+			gridDC . DrawLine (0, y * gridSide, gridWidth * gridSide, y * gridSide);
+		}
+		grid . SetMask (new wxMask (grid, wxColour (0, 0, 0)));
+	}
+	void buildGrid (void) {
+		if (gridWidth < 1) gridWidth = 1;
+		if (gridHeight < 1) gridHeight = 1;
+		buildSquareGrid ();
+	}
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
+		moveGrid = moveBoard = moveTokens = true;
 		gridType = 2;
-		gridSide = 100;
-		gridWidth = gridHeight = 10;
+		gridSide = 60;
+		gridWidth = gridHeight = 4;
 		gridStartX = gridStartY = 0;
 		gridIndexing = true;
 		boardLocation = wxPoint (0, 0);
 		SetBackgroundStyle (wxBG_STYLE_CUSTOM);
 		tokens = 0;
 		dragToken = 0;
-		lastRightClickPosition = capturedPosition = wxPoint (10, 10);
-
-		grid = wxBitmap (300, 200, 32);
-		wxMemoryDC gridDC (grid);
-		gridDC . SetBackground (* wxBLACK);
-		gridDC . Clear ();
-		gridDC . SetPen (wxPen (wxColour (255, 0, 0)));
-		gridDC . DrawLine (0, 0, 200, 200);
-		grid . SetMask (new wxMask (grid, wxColour (0, 0, 0)));
+		lastRightClickPosition = capturedPosition = boardLocation = gridLocation = wxPoint (10, 10);
+		buildSquareGrid ();
 	}
 	~ BoardWindow (void) {
 	}
@@ -136,7 +138,7 @@ public:
 		// draw board
 		dc . DrawBitmap (board, boardLocation . x, boardLocation . y, true);
 		// draw grid
-		dc . DrawBitmap (grid, 0, 0, true);
+		dc . DrawBitmap (grid, gridLocation . x, gridLocation . y, true);
 		//dc . Blit (0, 0, 300, 200, & gridDC, 0, 0);
 		// draw tokens
 		BoardToken * tkp = tokens;
@@ -163,8 +165,9 @@ public:
 		wxPoint p = event . GetPosition ();
 		wxPoint delta = p - capturedPosition;
 		if (dragToken == 0) {
-			if (tokens != 0) tokens -> moveAll (delta);
-			boardLocation += delta;
+			if (moveTokens && tokens != 0) tokens -> moveAll (delta);
+			if (moveBoard) boardLocation += delta;
+			if (moveGrid) gridLocation += delta;
 		} else dragToken -> move (delta);
 		capturedPosition = p;
 		Refresh ();
@@ -203,10 +206,6 @@ public:
 			Refresh ();			
 		}
 	}
-	void OnGridMenu (wxCommandEvent & event) {
-		GridMenuDialogClass dialog (this);
-		dialog . ShowModal ();
-	}
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -220,51 +219,6 @@ EVT_MENU(4001, BoardWindow :: OnNewToken)
 EVT_MENU(4101, BoardWindow :: OnRotateRight)
 EVT_MENU(4102, BoardWindow :: OnRotateLeft)
 END_EVENT_TABLE()
-
-GridMenuDialogClass :: GridMenuDialogClass (BoardWindow * board) : wxDialog (board, -1, _T ("Grid dialog.")) {
-	this -> board = board;
-	wxFlexGridSizer * grid = new wxFlexGridSizer (6, 2, 0, 0);
-	grid -> Add (new wxStaticText (this, -1, _T ("Grid")));
-	gridType = new wxComboBox (this, 101,  _T (""), wxDefaultPosition, wxSize (-1, -1), 0, NULL, wxCB_READONLY);
-	gridType -> Append (_T ("NONE"));
-	gridType -> Append (_T ("SQUARE"));
-	gridType -> Append (_T ("HORIZONTAL HEX"));
-	gridType -> Append (_T ("VERTICAL HEX"));
-	gridType -> SetSelection (board -> gridType);
-	grid -> Add (gridType);
-	grid -> Add (new wxStaticText (this, -1, _T ("SIDE")));
-	sideCtrl = new wxSpinCtrl (this, 102);
-	sideCtrl -> SetRange (10, 200);
-	sideCtrl -> SetValue (board -> gridSide);
-	grid -> Add (sideCtrl);
-	grid -> Add (new wxStaticText (this, -1, _T ("START X")));
-	wxSpinCtrl * startXCtrl = new wxSpinCtrl (this, 103);
-	startXCtrl -> SetRange (-200, 200);
-	startXCtrl -> SetValue (board -> gridStartX);
-	grid -> Add (startXCtrl);
-	grid -> Add (new wxStaticText (this, -1, _T ("START Y")));
-	wxSpinCtrl * startYCtrl = new wxSpinCtrl (this, 104);
-	startYCtrl -> SetRange (-200, 200);
-	startYCtrl -> SetValue (board -> gridStartY);
-	grid -> Add (startYCtrl);
-	grid -> Add (new wxStaticText (this, -1, _T ("GRID SIZE X")));
-	wxSpinCtrl * sizeXCtrl = new wxSpinCtrl (this, 105);
-	sizeXCtrl -> SetRange (0, 400);
-	sizeXCtrl -> SetValue (board -> gridWidth);
-	grid -> Add (sizeXCtrl);
-	grid -> Add (new wxStaticText (this, -1, _T ("GRID SIZE Y")));
-	wxSpinCtrl * sizeYCtrl = new wxSpinCtrl (this, 106);
-	sizeYCtrl -> SetRange (0, 400);
-	sizeYCtrl -> SetValue (board -> gridHeight);
-	grid -> Add (sizeYCtrl);
-	SetSizer (grid);
-	grid -> SetSizeHints (this);
-	Centre ();
-}
-
-void GridMenuDialogClass :: OnSize (wxSpinEvent & event) {
-	board -> gridSide = sideCtrl -> GetValue ();
-}
 
 class BoardFrame : public wxFrame {
 public:
@@ -281,22 +235,42 @@ public:
 		bar -> Append (file_menu, _T ("File"));
 
 		wxMenu * grid_menu = new wxMenu ();
-		grid_menu -> Append (4401, _T ("Grid Setup	F3"));
-		grid_menu -> Append (4402, _T ("Square grid	F4"));
-		grid_menu -> Append (4403, _T ("Hex grid (horizontal)	F5"));
-		grid_menu -> Append (4404, _T ("Hex grid (vertical)	F6"));
-		grid_menu -> Append (4405, _T ("Lock grid	F7"));
+		grid_menu -> Append (4401, _T ("Show indices"));
+		grid_menu -> Append (4402, _T ("Add row	DOWN"));
+		grid_menu -> Append (4403, _T ("Add 4 rows	CTRL+DOWN"));
+		grid_menu -> Append (4404, _T ("Remove row	UP"));
+		grid_menu -> Append (4405, _T ("Remove 4 rows	CTRL+UP"));
+		grid_menu -> Append (4406, _T ("Add column	RGHT"));
+		grid_menu -> Append (4407, _T ("Add 4 columns	CTRL+RIGHT"));
+		grid_menu -> Append (4408, _T ("Remove column	LEFT"));
+		grid_menu -> Append (4409, _T ("Remove 4 columns	CTRL+LEFT"));
+		grid_menu -> Append (4410, _T ("Increase size by 1 pixel"));
+		grid_menu -> Append (4411, _T ("Increase size by 8 pixels"));
+		grid_menu -> Append (4412, _T ("Decrease size by 1 pixel"));
+		grid_menu -> Append (4413, _T ("Decrease size by 8 pixels"));
+		grid_menu -> Append (4414, _T ("Increase index horizontally by 1"));
+		grid_menu -> Append (4415, _T ("Increase index horizontally by 4"));
+		grid_menu -> Append (4416, _T ("Decrease index horizontally by 1"));
+		grid_menu -> Append (4417, _T ("Decrease index horizontally by 4"));
+		grid_menu -> Append (4418, _T ("Increase index vertically by 1"));
+		grid_menu -> Append (4419, _T ("Increase index vertically by 4"));
+		grid_menu -> Append (4420, _T ("Decrease index vertically by 1"));
+		grid_menu -> Append (4421, _T ("Decrease index vertically by 4"));
 		bar -> Append (grid_menu, _T ("Grid"));
 
 		wxMenu * board_menu = new wxMenu ();
 		board_menu -> Append (4201, _T ("New board	CTRL+B"));
-		board_menu -> Append (4202, _T ("Lock board	F8"));
+		board_menu -> AppendCheckItem (4202, _T ("Lock grid	F7"));
+		board_menu -> AppendCheckItem (4203, _T ("Lock board	F8"));
+		board_menu -> AppendCheckItem (4204, _T ("Lock tokens	F9"));
+		board_menu -> Append (4205, _T ("Square grid	F4"));
+		board_menu -> Append (4206, _T ("Hex grid (horizontal)	F5"));
+		board_menu -> Append (4207, _T ("Hex grid (vertical)	F6"));
 		bar -> Append (board_menu, _T ("Board"));
 
 		wxMenu * token_menu = new wxMenu ();
 		token_menu -> Append (4101, _T ("Rotate right	]"));
 		token_menu -> Append (4102, _T ("Rotate left	["));
-		token_menu -> Append (4103, _T ("Lock tokens	F9"));
 		bar -> Append (token_menu, _T ("Token"));
 
 		SetMenuBar (bar);
@@ -307,7 +281,38 @@ public:
 	void OnRotateLeft (wxCommandEvent & event) {board -> OnRotateLeft (event);}
 	void OnNewBoard (wxCommandEvent & event) {board -> OnNewBoard (event);}
 	void OnQuit (wxCommandEvent & event) {if (wxYES == wxMessageBox (_T ("EXIT?"), _T ("INFO"), wxYES_NO | wxNO_DEFAULT | wxICON_EXCLAMATION, this)) delete this;}
-	void OnGridMenu (wxCommandEvent & event) {board -> OnGridMenu (event);}
+	void OnLockGrid (wxCommandEvent & event) {
+		wxMenuBar * bar = GetMenuBar ();
+		bar -> Check (4202, board -> moveGrid);
+		board -> moveGrid = ! board -> moveGrid;
+		Refresh ();
+	}
+	void OnLockBoard (wxCommandEvent & event) {
+		wxMenuBar * bar = GetMenuBar ();
+		bar -> Check (4203, board -> moveBoard);
+		board -> moveBoard = ! board -> moveBoard;
+		Refresh ();
+	}
+	void OnLockTokens (wxCommandEvent & event) {
+		wxMenuBar * bar = GetMenuBar ();
+		bar -> Check (4204, board -> moveTokens);
+		board -> moveTokens = ! board -> moveTokens;
+		Refresh ();
+	}
+	void ChangeRows (int columns, int rows) {
+		board -> gridWidth += rows;
+		board -> gridHeight += columns;
+		board -> buildGrid ();
+		Refresh ();
+	}
+	void OnAddRow (wxCommandEvent & event) {ChangeRows (1, 0);}
+	void OnAdd4Rows (wxCommandEvent & event) {ChangeRows (4, 0);}
+	void OnRemoveRow (wxCommandEvent & event) {ChangeRows (-1, 0);}
+	void OnRemove4Rows (wxCommandEvent & event) {ChangeRows (-4, 0);}
+	void OnAddColumn (wxCommandEvent & event) {ChangeRows (0, 1);}
+	void OnAdd4Columns (wxCommandEvent & event) {ChangeRows (0, 4);}
+	void OnRemoveColumn (wxCommandEvent & event) {ChangeRows (0, -1);}
+	void OnRemove4Columns (wxCommandEvent & event) {ChangeRows (0, -4);}
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -315,8 +320,18 @@ BEGIN_EVENT_TABLE(BoardFrame, wxFrame)
 EVT_MENU(4101, BoardFrame :: OnRotateRight)
 EVT_MENU(4102, BoardFrame :: OnRotateLeft)
 EVT_MENU(4201, BoardFrame :: OnNewBoard)
+EVT_MENU(4202, BoardFrame :: OnLockGrid)
+EVT_MENU(4203, BoardFrame :: OnLockBoard)
+EVT_MENU(4204, BoardFrame :: OnLockTokens)
 EVT_MENU(4304, BoardFrame :: OnQuit)
-EVT_MENU(4401, BoardFrame :: OnGridMenu)
+EVT_MENU(4402, BoardFrame :: OnAddRow)
+EVT_MENU(4403, BoardFrame :: OnAdd4Rows)
+EVT_MENU(4404, BoardFrame :: OnRemoveRow)
+EVT_MENU(4405, BoardFrame :: OnRemove4Rows)
+EVT_MENU(4406, BoardFrame :: OnAddColumn)
+EVT_MENU(4407, BoardFrame :: OnAdd4Columns)
+EVT_MENU(4408, BoardFrame :: OnRemoveColumn)
+EVT_MENU(4409, BoardFrame :: OnRemove4Columns)
 END_EVENT_TABLE()
 
 class BoardClass : public wxApp {
