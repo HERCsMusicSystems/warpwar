@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-//#define PROTECT
+#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -108,12 +108,31 @@ public:
 		for (int y = 0; y <= gridHeight; y++) {
 			gridDC . DrawLine (0, y * gridSide, gridWidth * gridSide, y * gridSide);
 		}
-		grid . SetMask (new wxMask (grid, wxColour (0, 0, 0)));
+		grid . SetMask (new wxMask (grid, * wxBLACK));
+	}
+	void buildVerticalHexGrid (void) {
+		double gdrs = (double) gridSide * 0.5;
+		double H = gdrs * 0.866025404;
+		double half = gdrs * 0.5;
+		grid = wxBitmap (gridSide * gridWidth + 1, H * 2.0 * gridHeight + 30);
+		wxMemoryDC gridDC (grid);
+		gridDC . SetBackground (* wxBLACK);
+		gridDC . Clear ();
+		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
+		int x = 0;
+		for (int y = 0; y < gridHeight; y++) {
+			int xx = (int) (half + (double) x * gdrs);
+			int yy = (int) ((double) y * H * 2.0);
+			gridDC . DrawLine (xx, yy, xx + gdrs, yy);
+			gridDC . DrawLine (xx, yy, xx - half, yy + H);
+			gridDC . DrawLine (xx - half, yy + H, xx, yy + H + H);
+		}
 	}
 	void buildGrid (void) {
 		if (gridWidth < 1) gridWidth = 1;
 		if (gridHeight < 1) gridHeight = 1;
-		buildSquareGrid ();
+		//buildSquareGrid ();
+		buildVerticalHexGrid ();
 	}
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
 		moveGrid = moveBoard = moveTokens = true;
@@ -127,7 +146,8 @@ public:
 		tokens = 0;
 		dragToken = 0;
 		lastRightClickPosition = capturedPosition = boardLocation = gridLocation = wxPoint (10, 10);
-		buildSquareGrid ();
+		//buildSquareGrid ();
+		buildVerticalHexGrid ();
 	}
 	~ BoardWindow (void) {
 	}
