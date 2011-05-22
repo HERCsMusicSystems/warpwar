@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-#define PROTECT
+//#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -114,25 +114,42 @@ public:
 		double gdrs = (double) gridSide * 0.5;
 		double H = gdrs * 0.866025404;
 		double half = gdrs * 0.5;
-		grid = wxBitmap (gridSide * gridWidth + 1, H * 2.0 * gridHeight + 30);
+		grid = wxBitmap (gridSide * gridWidth + 1, H * 2.0 * gridHeight + 1 + H);
 		wxMemoryDC gridDC (grid);
 		gridDC . SetBackground (* wxBLACK);
 		gridDC . Clear ();
 		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
-		int x = 0;
-		for (int y = 0; y < gridHeight; y++) {
-			int xx = (int) (half + (double) x * gdrs);
-			int yy = (int) ((double) y * H * 2.0);
+		double vertical_shift = 0.0;
+		for (int x = 0; x < gridWidth; x++) {
+			double xx = half + (double) x * gdrs * 1.5;
+			double yy = vertical_shift;
+			if (vertical_shift == 0.0 && x < gridWidth - 1) gridDC . DrawLine (xx + gdrs, yy, xx + gdrs + half, yy + H);
+			for (int y = 0; y < gridHeight; y++) {
+				gridDC . DrawLine (xx, yy, xx + gdrs, yy);
+				gridDC . DrawLine (xx, yy, xx - half, yy + H);
+				gridDC . DrawLine (xx - half, yy + H, xx, yy + H + H);
+				if (x == gridWidth - 1) {
+					gridDC . DrawLine (xx + gdrs, yy, xx + gdrs + half, yy + H);
+					gridDC . DrawLine (xx + gdrs, yy + H + H, xx + gdrs + half, yy + H);
+				}
+				yy += H * 2.0;
+			}
 			gridDC . DrawLine (xx, yy, xx + gdrs, yy);
-			gridDC . DrawLine (xx, yy, xx - half, yy + H);
-			gridDC . DrawLine (xx - half, yy + H, xx, yy + H + H);
+			if (vertical_shift != 0.0 && x < gridWidth - 1) gridDC . DrawLine (xx + gdrs, yy, xx + gdrs + half, yy - H);
+			vertical_shift = vertical_shift == 0.0 ? H : 0.0;
 		}
+		grid . SetMask (new wxMask (grid, *wxBLACK));
+	}
+	void eraseGrid (void) {
 	}
 	void buildGrid (void) {
 		if (gridWidth < 1) gridWidth = 1;
 		if (gridHeight < 1) gridHeight = 1;
-		//buildSquareGrid ();
-		buildVerticalHexGrid ();
+		switch (gridType) {
+		case 1: buildSquareGrid (); break;
+		case 2: buildVerticalHexGrid (); break;
+		default: eraseGrid ();
+		}
 	}
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
 		moveGrid = moveBoard = moveTokens = true;
@@ -242,9 +259,28 @@ END_EVENT_TABLE()
 
 class BoardFrame : public wxFrame {
 public:
+	int gridControlType;
 	BoardWindow * board;
 	BoardFrame (wxWindow * parent) : wxFrame (parent, -1, _T ("TABLE TOP"), BOARD_POSITION, BOARD_SIZE) {
+		gridControlType = 1;
 		board = new BoardWindow (this, -1);
+		board -> SetFocus ();
+
+		wxMenuBar * bar = new wxMenuBar ();
+
+		wxMenu * file_menu = new wxMenu ();
+		file_menu -> Append (6101, _T ("EXIT	Q"));
+		bar -> Append (file_menu, _T ("File"));
+
+		wxMenu * control_menu = new wxMenu ();
+		control_menu -> AppendRadioItem (6001, _T ("Grid size	F5"));
+		control_menu -> AppendRadioItem (6002, _T ("Grid indexing	F6"));
+		control_menu -> AppendRadioItem (6003, _T ("Grid cell size	F7"));
+		bar -> Append (control_menu, _T ("Control"));
+
+		SetMenuBar (bar);
+		
+/*
 		wxMenuBar * bar = new wxMenuBar ();
 
 		wxMenu * file_menu = new wxMenu ();
@@ -253,7 +289,6 @@ public:
 		file_menu -> Append (4303, _T ("Save as	CTRL+A"));
 		file_menu -> Append (4304, _T ("Exit	Q"));
 		bar -> Append (file_menu, _T ("File"));
-
 		wxMenu * grid_menu = new wxMenu ();
 		grid_menu -> Append (4401, _T ("Show indices"));
 		grid_menu -> Append (4402, _T ("Add row	DOWN"));
@@ -292,15 +327,32 @@ public:
 		token_menu -> Append (4101, _T ("Rotate right	]"));
 		token_menu -> Append (4102, _T ("Rotate left	["));
 		bar -> Append (token_menu, _T ("Token"));
-
 		SetMenuBar (bar);
+*/
+
+//		wxAcceleratorEntry accelerators [12];
+//		accelerators [0] . Set (wxACCEL_NORMAL, (int) '2', 5001);
+//		accelerators [1] . Set (wxACCEL_NORMAL, WXK_RIGHT, 5002);
+//		accelerators [2] . Set (wxACCEL_NORMAL, WXK_UP, 5003);
+//		accelerators [3] . Set (wxACCEL_NORMAL, WXK_DOWN, 5004);
+//		accelerators [4] . Set (wxACCEL_CTRL, WXK_LEFT, 5005);
+//		accelerators [5] . Set (wxACCEL_CTRL, WXK_RIGHT, 5006);
+//		accelerators [6] . Set (wxACCEL_CTRL, WXK_UP, 5007);
+//		accelerators [7] . Set (wxACCEL_CTRL, WXK_DOWN, 5008);
+//		accelerators [8] . Set (wxACCEL_SHIFT, WXK_LEFT, 5009);
+//		accelerators [9] . Set (wxACCEL_SHIFT, WXK_RIGHT, 5010);
+//		accelerators [10] . Set (wxACCEL_SHIFT, WXK_UP, 5011);
+//		accelerators [11] . Set (wxACCEL_SHIFT, WXK_DOWN, 5012);
+//		wxAcceleratorTable accel (12, accelerators);
+//		SetAcceleratorTable (accel);
 	}
 	~ BoardFrame (void) {
 	}
 	void OnRotateRight (wxCommandEvent & event) {board -> OnRotateRight (event);}
 	void OnRotateLeft (wxCommandEvent & event) {board -> OnRotateLeft (event);}
 	void OnNewBoard (wxCommandEvent & event) {board -> OnNewBoard (event);}
-	void OnQuit (wxCommandEvent & event) {if (wxYES == wxMessageBox (_T ("EXIT?"), _T ("INFO"), wxYES_NO | wxNO_DEFAULT | wxICON_EXCLAMATION, this)) delete this;}
+	void OnQuit (wxCommandEvent & event) {OnEscape ();}
+	void OnEscape (void) {if (wxYES == wxMessageBox (_T ("EXIT?"), _T ("INFO"), wxYES_NO | wxNO_DEFAULT | wxICON_EXCLAMATION, this)) delete this;}
 	void OnLockGrid (wxCommandEvent & event) {
 		wxMenuBar * bar = GetMenuBar ();
 		bar -> Check (4202, board -> moveGrid);
@@ -325,44 +377,67 @@ public:
 		board -> buildGrid ();
 		Refresh ();
 	}
-	void OnAddRow (wxCommandEvent & event) {ChangeRows (1, 0);}
-	void OnAdd4Rows (wxCommandEvent & event) {ChangeRows (4, 0);}
-	void OnRemoveRow (wxCommandEvent & event) {ChangeRows (-1, 0);}
-	void OnRemove4Rows (wxCommandEvent & event) {ChangeRows (-4, 0);}
-	void OnAddColumn (wxCommandEvent & event) {ChangeRows (0, 1);}
-	void OnAdd4Columns (wxCommandEvent & event) {ChangeRows (0, 4);}
-	void OnRemoveColumn (wxCommandEvent & event) {ChangeRows (0, -1);}
-	void OnRemove4Columns (wxCommandEvent & event) {ChangeRows (0, -4);}
+	void OnArrow (int key) {
+		switch (gridControlType) {
+		case 1:
+			switch (key) {
+			case WXK_LEFT: ChangeRows (0, -1); break;
+			case WXK_RIGHT: ChangeRows (0, 1); break;
+			case WXK_UP: ChangeRows (-1, 0); break;
+			case WXK_DOWN: ChangeRows (1, 0); break;
+			default: break;
+			}
+			break;
+		default: break;
+		}
+	}
+	void OnGridSizeControl (wxCommandEvent & event) {gridControlType = 1;}
+	void OnGridIndexControl (wxCommandEvent & event) {gridControlType = 2;}
+	void OnGridCellSizeControl (wxCommandEvent & event) {gridControlType = 3;}
 private:
 	DECLARE_EVENT_TABLE()
 };
 BEGIN_EVENT_TABLE(BoardFrame, wxFrame)
-EVT_MENU(4101, BoardFrame :: OnRotateRight)
-EVT_MENU(4102, BoardFrame :: OnRotateLeft)
-EVT_MENU(4201, BoardFrame :: OnNewBoard)
-EVT_MENU(4202, BoardFrame :: OnLockGrid)
-EVT_MENU(4203, BoardFrame :: OnLockBoard)
-EVT_MENU(4204, BoardFrame :: OnLockTokens)
-EVT_MENU(4304, BoardFrame :: OnQuit)
-EVT_MENU(4402, BoardFrame :: OnAddRow)
-EVT_MENU(4403, BoardFrame :: OnAdd4Rows)
-EVT_MENU(4404, BoardFrame :: OnRemoveRow)
-EVT_MENU(4405, BoardFrame :: OnRemove4Rows)
-EVT_MENU(4406, BoardFrame :: OnAddColumn)
-EVT_MENU(4407, BoardFrame :: OnAdd4Columns)
-EVT_MENU(4408, BoardFrame :: OnRemoveColumn)
-EVT_MENU(4409, BoardFrame :: OnRemove4Columns)
+EVT_MENU(6001, BoardFrame :: OnGridSizeControl)
+EVT_MENU(6002, BoardFrame :: OnGridIndexControl)
+EVT_MENU(6003, BoardFrame :: OnGridCellSizeControl)
+EVT_MENU(6101, BoardFrame :: OnQuit)
+//EVT_MENU(5001, BoardFrame :: OnArrow)
+//EVT_MENU(5002, BoardFrame :: OnArrow)
+//EVT_MENU(5003, BoardFrame :: OnArrow)
+//EVT_MENU(5004, BoardFrame :: OnArrow)
 END_EVENT_TABLE()
+
+BoardFrame * boardFrame = 0;
 
 class BoardClass : public wxApp {
 public:
+	int previous_key_down;
 	bool OnInit (void) {
+		previous_key_down = -1;
 		wxInitAllImageHandlers ();
-		(new BoardFrame (0)) -> Show ();
+		(boardFrame = new BoardFrame (0)) -> Show ();
 		return true;
 	}
 	int OnExit (void) {
 		return wxApp :: OnExit ();
+	}
+	int FilterEvent (wxEvent & event) {
+		if (boardFrame == 0) return -1;
+		if (event . GetEventType () != wxEVT_KEY_DOWN) return -1;
+		int key = ((wxKeyEvent &) event) . GetKeyCode ();
+		if (key == previous_key_down) {previous_key_down = -1; return -1;}
+		previous_key_down = key;
+		switch (key) {
+		case WXK_LEFT:
+		case WXK_RIGHT:
+		case WXK_UP:
+		case WXK_DOWN:
+			boardFrame -> OnArrow (key);
+			break;
+		default: break;
+		}
+		return -1;
 	}
 };
 
