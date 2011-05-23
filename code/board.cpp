@@ -92,6 +92,7 @@ public:
 	int gridType;
 	int gridSide;
 	int gridWidth, gridHeight, gridStartX, gridStartY;
+	bool indexedGrid;
 	bool gridIndexing;
 	bool moveGrid;
 	bool moveBoard;
@@ -101,12 +102,24 @@ public:
 		wxMemoryDC gridDC (grid);
 		gridDC . SetBackground (* wxBLACK);
 		gridDC . Clear ();
+		gridDC . SetTextForeground (wxColour (255, 255, 255));
+		wxFont f = gridDC . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (8);
+		gridDC . SetFont (f);
 		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
 		for (int x = 0; x <= gridWidth; x++) {
 			gridDC . DrawLine (x * gridSide, 0, x * gridSide, gridHeight * gridSide);
 		}
 		for (int y = 0; y <= gridHeight; y++) {
 			gridDC . DrawLine (0, y * gridSide, gridWidth * gridSide, y * gridSide);
+		}
+		if (indexedGrid) {
+			for (int x = 0; x < gridWidth; x++) {
+				for (int y = 0; y < gridHeight; y++) {
+					gridDC . DrawText (wxString :: Format (_T ("%02i%02i"), x + gridStartX, y + gridStartY), x * gridSide + 1, y * gridSide + 1);
+				}
+			}
 		}
 		grid . SetMask (new wxMask (grid, * wxBLACK));
 	}
@@ -118,6 +131,11 @@ public:
 		wxMemoryDC gridDC (grid);
 		gridDC . SetBackground (* wxBLACK);
 		gridDC . Clear ();
+		gridDC . SetTextForeground (wxColour (255, 255, 255));
+		wxFont f = gridDC . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (8);
+		gridDC . SetFont (f);
 		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
 		double vertical_shift = 0.0;
 		for (int x = 0; x < gridWidth; x++) {
@@ -132,27 +150,68 @@ public:
 					gridDC . DrawLine (xx + gdrs, yy, xx + gdrs + half, yy + H);
 					gridDC . DrawLine (xx + gdrs, yy + H + H, xx + gdrs + half, yy + H);
 				}
+				if (indexedGrid) gridDC . DrawText (wxString :: Format (_T ("%02i%02i"), x + gridStartX, y + gridStartY), xx + 1, yy + 1);
 				yy += H * 2.0;
 			}
 			gridDC . DrawLine (xx, yy, xx + gdrs, yy);
 			if (vertical_shift != 0.0 && x < gridWidth - 1) gridDC . DrawLine (xx + gdrs, yy, xx + gdrs + half, yy - H);
 			vertical_shift = vertical_shift == 0.0 ? H : 0.0;
 		}
-		grid . SetMask (new wxMask (grid, *wxBLACK));
+		grid . SetMask (new wxMask (grid, * wxBLACK));
+	}
+	void buildHorizontalHexGrid (void) {
+		double gdrs = (double) gridSide * 0.5;
+		double H = gdrs * 0.866025404;
+		double half = gdrs * 0.5;
+		grid = wxBitmap (H * 2.0 * gridWidth + 1 + H, gridSide * gridHeight + 1);
+		wxMemoryDC gridDC (grid);
+		gridDC . SetBackground (* wxBLACK);
+		gridDC . Clear ();
+		gridDC . SetTextForeground (wxColour (255, 255, 255));
+		wxFont f = gridDC . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (8);
+		gridDC . SetFont (f);
+		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
+		double horizontal_shift = 0.0;
+		for (int y = 0; y < gridHeight; y++) {
+			double xx = horizontal_shift;
+			double yy = half + (double) y * gdrs * 1.5;
+			if (horizontal_shift == 0.0 && y < gridHeight - 1) gridDC . DrawLine (xx, yy + gdrs, xx + H, yy + gdrs + half);
+			for (int x = 0; x < gridWidth; x++) {
+				gridDC . DrawLine (xx, yy, xx, yy + gdrs);
+				gridDC . DrawLine (xx, yy, xx + H, yy - half);
+				gridDC . DrawLine (xx + H, yy - half, xx + H + H, yy);
+				if (y == gridHeight - 1) {
+					gridDC . DrawLine (xx, yy + gdrs, xx + H, yy + gdrs + half);
+					gridDC . DrawLine (xx + H, yy + gdrs + half, xx + H + H, yy + gdrs);
+				}
+				if (indexedGrid) gridDC . DrawText (wxString :: Format (_T ("%02i%02i"), x + gridStartX, y + gridStartY), xx + 1, yy + 1);
+				xx += H * 2.0;
+			}
+			gridDC . DrawLine (xx, yy, xx, yy + gdrs);
+			if (horizontal_shift != 0.0 && y < gridHeight - 1) gridDC . DrawLine (xx, yy + gdrs, xx - H, yy + gdrs + half);
+			horizontal_shift = horizontal_shift == 0.0 ? H : 0.0;
+		}
+		grid . SetMask (new wxMask (grid, * wxBLACK));
 	}
 	void eraseGrid (void) {
+		grid = 0;
 	}
 	void buildGrid (void) {
 		if (gridWidth < 1) gridWidth = 1;
 		if (gridHeight < 1) gridHeight = 1;
 		switch (gridType) {
+		case 0: eraseGrid (); break;
 		case 1: buildSquareGrid (); break;
 		case 2: buildVerticalHexGrid (); break;
+		case 3: buildHorizontalHexGrid (); break;
 		default: eraseGrid ();
 		}
 	}
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
 		moveGrid = moveBoard = moveTokens = true;
+		indexedGrid = true;
 		gridType = 2;
 		gridSide = 60;
 		gridWidth = gridHeight = 4;
@@ -278,73 +337,18 @@ public:
 		control_menu -> AppendRadioItem (6003, _T ("Grid cell size	F7"));
 		bar -> Append (control_menu, _T ("Control"));
 
-		SetMenuBar (bar);
-		
-/*
-		wxMenuBar * bar = new wxMenuBar ();
-
-		wxMenu * file_menu = new wxMenu ();
-		file_menu -> Append (4301, _T ("Load	F1"));
-		file_menu -> Append (4302, _T ("Save	CTRL+S"));
-		file_menu -> Append (4303, _T ("Save as	CTRL+A"));
-		file_menu -> Append (4304, _T ("Exit	Q"));
-		bar -> Append (file_menu, _T ("File"));
 		wxMenu * grid_menu = new wxMenu ();
-		grid_menu -> Append (4401, _T ("Show indices"));
-		grid_menu -> Append (4402, _T ("Add row	DOWN"));
-		grid_menu -> Append (4403, _T ("Add 4 rows	CTRL+DOWN"));
-		grid_menu -> Append (4404, _T ("Remove row	UP"));
-		grid_menu -> Append (4405, _T ("Remove 4 rows	CTRL+UP"));
-		grid_menu -> Append (4406, _T ("Add column	RGHT"));
-		grid_menu -> Append (4407, _T ("Add 4 columns	CTRL+RIGHT"));
-		grid_menu -> Append (4408, _T ("Remove column	LEFT"));
-		grid_menu -> Append (4409, _T ("Remove 4 columns	CTRL+LEFT"));
-		grid_menu -> Append (4410, _T ("Increase size by 1 pixel"));
-		grid_menu -> Append (4411, _T ("Increase size by 8 pixels"));
-		grid_menu -> Append (4412, _T ("Decrease size by 1 pixel"));
-		grid_menu -> Append (4413, _T ("Decrease size by 8 pixels"));
-		grid_menu -> Append (4414, _T ("Increase index horizontally by 1"));
-		grid_menu -> Append (4415, _T ("Increase index horizontally by 4"));
-		grid_menu -> Append (4416, _T ("Decrease index horizontally by 1"));
-		grid_menu -> Append (4417, _T ("Decrease index horizontally by 4"));
-		grid_menu -> Append (4418, _T ("Increase index vertically by 1"));
-		grid_menu -> Append (4419, _T ("Increase index vertically by 4"));
-		grid_menu -> Append (4420, _T ("Decrease index vertically by 1"));
-		grid_menu -> Append (4421, _T ("Decrease index vertically by 4"));
+		grid_menu -> AppendRadioItem (6201, _T ("No grid	F1"));
+		grid_menu -> AppendRadioItem (6202, _T ("Square grid	F2"));
+		grid_menu -> AppendRadioItem (6203, _T ("Vertical Hex grid	F3"));
+		grid_menu -> AppendRadioItem (6204, _T ("Horizontal Hex grid	F4"));
+		grid_menu -> AppendCheckItem (6205, _T ("Indexed	I"));
 		bar -> Append (grid_menu, _T ("Grid"));
 
-		wxMenu * board_menu = new wxMenu ();
-		board_menu -> Append (4201, _T ("New board	CTRL+B"));
-		board_menu -> AppendCheckItem (4202, _T ("Lock grid	F7"));
-		board_menu -> AppendCheckItem (4203, _T ("Lock board	F8"));
-		board_menu -> AppendCheckItem (4204, _T ("Lock tokens	F9"));
-		board_menu -> Append (4205, _T ("Square grid	F4"));
-		board_menu -> Append (4206, _T ("Hex grid (horizontal)	F5"));
-		board_menu -> Append (4207, _T ("Hex grid (vertical)	F6"));
-		bar -> Append (board_menu, _T ("Board"));
-
-		wxMenu * token_menu = new wxMenu ();
-		token_menu -> Append (4101, _T ("Rotate right	]"));
-		token_menu -> Append (4102, _T ("Rotate left	["));
-		bar -> Append (token_menu, _T ("Token"));
 		SetMenuBar (bar);
-*/
 
-//		wxAcceleratorEntry accelerators [12];
-//		accelerators [0] . Set (wxACCEL_NORMAL, (int) '2', 5001);
-//		accelerators [1] . Set (wxACCEL_NORMAL, WXK_RIGHT, 5002);
-//		accelerators [2] . Set (wxACCEL_NORMAL, WXK_UP, 5003);
-//		accelerators [3] . Set (wxACCEL_NORMAL, WXK_DOWN, 5004);
-//		accelerators [4] . Set (wxACCEL_CTRL, WXK_LEFT, 5005);
-//		accelerators [5] . Set (wxACCEL_CTRL, WXK_RIGHT, 5006);
-//		accelerators [6] . Set (wxACCEL_CTRL, WXK_UP, 5007);
-//		accelerators [7] . Set (wxACCEL_CTRL, WXK_DOWN, 5008);
-//		accelerators [8] . Set (wxACCEL_SHIFT, WXK_LEFT, 5009);
-//		accelerators [9] . Set (wxACCEL_SHIFT, WXK_RIGHT, 5010);
-//		accelerators [10] . Set (wxACCEL_SHIFT, WXK_UP, 5011);
-//		accelerators [11] . Set (wxACCEL_SHIFT, WXK_DOWN, 5012);
-//		wxAcceleratorTable accel (12, accelerators);
-//		SetAcceleratorTable (accel);
+		bar -> Check (6205, board -> indexedGrid);
+		
 	}
 	~ BoardFrame (void) {
 	}
@@ -388,12 +392,50 @@ public:
 			default: break;
 			}
 			break;
+		case 2:
+			if (board == 0) break;
+			switch (key) {
+			case WXK_LEFT: board -> gridStartX--; board -> buildGrid (); Refresh (); break;
+			case WXK_RIGHT: board -> gridStartX++; board -> buildGrid (); Refresh (); break;
+			case WXK_UP: board -> gridStartY--; board -> buildGrid (); Refresh (); break;
+			case WXK_DOWN: board -> gridStartY++; board -> buildGrid (); Refresh (); break;
+			default: break;
+			}
+			break;
+		case 3:
+			if (board == 0) break;
+			switch (key) {
+			case WXK_LEFT: board -> gridSide--; board -> buildGrid (); Refresh (); break;
+			case WXK_RIGHT: board -> gridSide++; board -> buildGrid (); Refresh (); break;
+			case WXK_UP: board -> gridSide += 6; board -> buildGrid (); Refresh (); break;
+			case WXK_DOWN: board -> gridSide -= 6; board -> buildGrid (); Refresh (); break;
+			default: break;
+			}
+			break;
 		default: break;
 		}
 	}
 	void OnGridSizeControl (wxCommandEvent & event) {gridControlType = 1;}
 	void OnGridIndexControl (wxCommandEvent & event) {gridControlType = 2;}
 	void OnGridCellSizeControl (wxCommandEvent & event) {gridControlType = 3;}
+	void setGridType (int type) {
+		if (board == 0) return;
+		board -> gridType = type;
+		board -> buildGrid ();
+		Refresh ();
+	}
+	void OnNoGrid (wxCommandEvent & event) {setGridType (0);}
+	void OnSquareGrid (wxCommandEvent & event) {setGridType (1);}
+	void OnVerticalHexGrid (wxCommandEvent & event) {setGridType (2);}
+	void OnHorizontalHexGrid (wxCommandEvent & event) {setGridType (3);}
+	void OnIndexed (wxCommandEvent & event) {
+		if (board == 0) return;
+		wxMenuBar * bar = GetMenuBar ();
+		if (bar == 0) return;
+		board -> indexedGrid = bar -> IsChecked (6205);
+		board -> buildGrid ();
+		Refresh ();
+	}
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -402,6 +444,11 @@ EVT_MENU(6001, BoardFrame :: OnGridSizeControl)
 EVT_MENU(6002, BoardFrame :: OnGridIndexControl)
 EVT_MENU(6003, BoardFrame :: OnGridCellSizeControl)
 EVT_MENU(6101, BoardFrame :: OnQuit)
+EVT_MENU(6201, BoardFrame :: OnNoGrid)
+EVT_MENU(6202, BoardFrame :: OnSquareGrid)
+EVT_MENU(6203, BoardFrame :: OnVerticalHexGrid)
+EVT_MENU(6204, BoardFrame :: OnHorizontalHexGrid)
+EVT_MENU(6205, BoardFrame :: OnIndexed)
 //EVT_MENU(5001, BoardFrame :: OnArrow)
 //EVT_MENU(5002, BoardFrame :: OnArrow)
 //EVT_MENU(5003, BoardFrame :: OnArrow)
