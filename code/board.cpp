@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-#define PROTECT
+//#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -279,6 +279,7 @@ public:
 		gridDC . SetBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
 		gridDC . Clear ();
 		gridDC . SetTextForeground (gridColour);
+		gridDC . SetTextBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
 		wxFont f = gridDC . GetFont ();
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (8);
@@ -736,7 +737,7 @@ public:
 					}
 					fr . skip ();
 				}
-				board -> tokens = new BoardToken (wxString :: Format (_T ("%s"), command), position, board -> tokens);
+				board -> tokens = new BoardToken (wxString :: From8BitData (command), position, board -> tokens);
 				board -> tokens -> rotate (rotation);
 			}
 		}
@@ -917,7 +918,13 @@ public:
 		previous_key_down = -1;
 		wxInitAllImageHandlers ();
 		(boardFrame = new BoardFrame (0)) -> Show ();
-		if (argc > 1) boardFrame -> LoadGrid (argv [1]);
+		if (argc > 1) {
+			char command [1024];
+			wxChar * cp = argv [1];
+			int ind = 0;
+			while (* cp != '\0') {command [ind++] = (char) * cp++;} command [ind++] = '\0';
+			boardFrame -> LoadGrid (command);
+		}
 		return true;
 	}
 	int OnExit (void) {
