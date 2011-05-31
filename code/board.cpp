@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-//#define PROTECT
+#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -19,9 +19,225 @@
 #include <math.h>
 #include "wx/spinctrl.h"
 #include "wx/dnd.h"
+#include "wx/colordlg.h"
+
+void toCommand (char * command, wxString & file_name) {
+	char * cp = command;
+	for (unsigned int ind = 0; ind < file_name . size (); ind++) {
+		* cp++ = (char) file_name [ind];
+	}
+	* cp++ = '\0';
+}
+
+#define SYMBOL_SIZE 1000
+class SetupFileReader {
+public:
+	int symbol_control;
+		// 0: EOF
+		// 1: [
+		// 2: ]
+		// 3: identifier
+		// 4: string
+		// 5: integer
+		// 6: float
+		// 7: unknown
+	int int_symbol;
+	double float_symbol;
+	char symbol [SYMBOL_SIZE];
+	FILE * setup_file;
+	int act_char;
+	SetupFileReader (char * file_name) {
+		setup_file = NULL;
+		setup_file = fopen (file_name, "rb");
+		act_char = 0;
+	}
+	~ SetupFileReader (void) {close ();}
+	void close (void) {
+		if (setup_file == NULL) return;
+		fclose (setup_file);
+		setup_file = NULL;
+	}
+	bool file_not_found (void) {
+		if (setup_file == NULL) return true;
+		return false;
+	}
+	int get_char (void) {
+		act_char = fgetc (setup_file);
+		return act_char;
+	}
+	void get_symbol (void) {
+		bool negative = false;
+		char * symbol_pointer;
+		double fraction;
+		if (setup_file == NULL) {
+			symbol_control = 0;
+			return;
+		}
+		while (act_char < 33) {
+			if (act_char == EOF) {
+				symbol_control = 0;
+				close ();
+				return;
+			}
+			get_char ();
+		}
+		if (act_char == '[') {
+			symbol_control = 1;
+			get_char ();
+			return;
+		}
+		if (act_char == ']') {
+			symbol_control = 2;
+			get_char ();
+			return;
+		}
+		if ((act_char >= 'a' && act_char <= 'z') || act_char == '_' || (act_char >= 'A' && act_char <= 'Z')) {
+			symbol_pointer = symbol;
+			while ((act_char >= 'a' && act_char <= 'z') || act_char == '_' || (act_char >= 'A' && act_char <= 'Z') || (act_char >= '0' && act_char <= '9')) {
+				* (symbol_pointer++) = act_char;
+				get_char ();
+			}
+			symbol_control = 3;
+			* symbol_pointer = '\0';
+			return;
+		}
+		if (act_char == '-') {
+			negative = true;
+			get_char ();
+		}
+		if (act_char >= '0' && act_char <= '9') {
+			int_symbol = act_char - '0';
+			get_char ();
+			while (act_char >= '0' && act_char <= '9') {
+				int_symbol *= 10;
+				int_symbol += act_char - '0';
+				get_char ();
+			}
+			if (act_char == 'e') {
+				if (negative) int_symbol = - int_symbol;
+				negative = false;
+				float_symbol = int_symbol;
+				symbol_control = 6;
+				int shift = 0;
+				get_char ();
+				if (act_char == '-') {negative = true; get_char ();}
+				while (act_char >= '0' && act_char <= '9') {
+					shift *= 10;
+					shift += act_char - '0';
+					get_char ();
+				}
+				while (shift > 0) {
+					if (negative) float_symbol *= 0.1;
+					else float_symbol *= 10.0;
+					shift--;
+				}
+				return;
+			}
+			if (act_char == '.') {
+				get_char ();
+				float_symbol = int_symbol;
+				symbol_control = 6;
+				fraction = 1.0 / 10.0;
+				int_symbol = 0;
+				while (act_char >= '0' && act_char <= '9') {
+					float_symbol += ((double) (act_char - '0')) * fraction;
+					fraction /= 10.0;
+					get_char ();
+				}
+				if (negative) float_symbol = - float_symbol;
+				if (act_char == 'e') {
+					int shift = 0;
+					get_char ();
+					negative = false;
+					if (act_char == '-') {negative = true; get_char ();}
+					while (act_char >= '0' && act_char <= '9') {
+						shift *= 10;
+						shift += act_char - '0';
+						get_char ();
+					}
+					while (shift > 0) {
+						if (negative) float_symbol *= 0.1;
+						else float_symbol *= 10.0;
+						shift--;
+					}
+				}
+				return;
+			}
+			symbol_control = 5;
+			if (negative) int_symbol = 0 - int_symbol;
+			float_symbol = (double) int_symbol;
+			return;
+		}
+		if (negative) {
+			symbol_control = 7;
+			return;
+		}
+		if (act_char == '"') {
+			get_char ();
+			symbol_pointer = symbol;
+			while (act_char > 0 && act_char != '"') {
+				if (act_char == '\\')
+					get_char ();
+				* (symbol_pointer++) = act_char;
+				get_char ();
+			}
+			* symbol_pointer = '\0';
+			if (act_char <= 0) {
+				symbol_control = 0;
+				return;
+			}
+			symbol_control = 4;
+			get_char ();
+			return;
+		}
+		get_char ();
+		symbol_control = 7;
+	}
+	void skip (void) {
+		int ind = 1;
+		while (ind > 0) {
+			get_symbol ();
+			switch (symbol_control) {
+			case 0: ind = 0; break;
+			case 1: ind++; break;
+			case 2: ind--; break;
+			default: break;
+			}
+		}
+	}
+	bool id (char * name) {
+		if (symbol_control != 1) return false;
+		return strcmp (symbol, name) == 0;
+	}
+	bool get_string (void) {
+		get_symbol ();
+		return symbol_control == 4;
+	}
+	bool get_int (void) {
+		get_symbol ();
+		return symbol_control == 5;
+	}
+	bool get_float (void) {
+		get_symbol ();
+		return symbol_control == 6;
+	}
+	bool get_id (void) {
+		get_symbol ();
+		if (symbol_control != 3) return false;
+		get_symbol ();
+		return symbol_control == 1;
+	}
+	bool get_id (char * name) {
+		get_symbol ();
+		if (symbol_control != 3 || strcmp (symbol, name) != 0) return false;
+		get_symbol ();
+		return symbol_control == 1;
+	}
+};
 
 class BoardToken {
 public:
+	wxString original_file;
 	wxBitmap token;
 	wxBitmap toDraw;
 	wxPoint position;
@@ -34,18 +250,40 @@ public:
 	wxSize gridSize;
 	wxPoint gridStart;
 	bool gridIndexing;
+	wxColour gridColour;
+	BoardToken * next;
+	void Save (FILE * fw) {
+		if (next != 0) next -> Save (fw);
+		if (isGrid) {
+			fprintf (fw, "	grid [\n");
+			fprintf (fw, "		type [%i]\n", choosenRotation);
+			fprintf (fw, "		side [%i]\n", gridSide);
+			fprintf (fw, "		size [%i %i]\n", gridSize . GetWidth (), gridSize . GetHeight ());
+			fprintf (fw, "		index [%i %i]\n", gridStart . x, gridStart . y);
+			if (gridIndexing) fprintf (fw, "		indexed []\n");
+		} else {
+			fprintf (fw, "	token [\n");
+			char command [1024];
+			toCommand (command, original_file);
+			fprintf (fw, "		location [\"%s\"]\n", command);
+			fprintf (fw, "		rotation [%i]\n", choosenRotation);
+		}
+		fprintf (fw, "		position [%i %i]\n", position . x, position . y);
+		if (isSelectable) fprintf (fw, "		selectable []\n");
+		fprintf (fw, "	]\n");
+	}
 	void buildSquareGrid (void) {
 		token_size = wxSize (gridSide * gridSize . x + 1, gridSide * gridSize . y + 1);
 		toDraw = wxBitmap (token_size . x, token_size . y); //wxBitmap (gridSide * gridSize . x + 1, gridSide * gridSize . y + 1);
 		wxMemoryDC gridDC (toDraw);
-		gridDC . SetBackground (* wxBLACK);
+		gridDC . SetBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
 		gridDC . Clear ();
-		gridDC . SetTextForeground (wxColour (255, 255, 255));
+		gridDC . SetTextForeground (gridColour);
 		wxFont f = gridDC . GetFont ();
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (8);
 		gridDC . SetFont (f);
-		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
+		gridDC . SetPen (wxPen (gridColour));
 		for (int x = 0; x <= gridSize . x; x++) {
 			gridDC . DrawLine (x * gridSide, 0, x * gridSide, gridSize . y * gridSide);
 		}
@@ -59,7 +297,7 @@ public:
 				}
 			}
 		}
-		toDraw . SetMask (new wxMask (toDraw, * wxBLACK));
+		toDraw . SetMask (new wxMask (toDraw, gridColour != * wxBLACK ? * wxBLACK : * wxWHITE));
 	}
 	void buildVerticalHexGrid (bool initial) {
 		double gdrs = (double) gridSide * 0.5;
@@ -68,14 +306,14 @@ public:
 		token_size = wxSize (gdrs * 1.5 * (double) gridSize . x + half + 1, H * 2.0 * gridSize . y + 1 + H);
 		toDraw = wxBitmap (token_size . x, token_size . y);
 		wxMemoryDC gridDC (toDraw);
-		gridDC . SetBackground (* wxBLACK);
+		gridDC . SetBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
 		gridDC . Clear ();
-		gridDC . SetTextForeground (wxColour (255, 255, 255));
+		gridDC . SetTextForeground (gridColour);
 		wxFont f = gridDC . GetFont ();
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (8);
 		gridDC . SetFont (f);
-		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
+		gridDC . SetPen (wxPen (gridColour));
 		double vertical_shift = initial ? H : 0.0;
 		for (int x = 0; x < gridSize . x; x++) {
 			double xx = half + (double) x * gdrs * 1.5;
@@ -96,7 +334,7 @@ public:
 			if (vertical_shift != 0.0 && x < gridSize . x - 1) gridDC . DrawLine (xx + gdrs, yy, xx + gdrs + half, yy - H);
 			vertical_shift = vertical_shift == 0.0 ? H : 0.0;
 		}
-		toDraw . SetMask (new wxMask (toDraw, * wxBLACK));
+		toDraw . SetMask (new wxMask (toDraw, gridColour != * wxBLACK ? * wxBLACK : * wxWHITE));
 	}
 	void buildHorizontalHexGrid (bool initial) {
 		double gdrs = (double) gridSide * 0.5;
@@ -105,14 +343,14 @@ public:
 		token_size = wxSize (H * 2.0 * gridSize . x + 1 + H, gdrs * 1.5 * (double) gridSize . y + half + 1);
 		toDraw = wxBitmap (token_size . x, token_size . y);
 		wxMemoryDC gridDC (toDraw);
-		gridDC . SetBackground (* wxBLACK);
+		gridDC . SetBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
 		gridDC . Clear ();
-		gridDC . SetTextForeground (wxColour (255, 255, 255));
+		gridDC . SetTextForeground (gridColour);
 		wxFont f = gridDC . GetFont ();
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (8);
 		gridDC . SetFont (f);
-		gridDC . SetPen (wxPen (wxColour (255, 255, 255)));
+		gridDC . SetPen (wxPen (gridColour));
 		double horizontal_shift = initial ? H : 0.0;
 		for (int y = 0; y < gridSize . y; y++) {
 			double xx = horizontal_shift;
@@ -133,7 +371,7 @@ public:
 			if (horizontal_shift != 0.0 && y < gridSize . y - 1) gridDC . DrawLine (xx, yy + gdrs, xx - H, yy + gdrs + half);
 			horizontal_shift = horizontal_shift == 0.0 ? H : 0.0;
 		}
-		toDraw . SetMask (new wxMask (toDraw, * wxBLACK));
+		toDraw . SetMask (new wxMask (toDraw, gridColour != * wxBLACK ? * wxBLACK : * wxWHITE));
 	}
 	void buildGrid (void) {
 		if (gridSize . x < 1) gridSize . x = 1;
@@ -213,8 +451,10 @@ public:
 	}
 	BoardToken (wxString file_name, wxPoint position, BoardToken * next = 0) {
 		this -> isGrid = false;
+		this -> gridColour = * wxWHITE;
 		this -> isSelectable = true;
 		this -> next = next;
+		this -> original_file = file_name;
 		token . LoadFile (file_name, wxBITMAP_TYPE_PNG);
 		this -> position = position;
 		position -= wxPoint (token . GetWidth () / 2, token . GetHeight () / 2);
@@ -222,6 +462,7 @@ public:
 	}
 	BoardToken (wxPoint position, BoardToken * next = 0) {
 		this -> isGrid = true;
+		this -> gridColour = * wxWHITE;
 		this -> isSelectable = true;
 		this -> position = position - wxPoint (120, 120);
 		this -> next = next;
@@ -232,6 +473,10 @@ public:
 		gridIndexing = true;
 		rotate (0);
 	}
+	~ BoardToken (void) {
+		if (next != 0) delete next;
+		wxMessageBox (_T ("Delete ") + original_file, _T ("INFO"), wxOK, 0);
+	}
 	void changeGridSide (int change) {
 		if (! isGrid) return;
 		gridSide += change;
@@ -241,7 +486,6 @@ public:
 	void setIndexedGrid (void) {if (! isGrid) return; gridIndexing = ! gridIndexing; buildGrid ();}
 	void changeGridIndexing (wxPoint change) {if (! isGrid) return; gridStart += change; buildGrid ();}
 	void changeRows (wxSize change) {if (! isGrid) return; gridSize += change; buildGrid ();}
-	BoardToken * next;
 };
 
 class BoardFrame;
@@ -255,8 +499,9 @@ public:
 
 class BoardWindow : public wxWindow {
 public:
-	wxBitmap board;
-	wxPoint boardLocation;
+//	wxBitmap board;
+//	wxPoint boardLocation;
+	wxColour backgroundColour;
 	BoardToken * tokens;
 	wxPoint lastRightClickPosition;
 	BoardToken * dragToken;
@@ -265,21 +510,26 @@ public:
 	bool moveBoard;
 	bool moveTokens;
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
+		backgroundColour = * wxBLUE;
 		moveGrid = moveBoard = moveTokens = true;
-		boardLocation = wxPoint (0, 0);
+//		boardLocation = wxPoint (0, 0);
 		SetBackgroundStyle (wxBG_STYLE_CUSTOM);
 		tokens = 0;
 		dragToken = 0;
-		lastRightClickPosition = capturedPosition = boardLocation = wxPoint (10, 10);
+//		lastRightClickPosition = capturedPosition = boardLocation = wxPoint (10, 10);
+		lastRightClickPosition = capturedPosition = wxPoint (10, 10);
 	}
 	~ BoardWindow (void) {
 	}
+	void SaveTokens (FILE * fw) {
+		if (tokens != 0) tokens -> Save (fw);
+	}
 	void OnPaint (wxPaintEvent & event) {
 		wxBufferedPaintDC dc (this);
-		dc . SetBackground (wxBrush (wxColour (0, 0, 255)));
+		dc . SetBackground (wxBrush (backgroundColour));
 		dc . Clear ();
 		// draw board
-		dc . DrawBitmap (board, boardLocation . x, boardLocation . y, true);
+//		dc . DrawBitmap (board, boardLocation . x, boardLocation . y, true);
 		// draw grid
 //		dc . DrawBitmap (grid, gridLocation . x, gridLocation . y, true);
 		//dc . Blit (0, 0, 300, 200, & gridDC, 0, 0);
@@ -315,7 +565,7 @@ public:
 		wxPoint delta = p - capturedPosition;
 		if (dragToken == 0) {
 			if (moveTokens && tokens != 0) tokens -> moveAll (delta);
-			if (moveBoard) boardLocation += delta;
+//			if (moveBoard) boardLocation += delta;
 //			if (moveGrid) gridLocation += delta;
 		} else dragToken -> move (delta);
 		capturedPosition = p;
@@ -335,7 +585,9 @@ public:
 		wxFileDialog picker (this);
 		picker . SetWildcard (_T ("PNG pictures (*.png)|*.png"));
 		if (picker . ShowModal () == wxID_OK) {
-			dragToken = tokens = new BoardToken (picker . GetDirectory () + _T ("/") + picker . GetFilename (), lastRightClickPosition, tokens);
+			wxString file_name = picker . GetDirectory () + _T ("/") + picker . GetFilename ();
+			file_name . Replace (_T ("\\"), _T ("/"));
+			dragToken = tokens = new BoardToken (file_name, lastRightClickPosition, tokens);
 			Refresh ();
 		}
 	}
@@ -354,15 +606,15 @@ public:
 		Refresh ();
 	}
 	void OnRotateLeft (wxCommandEvent & event) {rotateLeft ();}
-	void OnNewBoard (wxCommandEvent & event) {
-		boardLocation = wxPoint (10, 10);
-		wxFileDialog picker (this);
-		picker . SetWildcard (_T ("PNG pictures (*.png)|*.png"));
-		if (picker . ShowModal () == wxID_OK) {
-			board . LoadFile (picker . GetDirectory () + _T ("/") + picker . GetFilename (), wxBITMAP_TYPE_PNG);
-			Refresh ();			
-		}
-	}
+//	void OnNewBoard (wxCommandEvent & event) {
+//		boardLocation = wxPoint (10, 10);
+//		wxFileDialog picker (this);
+//		picker . SetWildcard (_T ("PNG pictures (*.png)|*.png"));
+//		if (picker . ShowModal () == wxID_OK) {
+//			board . LoadFile (picker . GetDirectory () + _T ("/") + picker . GetFilename (), wxBITMAP_TYPE_PNG);
+//			Refresh ();			
+//		}
+//	}
 	void changeGridSide (int change) {
 		if (dragToken == 0) return;
 		dragToken -> changeGridSide (change);
@@ -402,7 +654,9 @@ class BoardFrame : public wxFrame {
 public:
 	int gridControlType;
 	BoardWindow * board;
+	wxString file_name;
 	BoardFrame (wxWindow * parent) : wxFrame (parent, -1, _T ("TABLE TOP"), BOARD_POSITION, BOARD_SIZE) {
+		file_name = _T ("");
 		gridControlType = 1;
 		board = new BoardWindow (this, -1);
 		board -> SetDropTarget (new FileReceiver (this));
@@ -411,6 +665,9 @@ public:
 		wxMenuBar * bar = new wxMenuBar ();
 
 		wxMenu * file_menu = new wxMenu ();
+		file_menu -> Append (6102, _T ("Load	L"));
+		file_menu -> Append (6103, _T ("Save	S"));
+		file_menu -> Append (6104, _T ("Save As	A"));
 		file_menu -> Append (6101, _T ("EXIT	Q"));
 		bar -> Append (file_menu, _T ("File"));
 
@@ -422,24 +679,118 @@ public:
 		control_menu -> Append (6205, _T ("Change Indexing	I"));
 		bar -> Append (control_menu, _T ("Control"));
 
-//		wxMenu * grid_menu = new wxMenu ();
-//		grid_menu -> AppendRadioItem (6201, _T ("No grid	F1"));
-//		grid_menu -> AppendRadioItem (6202, _T ("Square grid	F2"));
-//		grid_menu -> AppendRadioItem (6203, _T ("Vertical Hex grid	F3"));
-//		grid_menu -> AppendRadioItem (6204, _T ("Horizontal Hex grid	F4"));
-//		grid_menu -> AppendCheckItem (6205, _T ("Indexed	I"));
-//		bar -> Append (grid_menu, _T ("Grid"));
+		wxMenu * colour_menu = new wxMenu ();
+		colour_menu -> Append (6601, _T ("Board colour	B"));
+		colour_menu -> Append (6602, _T ("Grid colour	G"));
+		bar -> Append (colour_menu, _T ("Colours"));
 
 		SetMenuBar (bar);
 
 //		bar -> Check (6205, board -> indexedGrid);
+		bar -> Enable (6103, false);
 		
 	}
 	~ BoardFrame (void) {
 	}
+	void OnBoardColour (wxCommandEvent & event) {
+		if (board == 0) return;
+		wxColourDialog picker (this);
+		if (picker . ShowModal () == wxID_OK) {
+			board -> backgroundColour = picker . GetColourData () . GetColour ();
+			Refresh ();
+		}
+	}
+	void OnGridColour (wxCommandEvent & event) {
+		if (board == 0) return;
+		if (board -> dragToken == 0) return;
+		if (! board -> dragToken -> isGrid) return;
+		wxColourDialog picker (this);
+		if (picker . ShowModal () == wxID_OK) {
+			board -> dragToken -> gridColour = picker . GetColourData () . GetColour ();
+			board -> dragToken -> buildGrid ();
+			Refresh ();
+		}
+	}
+	void LoadGrid (char * file_name) {
+		if (board == 0) return;
+		SetupFileReader fr (file_name);
+		if (fr . file_not_found ()) return;
+		if (! fr . get_id ("board")) return;
+		if (board -> tokens != 0) delete board -> tokens; board -> dragToken = board -> tokens = 0;
+		while (fr . get_id ()) {
+			bool selectable = false;
+			wxPoint position (0, 0);
+			if (fr . id ("token")) {
+				char command [1024];
+				int rotation = 0;
+				while (fr . get_id ()) {
+					if (fr . id ("location")) {
+						if (! fr . get_string ()) return; strcpy (command, fr . symbol);
+					}
+					if (fr . id ("position")) {
+						if (! fr . get_int ()) return; position . x = fr . int_symbol;
+						if (! fr . get_int ()) return; position . y = fr . int_symbol;
+					}
+					if (fr . id ("rotation")) {
+						if (! fr . get_int ()) return; rotation = fr . int_symbol;
+					}
+					fr . skip ();
+				}
+				board -> tokens = new BoardToken (wxString :: Format (_T ("%s"), command), position, board -> tokens);
+				board -> tokens -> rotate (rotation);
+			}
+		}
+		this -> file_name = wxString :: Format (_T ("%s"), file_name);
+		wxMenuBar * bar = GetMenuBar ();
+		if (bar != 0) bar -> Enable (6103, true);
+	}
+	void LoadGrid (void) {
+		char command [1024];
+		toCommand (command, file_name);
+		LoadGrid (command);
+		Refresh ();
+	}
+	void OnLoad (wxCommandEvent & event) {
+		wxFileDialog picker (this);
+		picker . SetWildcard (_T ("Grid files (*.grid)|*.grid"));
+		if (picker . ShowModal () == wxID_OK) {
+			file_name = picker . GetDirectory () + _T ( "/") + picker . GetFilename ();
+			file_name . Replace (_T ("\\"), _T ("/"));
+			LoadGrid ();
+		}
+	}
+	void SaveGrid (char * file_name) {
+		FILE * fw = fopen (file_name, "wt");
+		if (fw == 0) return;
+		fprintf (fw, "board [\n");
+		if (board != 0) board -> SaveTokens (fw);
+		fprintf (fw, "]\n");
+		fclose (fw);
+		wxMenuBar * bar = GetMenuBar ();
+		if (bar != 0) bar -> Enable (6103, true);
+	}
+	void SaveGrid (void) {
+		char command [1024];
+		toCommand (command, file_name);
+		SaveGrid (command);
+		Refresh ();
+	}
+	void OnSave (wxCommandEvent & event) {
+		if (file_name . length () > 6) SaveGrid ();
+	}
+	void OnSaveAs (wxCommandEvent & event) {
+		wxFileDialog picker (this);
+		picker . SetWindowStyle (picker . GetWindowStyle () | wxFD_SAVE);
+		picker . SetWildcard (_T ("Grid files (*.grid)|*.grid"));
+		if (picker . ShowModal () == wxID_OK) {
+			file_name = picker . GetDirectory () + _T ("/") + picker . GetFilename ();
+			file_name . Replace (_T ("\\"), _T ("/"));
+			SaveGrid ();
+		}
+	}
 	void OnRotateRight (wxCommandEvent & event) {board -> OnRotateRight (event);}
 	void OnRotateLeft (wxCommandEvent & event) {board -> OnRotateLeft (event);}
-	void OnNewBoard (wxCommandEvent & event) {board -> OnNewBoard (event);}
+//	void OnNewBoard (wxCommandEvent & event) {board -> OnNewBoard (event);}
 	void OnQuit (wxCommandEvent & event) {OnEscape ();}
 	//void OnEscape (void) {if (wxYES == wxMessageBox (_T ("EXIT?"), _T ("INFO"), wxYES_NO | wxNO_DEFAULT | wxICON_EXCLAMATION, this)) delete this;}
 	void OnEscape (void) {delete this;}
@@ -517,6 +868,7 @@ public:
 	}
 	void insertNewToken (wxPoint location, wxString file_name) {
 		if (board == 0) return;
+		file_name . Replace (_T ("\\"), _T ("/"));
 		board -> insertNewToken (location, file_name);
 	}
 private:
@@ -537,6 +889,11 @@ EVT_MENU(6205, BoardFrame :: OnIndexed)
 //EVT_MENU(5002, BoardFrame :: OnArrow)
 //EVT_MENU(5003, BoardFrame :: OnArrow)
 //EVT_MENU(5004, BoardFrame :: OnArrow)
+EVT_MENU(6102, BoardFrame :: OnLoad)
+EVT_MENU(6103, BoardFrame :: OnSave)
+EVT_MENU(6104, BoardFrame :: OnSaveAs)
+EVT_MENU(6601, BoardFrame :: OnBoardColour)
+EVT_MENU(6602, BoardFrame :: OnGridColour)
 END_EVENT_TABLE()
 
 BoardFrame * boardFrame = 0;
@@ -547,7 +904,8 @@ bool FileReceiver :: OnDropFiles (wxCoord x, wxCoord y, const wxArrayString & fi
 	if (frame == NULL) return true;
 	if ((int) files . GetCount () < 1) return true;
 	for (int ind = 0; ind < (int) files . GetCount (); ind++) {
-		frame -> insertNewToken (wxPoint (x, y) + wxPoint (20 *ind, 20 * ind), files [ind]);
+		if (files [ind] . Lower () . Find (_T (".png")) >= 0) frame -> insertNewToken (wxPoint (x, y) + wxPoint (20 *ind, 20 * ind), files [ind]);
+		if (files [ind] . Lower () . Find (_T (".grid")) >= 0) {frame -> file_name = files [ind]; frame -> LoadGrid ();}
 	}
 	return true;
 }
@@ -559,6 +917,7 @@ public:
 		previous_key_down = -1;
 		wxInitAllImageHandlers ();
 		(boardFrame = new BoardFrame (0)) -> Show ();
+		if (argc > 1) boardFrame -> LoadGrid (argv [1]);
 		return true;
 	}
 	int OnExit (void) {
