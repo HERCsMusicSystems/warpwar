@@ -432,9 +432,9 @@ public:
 		position += delta;
 		if (next != 0) next -> moveAll (delta);
 	}
-	BoardToken * draw (wxDC & dc) {
+	void draw (wxDC & dc) {
+		if (next != 0) next -> draw (dc);
 		dc . DrawBitmap (toDraw, position + positionShift, true);
-		return next;
 	}
 	BoardToken * drawBorder (wxDC & dc) {
 		dc . DrawRectangle (position + positionShift, token_size);
@@ -476,7 +476,6 @@ public:
 	}
 	~ BoardToken (void) {
 		if (next != 0) delete next;
-		wxMessageBox (_T ("Delete ") + original_file, _T ("INFO"), wxOK, 0);
 	}
 	void changeGridSide (int change) {
 		if (! isGrid) return;
@@ -535,8 +534,9 @@ public:
 //		dc . DrawBitmap (grid, gridLocation . x, gridLocation . y, true);
 		//dc . Blit (0, 0, 300, 200, & gridDC, 0, 0);
 		// draw tokens
-		BoardToken * tkp = tokens;
-		while (tkp != 0) {tkp = tkp -> draw (dc);}
+		if (tokens != 0) tokens -> draw (dc);
+		//BoardToken * tkp = tokens;
+		//while (tkp != 0) {tkp = tkp -> draw (dc);}
 		// draw selected square
 		if (dragToken != 0) {
 			dc . SetPen (wxPen (wxColour (255, 255, 255), 1, wxDOT));
@@ -607,15 +607,6 @@ public:
 		Refresh ();
 	}
 	void OnRotateLeft (wxCommandEvent & event) {rotateLeft ();}
-//	void OnNewBoard (wxCommandEvent & event) {
-//		boardLocation = wxPoint (10, 10);
-//		wxFileDialog picker (this);
-//		picker . SetWildcard (_T ("PNG pictures (*.png)|*.png"));
-//		if (picker . ShowModal () == wxID_OK) {
-//			board . LoadFile (picker . GetDirectory () + _T ("/") + picker . GetFilename (), wxBITMAP_TYPE_PNG);
-//			Refresh ();			
-//		}
-//	}
 	void changeGridSide (int change) {
 		if (dragToken == 0) return;
 		dragToken -> changeGridSide (change);
@@ -635,6 +626,44 @@ public:
 		if (dragToken == 0) return;
 		dragToken -> changeRows (change);
 		Refresh ();
+	}
+	void TabForward (void) {
+		if (dragToken == 0) return;
+		dragToken = dragToken -> next;
+		if (dragToken == 0) dragToken = tokens;
+		Refresh ();
+	}
+	void TabBackward (void) {
+		if (dragToken == 0) return;
+		if (dragToken == tokens) {
+			while (dragToken -> next != 0) dragToken = dragToken -> next;
+		} else {
+			BoardToken * bp = tokens;
+			while (bp -> next != dragToken) bp = bp -> next;
+			dragToken = bp;
+		}
+		Refresh ();
+	}
+	void TokenToFront (void) {
+		if (dragToken == 0) return;
+		if (dragToken -> next == 0) return;
+		if (dragToken == tokens) {
+			BoardToken * bp = tokens -> next;
+			tokens -> next = tokens -> next -> next;
+			bp -> next = tokens;
+			tokens = bp;
+			Refresh ();
+			return;
+		}
+		BoardToken * bp = tokens;
+		while (bp -> next != dragToken) bp = bp -> next;
+		bp -> next = dragToken -> next;
+		bp = bp -> next;
+		dragToken -> next = dragToken -> next -> next;
+		bp -> next = dragToken;
+		Refresh ();
+	}
+	void TokenToBack (void) {
 	}
 private:
 	DECLARE_EVENT_TABLE()
@@ -673,10 +702,11 @@ public:
 		bar -> Append (file_menu, _T ("File"));
 
 		wxMenu * control_menu = new wxMenu ();
-		control_menu -> AppendRadioItem (6001, _T ("Grid size	F5"));
-		control_menu -> AppendRadioItem (6002, _T ("Grid indexing	F6"));
-		control_menu -> AppendRadioItem (6003, _T ("Grid cell size	F7"));
-		control_menu -> AppendRadioItem (6004, _T ("Rotation	F8"));
+		control_menu -> AppendRadioItem (6005, _T ("Toker ordering	F4"));
+		control_menu -> AppendRadioItem (6004, _T ("Rotation	F5"));
+		control_menu -> AppendRadioItem (6001, _T ("Grid size	F6"));
+		control_menu -> AppendRadioItem (6002, _T ("Grid indexing	F7"));
+		control_menu -> AppendRadioItem (6003, _T ("Grid cell size	F8"));
 		control_menu -> Append (6205, _T ("Change Indexing	I"));
 		bar -> Append (control_menu, _T ("Control"));
 
@@ -850,6 +880,11 @@ public:
 			default: break;
 			}
 			break;
+		case 5:
+			switch (key) {
+			case WXK_LEFT: case WXK_DOWN: board -> TokenToFront (); break;
+			case WXK_RIGHT: case WXK_UP: board -> TokenToBack (); break;
+			}
 		default: break;
 		}
 	}
@@ -857,6 +892,7 @@ public:
 	void OnGridIndexControl (wxCommandEvent & event) {gridControlType = 2;}
 	void OnGridCellSizeControl (wxCommandEvent & event) {gridControlType = 3;}
 	void OnRotateControl (wxCommandEvent & event) {gridControlType = 4;}
+	void OnTokenOrdering (wxCommandEvent & event) {gridControlType = 5;}
 //	void OnNoGrid (wxCommandEvent & event) {setGridType (0);}
 //	void OnSquareGrid (wxCommandEvent & event) {setGridType (1);}
 //	void OnVerticalHexGrid (wxCommandEvent & event) {setGridType (2);}
@@ -872,6 +908,8 @@ public:
 		file_name . Replace (_T ("\\"), _T ("/"));
 		board -> insertNewToken (location, file_name);
 	}
+	void TabForward (void) {if (board != 0) board -> TabForward ();}
+	void TabBackward (void) {if (board != 0) board -> TabBackward ();}
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -880,6 +918,7 @@ EVT_MENU(6001, BoardFrame :: OnGridSizeControl)
 EVT_MENU(6002, BoardFrame :: OnGridIndexControl)
 EVT_MENU(6003, BoardFrame :: OnGridCellSizeControl)
 EVT_MENU(6004, BoardFrame :: OnRotateControl)
+EVT_MENU(6005, BoardFrame :: OnTokenOrdering)
 EVT_MENU(6101, BoardFrame :: OnQuit)
 //EVT_MENU(6201, BoardFrame :: OnNoGrid)
 //EVT_MENU(6202, BoardFrame :: OnSquareGrid)
@@ -914,7 +953,9 @@ bool FileReceiver :: OnDropFiles (wxCoord x, wxCoord y, const wxArrayString & fi
 class BoardClass : public wxApp {
 public:
 	int previous_key_down;
+	bool shiftDown;
 	bool OnInit (void) {
+		shiftDown = false;
 		previous_key_down = -1;
 		wxInitAllImageHandlers ();
 		(boardFrame = new BoardFrame (0)) -> Show ();
@@ -932,17 +973,21 @@ public:
 	}
 	int FilterEvent (wxEvent & event) {
 		if (boardFrame == 0) return -1;
-		if (event . GetEventType () != wxEVT_KEY_DOWN) return -1;
 		int key = ((wxKeyEvent &) event) . GetKeyCode ();
+		if (event . GetEventType () == wxEVT_KEY_UP) {
+			if (key == WXK_SHIFT) shiftDown = false;
+			return -1;
+		}
+		if (event . GetEventType () != wxEVT_KEY_DOWN) return -1;
 		if (key == previous_key_down) {previous_key_down = -1; return -1;}
 		previous_key_down = key;
 		switch (key) {
+		case WXK_SHIFT: shiftDown = true; break;
 		case WXK_LEFT:
 		case WXK_RIGHT:
 		case WXK_UP:
-		case WXK_DOWN:
-			boardFrame -> OnArrow (key);
-			break;
+		case WXK_DOWN: boardFrame -> OnArrow (key); break;
+		case WXK_TAB: if (shiftDown) boardFrame -> TabBackward (); else boardFrame -> TabForward (); break;
 		default: break;
 		}
 		return -1;
