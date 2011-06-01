@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-//#define PROTECT
+#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -628,13 +628,13 @@ public:
 		Refresh ();
 	}
 	void TabForward (void) {
-		if (dragToken == 0) return;
+		if (dragToken == 0) {dragToken = tokens; Refresh (); return;}
 		dragToken = dragToken -> next;
 		if (dragToken == 0) dragToken = tokens;
 		Refresh ();
 	}
 	void TabBackward (void) {
-		if (dragToken == 0) return;
+		if (dragToken == 0) {dragToken = tokens; Refresh (); return;}
 		if (dragToken == tokens) {
 			while (dragToken -> next != 0) dragToken = dragToken -> next;
 		} else {
@@ -644,7 +644,42 @@ public:
 		}
 		Refresh ();
 	}
+	void TokenToVeryFront (void) {
+		if (tokens == 0) return;
+		if (dragToken == 0) return;
+		if (dragToken -> next == 0) return;
+		if (dragToken == tokens) {
+			tokens = dragToken -> next;
+			dragToken -> next = 0;
+			BoardToken * bp = tokens;
+			while (bp -> next != 0) bp = bp -> next;
+			bp -> next = dragToken;
+			Refresh ();
+			return;
+		}
+		BoardToken * bp = tokens;
+		while (bp -> next != dragToken) bp = bp -> next;
+		bp -> next = dragToken -> next;
+		dragToken -> next = 0;
+		while (bp -> next != 0) bp = bp -> next;
+		bp -> next = dragToken;
+		Refresh ();
+		return;
+	}
+	void TokenToVeryBack (void) {
+		if (tokens == 0) return;
+		if (dragToken == 0) return;
+		if (dragToken == tokens) return;
+		BoardToken * bp = tokens;
+		while (bp -> next != dragToken) bp = bp -> next;
+		bp -> next = dragToken -> next;
+		dragToken -> next = tokens;
+		tokens = dragToken;
+		Refresh ();
+		return;
+	}
 	void TokenToFront (void) {
+		if (tokens == 0) return;
 		if (dragToken == 0) return;
 		if (dragToken -> next == 0) return;
 		if (dragToken == tokens) {
@@ -664,6 +699,24 @@ public:
 		Refresh ();
 	}
 	void TokenToBack (void) {
+		if (tokens == 0) return;
+		if (dragToken == 0) return;
+		if (dragToken == tokens) return;
+		if (dragToken == tokens -> next) {
+			BoardToken * bp = tokens;
+			tokens = tokens -> next;
+			bp -> next = tokens -> next;
+			tokens -> next = bp;
+			Refresh ();
+			return;
+		}
+		BoardToken * bp = tokens;
+		while (bp -> next -> next != dragToken) bp = bp -> next;
+		bp -> next -> next = dragToken -> next;
+		dragToken -> next = bp -> next;
+		bp -> next = dragToken;
+		Refresh ();
+		return;
 	}
 private:
 	DECLARE_EVENT_TABLE()
@@ -687,7 +740,7 @@ public:
 	wxString file_name;
 	BoardFrame (wxWindow * parent) : wxFrame (parent, -1, _T ("TABLE TOP"), BOARD_POSITION, BOARD_SIZE) {
 		file_name = _T ("");
-		gridControlType = 1;
+		gridControlType = 5;
 		board = new BoardWindow (this, -1);
 		board -> SetDropTarget (new FileReceiver (this));
 		board -> SetFocus ();
@@ -719,6 +772,7 @@ public:
 
 //		bar -> Check (6205, board -> indexedGrid);
 		bar -> Enable (6103, false);
+		bar -> Check (6005, true);
 		
 	}
 	~ BoardFrame (void) {
@@ -771,7 +825,7 @@ public:
 				board -> tokens -> rotate (rotation);
 			}
 		}
-		this -> file_name = wxString :: Format (_T ("%s"), file_name);
+		this -> file_name = wxString :: From8BitData (file_name); //Format (_T ("%s"), file_name);
 		wxMenuBar * bar = GetMenuBar ();
 		if (bar != 0) bar -> Enable (6103, true);
 	}
@@ -882,8 +936,11 @@ public:
 			break;
 		case 5:
 			switch (key) {
-			case WXK_LEFT: case WXK_DOWN: board -> TokenToFront (); break;
-			case WXK_RIGHT: case WXK_UP: board -> TokenToBack (); break;
+			case WXK_LEFT: board -> TokenToFront (); break;
+			case WXK_RIGHT: board -> TokenToBack (); break;
+			case WXK_DOWN: board -> TokenToVeryFront (); break;
+			case WXK_UP: board -> TokenToVeryBack (); break;
+			default: break;
 			}
 		default: break;
 		}
