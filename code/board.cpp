@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-#define PROTECT
+//#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -564,7 +564,9 @@ public:
 	bool notMoved;
 	bool possibleTokenCirculation;
 	bool unlocked;
+	bool modified;
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
+		modified = false;
 		unlocked = false;
 		notMoved = true;
 		possibleTokenCirculation = false;
@@ -647,16 +649,18 @@ public:
 //			if (moveGrid) gridLocation += delta;
 		} else dragToken -> move (delta);
 		capturedPosition = p;
+		modified = true;
 		Refresh ();
 	}
 	void OnRightDown (wxMouseEvent & event) {
 		lastRightClickPosition = event . GetPosition ();
 		dragToken = tokens == 0 ? 0 : tokens -> hitFind (lastRightClickPosition, unlocked);
 		wxMenu menu;
-		if (dragToken == 0) menu . Append (4001, _T ("New Token"));
-		if (dragToken == 0) menu . Append (4002, _T ("New Grid"));
+		if (dragToken == 0) menu . Append (4001, _T ("New token"));
+		if (dragToken == 0) menu . Append (4002, _T ("New grid"));
 		if (dragToken != 0) menu . Append (4101, _T ("Rotate right"));
 		if (dragToken != 0) menu . Append (4102, _T ("Rotate left"));
+		if (dragToken != 0) menu . Append (4103, _T ("Delete token"));
 		PopupMenu (& menu, lastRightClickPosition);
 	}
 	void OnNewToken (wxCommandEvent & event) {
@@ -666,42 +670,50 @@ public:
 			wxString file_name = picker . GetDirectory () + _T ("/") + picker . GetFilename ();
 			file_name . Replace (_T ("\\"), _T ("/"));
 			dragToken = tokens = new BoardToken (file_name, lastRightClickPosition, tokens);
+			modified = true;
 			Refresh ();
 		}
 	}
 	void insertNewToken (wxPoint location, wxString file_name) {
 		dragToken = tokens = new BoardToken (file_name, location, tokens);
+		modified = true;
 		Refresh ();
 	}
-	void OnNewGrid (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, tokens); Refresh ();}
+	void OnNewGrid (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, tokens);modified = true; Refresh ();}
 	void rotateRight (void) {
 		if (dragToken != 0) dragToken -> rotateRight ();
+		modified = true;
 		Refresh ();
 	}
 	void OnRotateRight (wxCommandEvent & event) {rotateRight ();}
 	void rotateLeft (void) {
 		if (dragToken != 0) dragToken -> rotateLeft ();
+		modified = true;
 		Refresh ();
 	}
 	void OnRotateLeft (wxCommandEvent & event) {rotateLeft ();}
 	void changeGridSide (int change) {
 		if (dragToken == 0) return;
 		dragToken -> changeGridSide (change);
+		modified = true;
 		Refresh ();
 	}
 	void setIndexedGrid (void) {
 		if (dragToken == 0) return;
 		dragToken -> setIndexedGrid ();
+		modified = true;
 		Refresh ();
 	}
 	void changeGridIndexing (wxPoint change) {
 		if (dragToken == 0) return;
 		dragToken -> changeGridIndexing (change);
+		modified = true;
 		Refresh ();
 	}
 	void changeRows (wxSize change) {
 		if (dragToken == 0) return;
 		dragToken -> changeRows (change);
+		modified = true;
 		Refresh ();
 	}
 	BoardToken * getNextSelectableToken (BoardToken * bp, bool unlocked) {
@@ -724,9 +736,12 @@ public:
 		if (dragToken == tokens) {
 			while (getNextSelectableToken (dragToken -> next, unlocked) != 0) dragToken = getNextSelectableToken (dragToken -> next, unlocked);
 		} else {
-			BoardToken * bp = tokens;
-			while (getNextSelectableToken (bp -> next, unlocked) != dragToken) bp = getNextSelectableToken (bp -> next, unlocked);
+			BoardToken * bp = getNextSelectableToken (tokens, unlocked);
+			while (bp != 0 && bp -> next != 0 && getNextSelectableToken (bp -> next, unlocked) != dragToken) {
+				bp = getNextSelectableToken (bp -> next, unlocked);
+			}
 			dragToken = bp;
+			if (dragToken == 0) dragToken = getNextSelectableToken (tokens, unlocked);
 		}
 		Refresh ();
 	}
@@ -740,6 +755,7 @@ public:
 			BoardToken * bp = tokens;
 			while (bp -> next != 0) bp = bp -> next;
 			bp -> next = dragToken;
+			modified = true;
 			Refresh ();
 			return;
 		}
@@ -749,6 +765,7 @@ public:
 		dragToken -> next = 0;
 		while (bp -> next != 0) bp = bp -> next;
 		bp -> next = dragToken;
+		modified = true;
 		Refresh ();
 		return;
 	}
@@ -761,6 +778,7 @@ public:
 		bp -> next = dragToken -> next;
 		dragToken -> next = tokens;
 		tokens = dragToken;
+		modified = true;
 		Refresh ();
 		return;
 	}
@@ -773,6 +791,7 @@ public:
 			tokens -> next = tokens -> next -> next;
 			bp -> next = tokens;
 			tokens = bp;
+			modified = true;
 			Refresh ();
 			return;
 		}
@@ -782,6 +801,7 @@ public:
 		bp = bp -> next;
 		dragToken -> next = dragToken -> next -> next;
 		bp -> next = dragToken;
+		modified = true;
 		Refresh ();
 	}
 	void TokenToBack (void) {
@@ -793,6 +813,7 @@ public:
 			tokens = tokens -> next;
 			bp -> next = tokens -> next;
 			tokens -> next = bp;
+			modified = true;
 			Refresh ();
 			return;
 		}
@@ -801,9 +822,33 @@ public:
 		bp -> next -> next = dragToken -> next;
 		dragToken -> next = bp -> next;
 		bp -> next = dragToken;
+		modified = true;
 		Refresh ();
 		return;
 	}
+	void deleteToken (void) {
+		if (tokens == 0) return;
+		if (dragToken == 0) return;
+		if (dragToken == tokens) {
+			tokens = dragToken -> next;
+			dragToken -> next = 0;
+			delete dragToken;
+			dragToken = 0;
+			modified = true;
+			Refresh ();
+			return;
+		}
+		BoardToken * bp = tokens;
+		while (bp != 0 && bp -> next != dragToken) bp = bp -> next;
+		bp -> next = dragToken -> next;
+		dragToken -> next = 0;
+		delete dragToken;
+		dragToken = 0;
+		modified = true;
+		Refresh ();
+		return;
+	}
+	void OnDeleteToken (wxCommandEvent & event) {deleteToken ();}
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -817,6 +862,7 @@ EVT_MENU(4001, BoardWindow :: OnNewToken)
 EVT_MENU(4002, BoardWindow :: OnNewGrid)
 EVT_MENU(4101, BoardWindow :: OnRotateRight)
 EVT_MENU(4102, BoardWindow :: OnRotateLeft)
+EVT_MENU(4103, BoardWindow :: OnDeleteToken)
 END_EVENT_TABLE()
 
 class BoardFrame : public wxFrame {
@@ -837,6 +883,11 @@ public:
 		file_menu -> Append (6102, _T ("Load	L"));
 		file_menu -> Append (6103, _T ("Save	S"));
 		file_menu -> Append (6104, _T ("Save As	A"));
+		file_menu -> AppendSeparator ();
+		file_menu -> Append (6121, _T ("New token	N"));
+		file_menu -> Append (6122, _T ("New grid	M"));
+		file_menu -> Append (6123, _T ("Delete token / grid	R"));
+		file_menu -> AppendSeparator ();
 		file_menu -> Append (6101, _T ("EXIT	Q"));
 		bar -> Append (file_menu, _T ("File"));
 
@@ -846,6 +897,7 @@ public:
 		control_menu -> AppendRadioItem (6001, _T ("Grid size	F6"));
 		control_menu -> AppendRadioItem (6002, _T ("Grid indexing	F7"));
 		control_menu -> AppendRadioItem (6003, _T ("Grid cell size	F8"));
+		control_menu -> AppendSeparator ();
 		control_menu -> Append (6205, _T ("Change Indexing	I"));
 		bar -> Append (control_menu, _T ("Control"));
 
@@ -867,13 +919,12 @@ public:
 		bar -> Check (6701, board -> unlocked);
 		
 	}
-	~ BoardFrame (void) {
-	}
 	void OnBoardColour (wxCommandEvent & event) {
 		if (board == 0) return;
 		wxColourDialog picker (this);
 		if (picker . ShowModal () == wxID_OK) {
 			board -> backgroundColour = picker . GetColourData () . GetColour ();
+			board -> modified = true;
 			Refresh ();
 		}
 	}
@@ -884,7 +935,7 @@ public:
 		wxColourDialog picker (this);
 		if (picker . ShowModal () == wxID_OK) {
 			board -> dragToken -> gridColour = picker . GetColourData () . GetColour ();
-//			board -> dragToken -> buildGrid ();
+			board -> modified = true;
 			Refresh ();
 		}
 	}
@@ -894,6 +945,7 @@ public:
 		if (fr . file_not_found ()) return;
 		if (! fr . get_id ("board")) return;
 		if (board -> tokens != 0) delete board -> tokens; board -> dragToken = board -> tokens = 0;
+		board -> modified = false;
 		while (fr . get_id ()) {
 			bool selectable = false;
 			wxPoint position (0, 0);
@@ -985,6 +1037,7 @@ public:
 		if (board != 0) {
 			fprintf (fw, "	background [%i %i %i]\n", board -> backgroundColour . Red (), board -> backgroundColour . Green (), board -> backgroundColour . Blue ());
 			board -> SaveTokens (fw);
+			board -> modified = false;
 		}
 		fprintf (fw, "]\n");
 		fclose (fw);
@@ -998,9 +1051,11 @@ public:
 		Refresh ();
 	}
 	void OnSave (wxCommandEvent & event) {
-		if (file_name . length () > 6) SaveGrid ();
+		if (file_name . length () > 6) {
+			if (wxYES == wxMessageBox (_T ("SAVE ?"), _T ("INFO"), wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION, this)) SaveGrid ();
+		}
 	}
-	void OnSaveAs (wxCommandEvent & event) {
+	void SaveAs (void) {
 		wxFileDialog picker (this);
 		picker . SetWindowStyle (picker . GetWindowStyle () | wxFD_SAVE);
 		picker . SetWildcard (_T ("Grid files (*.grid)|*.grid"));
@@ -1010,13 +1065,14 @@ public:
 			SaveGrid ();
 		}
 	}
+	void OnSaveAs (wxCommandEvent & event) {SaveAs ();}
 	void OnRotateRight (wxCommandEvent & event) {board -> OnRotateRight (event);}
 	void OnRotateLeft (wxCommandEvent & event) {board -> OnRotateLeft (event);}
 //	void OnNewBoard (wxCommandEvent & event) {board -> OnNewBoard (event);}
 	void OnQuit (wxCommandEvent & event) {OnEscape ();}
 	//void OnEscape (void) {if (wxYES == wxMessageBox (_T ("EXIT?"), _T ("INFO"), wxYES_NO | wxNO_DEFAULT | wxICON_EXCLAMATION, this)) delete this;}
 	void OnEscape (void) {delete this;}
-	void OnLockGrid (wxCommandEvent & event) {
+/*	void OnLockGrid (wxCommandEvent & event) {
 		wxMenuBar * bar = GetMenuBar ();
 		bar -> Check (4202, board -> moveGrid);
 		board -> moveGrid = ! board -> moveGrid;
@@ -1033,7 +1089,7 @@ public:
 		bar -> Check (4204, board -> moveTokens);
 		board -> moveTokens = ! board -> moveTokens;
 		Refresh ();
-	}
+	}*/
 	void OnArrow (int key) {
 		if (board == 0) return;
 		switch (gridControlType) {
@@ -1087,10 +1143,6 @@ public:
 	void OnGridCellSizeControl (wxCommandEvent & event) {gridControlType = 3;}
 	void OnRotateControl (wxCommandEvent & event) {gridControlType = 4;}
 	void OnTokenOrdering (wxCommandEvent & event) {gridControlType = 5;}
-//	void OnNoGrid (wxCommandEvent & event) {setGridType (0);}
-//	void OnSquareGrid (wxCommandEvent & event) {setGridType (1);}
-//	void OnVerticalHexGrid (wxCommandEvent & event) {setGridType (2);}
-//	void OnHorizontalHexGrid (wxCommandEvent & event) {setGridType (3);}
 	void OnIndexed (wxCommandEvent & event) {
 		if (board == 0) return;
 		wxMenuBar * bar = GetMenuBar ();
@@ -1117,7 +1169,20 @@ public:
 		if (board -> dragToken == 0) return;
 		board -> dragToken -> isSelectable = ! board -> dragToken -> isSelectable;
 		board -> dragToken = 0;
+		board -> modified = true;
 		Refresh ();
+	}
+	void OnNewToken (wxCommandEvent & event) {if (board != 0) board -> OnNewToken (event);}
+	void OnNewGrid (wxCommandEvent & event) {if (board != 0) board -> OnNewGrid (event);}
+	void OnDeleteToken (wxCommandEvent & event) {if (board != 0) board -> OnDeleteToken (event);}
+	~ BoardFrame (void) {
+		if (board != 0) {
+			if (board -> modified) {
+				if (wxYES == wxMessageBox (_T ("SAVE CHANGES ?"), _T ("INFO"), wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION, this)) {
+					if (file_name . length () > 6) SaveGrid (); else SaveAs ();
+				}
+			}
+		}
 	}
 private:
 	DECLARE_EVENT_TABLE()
@@ -1145,6 +1210,9 @@ EVT_MENU(6601, BoardFrame :: OnBoardColour)
 EVT_MENU(6602, BoardFrame :: OnGridColour)
 EVT_MENU(6701, BoardFrame :: OnLock)
 EVT_MENU(6703, BoardFrame :: OnLockToken)
+EVT_MENU(6121, BoardFrame :: OnNewToken)
+EVT_MENU(6122, BoardFrame :: OnNewGrid)
+EVT_MENU(6123, BoardFrame :: OnDeleteToken)
 END_EVENT_TABLE()
 
 BoardFrame * boardFrame = 0;
@@ -1199,6 +1267,7 @@ public:
 		case WXK_UP:
 		case WXK_DOWN: boardFrame -> OnArrow (key); break;
 		case WXK_TAB: if (shiftDown) boardFrame -> TabBackward (); else boardFrame -> TabForward (); break;
+		case WXK_DELETE: case WXK_BACK: boardFrame -> board -> deleteToken (); break;
 		default: break;
 		}
 		return -1;
