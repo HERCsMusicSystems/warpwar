@@ -237,6 +237,7 @@ public:
 
 class BoardToken {
 public:
+	enum TokenType {PictureToken = 0, GridToken, DiceToken};
 	wxString original_file;
 	wxBitmap token;
 	wxBitmap rotatedToken;
@@ -244,17 +245,21 @@ public:
 	wxPoint positionShift;
 	wxSize token_size;
 	int choosenRotation; // rotation for token, different grids for grid (square, vertical hex 1 and 2, horizontal hex 1 and 2
-	bool isGrid;
+	//bool isGrid;
+	TokenType tokenType;
 	bool isSelectable;
 	int gridSide;
 	wxSize gridSize;
 	wxPoint gridStart;
 	bool gridIndexing;
 	wxColour gridColour;
+	wxColour backgroundColour;
+	int diceValue;
 	BoardToken * next;
 	void Save (FILE * fw) {
 		if (next != 0) next -> Save (fw);
-		if (isGrid) {
+		switch (tokenType) {
+		case GridToken:
 			fprintf (fw, "	grid [\n");
 			fprintf (fw, "		type [%i]\n", choosenRotation);
 			fprintf (fw, "		side [%i]\n", gridSide);
@@ -262,12 +267,22 @@ public:
 			fprintf (fw, "		index [%i %i]\n", gridStart . x, gridStart . y);
 			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
 			if (gridIndexing) fprintf (fw, "		indexed []\n");
-		} else {
+			break;
+		case PictureToken:
 			fprintf (fw, "	token [\n");
 			char command [1024];
 			toCommand (command, original_file);
 			fprintf (fw, "		location [\"%s\"]\n", command);
 			fprintf (fw, "		rotation [%i]\n", choosenRotation);
+			break;
+		case DiceToken:
+			fprintf (fw, "	dice [\n");
+			fprintf (fw, "		type [%i]\n", choosenRotation);
+			fprintf (fw, "		value [%i]\n", diceValue);
+			break;
+		default:
+			fprintf (fw, "	unknown [\n");
+			break;
 		}
 		fprintf (fw, "		position [%i %i]\n", position . x, position . y);
 		if (isSelectable) fprintf (fw, "		selectable []\n");
@@ -307,16 +322,6 @@ public:
 			}
 		}
 	}
-	void buildSquareGrid (void) {
-		token_size = wxSize (gridSide * gridSize . x + 1, gridSide * gridSize . y + 1);
-		rotatedToken = wxBitmap (token_size . x, token_size . y); //wxBitmap (gridSide * gridSize . x + 1, gridSide * gridSize . y + 1);
-		wxMemoryDC gridDC (rotatedToken);
-		gridDC . SetBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
-		gridDC . Clear ();
-		gridDC . SetTextBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
-		drawSquareGrid (gridDC, wxPoint (0, 0));
-		rotatedToken . SetMask (new wxMask (rotatedToken, gridColour != * wxBLACK ? * wxBLACK : * wxWHITE));
-	}
 	void drawVerticalHexGrid (wxDC & gridDC, wxPoint location, bool initial) {
 		double gdrs = (double) gridSide * 0.5;
 		double H = gdrs * 0.866025404;
@@ -348,18 +353,6 @@ public:
 			if (vertical_shift != location . y && x < gridSize . x - 1) gridDC . DrawLine (xx + gdrs, yy, xx + gdrs + half, yy - H);
 			vertical_shift = vertical_shift == location . y ? location . y + H : location . y;
 		}
-	}
-	void buildVerticalHexGrid (bool initial) {
-		double gdrs = (double) gridSide * 0.5;
-		double H = gdrs * 0.866025404;
-		double half = gdrs * 0.5;
-		token_size = wxSize (gdrs * 1.5 * (double) gridSize . x + half + 1, H * 2.0 * gridSize . y + 1 + H);
-		rotatedToken = wxBitmap (token_size . x, token_size . y);
-		wxMemoryDC gridDC (rotatedToken);
-		gridDC . SetBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
-		gridDC . Clear ();
-		drawVerticalHexGrid (gridDC, wxPoint (0, 0), initial);
-		rotatedToken . SetMask (new wxMask (rotatedToken, gridColour != * wxBLACK ? * wxBLACK : * wxWHITE));
 	}
 	void drawHorizontalHexGrid (wxDC & gridDC, wxPoint location, bool initial) {
 		double gdrs = (double) gridSide * 0.5;
@@ -393,68 +386,62 @@ public:
 			horizontal_shift = horizontal_shift == location . x ? location . x + H : location . x;
 		}
 	}
-	void buildHorizontalHexGrid (bool initial) {
-		double gdrs = (double) gridSide * 0.5;
-		double H = gdrs * 0.866025404;
-		double half = gdrs * 0.5;
-		token_size = wxSize (H * 2.0 * gridSize . x + 1 + H, gdrs * 1.5 * (double) gridSize . y + half + 1);
-		rotatedToken = wxBitmap (token_size . x, token_size . y);
-		wxMemoryDC gridDC (rotatedToken);
-		gridDC . SetBackground (gridColour != * wxBLACK ? * wxBLACK : * wxWHITE);
-		gridDC . Clear ();
-		drawHorizontalHexGrid (gridDC, wxPoint (0, 0), initial);
-		rotatedToken . SetMask (new wxMask (rotatedToken, gridColour != * wxBLACK ? * wxBLACK : * wxWHITE));
+	void drawDice (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		dc . DrawRoundedRectangle (position . x + 10, position . y + 10, gridSide, gridSide, 6);
+
+		wxFont f = dc . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (gridSide / 2);
+		dc . SetFont (f);
+		dc . SetTextForeground (gridColour);
+		wxString text = wxString :: Format (_T ("%i"), diceValue);
+		wxSize extent = dc . GetTextExtent (text);
+		dc . DrawText (text, position . x + 10 + gridSide / 2 - extent . x / 2, position . y + 10 + gridSide / 2 - extent . y / 2);
 	}
-//	void buildGrid (void) {
-//		if (gridSize . x < 1) gridSize . x = 1;
-//		if (gridSize . y < 1) gridSize . y = 1;
-//		switch (choosenRotation) {
-//		case 0: buildSquareGrid (); break;
-//		case 1: buildVerticalHexGrid (false); break;
-//		case 2: buildVerticalHexGrid (true); break;
-//		case 3: buildHorizontalHexGrid (false); break;
-//		case 4: buildHorizontalHexGrid (true); break;
-//		default: buildSquareGrid (); break;
-//		}
-//	}
 	void rotate (int angle) {
-		if (isGrid) {
-			this -> choosenRotation = angle;
-//			buildGrid ();
-			return;
+		switch (tokenType) {
+		case GridToken: this -> choosenRotation = angle; break;
+		case PictureToken:
+			while (angle > 360) angle -= 360;
+			while (angle < 0) angle += 360;
+			rotatedToken = wxBitmap (token . ConvertToImage () . Rotate (M_PI * (double) angle / 180.0, wxPoint (token . GetWidth () / 2, token . GetHeight () / 2)));
+			token_size = wxSize (rotatedToken . GetWidth (), rotatedToken . GetHeight ());
+			positionShift = wxPoint ((token . GetWidth () - rotatedToken . GetWidth ()) / 2, (token . GetHeight () - rotatedToken . GetHeight ()) / 2);
+			choosenRotation = angle;
+			break;
+		case DiceToken: break;
+		default: break;
 		}
-		while (angle > 360) angle -= 360;
-		while (angle < 0) angle += 360;
-		rotatedToken = wxBitmap (token . ConvertToImage () . Rotate (M_PI * (double) angle / 180.0, wxPoint (token . GetWidth () / 2, token . GetHeight () / 2)));
-		token_size = wxSize (rotatedToken . GetWidth (), rotatedToken . GetHeight ());
-		positionShift = wxPoint ((token . GetWidth () - rotatedToken . GetWidth ()) / 2, (token . GetHeight () - rotatedToken . GetHeight ()) / 2);
-		choosenRotation = angle;
 	}
 	void rotateRight (void) {
-		if (isGrid) {
-			choosenRotation++;
-			if (choosenRotation > 4) choosenRotation = 0;
-//			buildGrid ();
-			return;
-		}
 		int rotations [] = {315, 300, 270, 240, 225, 210, 180, 150, 135, 120, 90, 60, 45, 30, 0};
-		for (int ind = 0; ind < 15; ind++) {
-			if (choosenRotation > rotations [ind]) return rotate (rotations [ind]);
+		switch (tokenType) {
+		case GridToken: choosenRotation++; if (choosenRotation > 4) choosenRotation = 0; break;
+		case PictureToken:
+			for (int ind = 0; ind < 15; ind++) {
+				if (choosenRotation > rotations [ind]) return rotate (rotations [ind]);
+			}
+			rotate (330);
+			break;
+		case DiceToken: break;
+		default: break;
 		}
-		rotate (330);
 	}
 	void rotateLeft (void) {
-		if (isGrid) {
-			choosenRotation--;
-			if (choosenRotation < 0) choosenRotation = 4;
-//			buildGrid ();
-			return;
-		}
 		int rotations [] = {30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330};
-		for (int ind = 0; ind < 15; ind++) {
-			if (choosenRotation < rotations [ind]) return rotate (rotations [ind]);
+		switch (tokenType) {
+		case GridToken: choosenRotation--; if (choosenRotation < 0) choosenRotation = 4; break;
+		case PictureToken:
+			for (int ind = 0; ind < 15; ind++) {
+				if (choosenRotation < rotations [ind]) return rotate (rotations [ind]);
+			}
+			rotate (0);
+			break;
+		case DiceToken: break;
+		default: break;
 		}
-		rotate (0);
 	}
 	void move (wxPoint & delta) {
 		position += delta;
@@ -465,7 +452,8 @@ public:
 	}
 	void draw (wxDC & dc) {
 		if (next != 0) next -> draw (dc);
-		if (isGrid) {
+		switch (tokenType) {
+		case GridToken:
 			switch (choosenRotation) {
 			case 0: drawSquareGrid (dc, position); break;
 			case 1: drawVerticalHexGrid (dc, position, false); break;
@@ -474,7 +462,11 @@ public:
 			case 4: drawHorizontalHexGrid (dc, position, true); break;
 			default: drawSquareGrid (dc, position); break;
 			}
-		} else dc . DrawBitmap (rotatedToken, position + positionShift, true);
+			break;
+		case PictureToken: dc . DrawBitmap (rotatedToken, position + positionShift, true); break;
+		case DiceToken: drawDice (dc); break;
+		default: break;
+		}
 	}
 	BoardToken * drawBorder (wxDC & dc) {
 		dc . DrawRectangle (position + positionShift, token_size);
@@ -490,19 +482,19 @@ public:
 		if (next == 0) return 0;
 		return next -> hitFind (position, selectableOverride);
 	}
-	BoardToken (wxString file_name, wxPoint position, BoardToken * next = 0) {
-		this -> isGrid = false;
+	BoardToken (wxString file_name, wxPoint position, bool centered, BoardToken * next = 0) {
+		this -> tokenType = PictureToken;
 		this -> gridColour = * wxWHITE;
 		this -> isSelectable = true;
 		this -> next = next;
 		this -> original_file = file_name;
 		token . LoadFile (file_name, wxBITMAP_TYPE_PNG);
 		this -> position = position;
-		position -= wxPoint (token . GetWidth () / 2, token . GetHeight () / 2);
+		if (centered) this -> position -= wxPoint (token . GetWidth () / 2, token . GetHeight () / 2);
 		rotate (0);
 	}
 	BoardToken (wxPoint position, BoardToken * next = 0) {
-		this -> isGrid = true;
+		this -> tokenType = GridToken;
 		this -> gridColour = * wxWHITE;
 		this -> isSelectable = true;
 		this -> position = position - wxPoint (120, 120);
@@ -515,7 +507,7 @@ public:
 		rotate (0);
 	}
 	BoardToken (wxPoint position, int type, int side, wxSize size, wxPoint start, bool indexing, bool selectable, wxColour colour, BoardToken * next = 0) {
-		this -> isGrid = true;
+		this -> tokenType = GridToken;
 		this -> gridColour = colour;
 		this -> isSelectable = selectable;
 		this -> position = position;
@@ -526,18 +518,32 @@ public:
 		gridStart = start;
 		gridIndexing = indexing;
 	}
+	BoardToken (wxPoint position, int diceType, int side, wxColour foreground, wxColour background, bool centered, bool selectable, BoardToken * next = 0) {
+		this -> tokenType = DiceToken;
+		this -> diceValue = 1 + rand () % diceType;
+		this -> choosenRotation = diceType;
+		this -> gridSide = side;
+		this -> gridColour = foreground;
+		this -> backgroundColour = background;
+		this -> next = next;
+		this -> position = position;
+		if (centered) this -> position -= wxPoint (side / 2 + 10, side / 2 + 10);
+		this -> token_size = wxSize (side + 20, side + 20);
+		this -> isSelectable = selectable;
+	}
 	~ BoardToken (void) {
 		if (next != 0) delete next;
 	}
 	void changeGridSide (int change) {
-		if (! isGrid) return;
+		if (tokenType == PictureToken) return;
 		gridSide += change;
 		if (gridSide < 10) gridSide = 10;
+		if (tokenType == DiceToken) token_size = wxSize (gridSide + 20, gridSide + 20);
 //		buildGrid ();
 	}
-	void setIndexedGrid (void) {if (! isGrid) return; gridIndexing = ! gridIndexing;}// buildGrid ();}
-	void changeGridIndexing (wxPoint change) {if (! isGrid) return; gridStart += change;}// buildGrid ();}
-	void changeRows (wxSize change) {if (! isGrid) return; gridSize += change;}// buildGrid ();}
+	void setIndexedGrid (void) {if (tokenType != GridToken) return; gridIndexing = ! gridIndexing;}// buildGrid ();}
+	void changeGridIndexing (wxPoint change) {if (tokenType != GridToken) return; gridStart += change;}// buildGrid ();}
+	void changeRows (wxSize change) {if (tokenType != GridToken) return; gridSize += change;}// buildGrid ();}
 };
 
 class BoardFrame;
@@ -654,13 +660,14 @@ public:
 	}
 	void OnRightDown (wxMouseEvent & event) {
 		lastRightClickPosition = event . GetPosition ();
-		dragToken = tokens == 0 ? 0 : tokens -> hitFind (lastRightClickPosition, unlocked);
+		bool onToken = dragToken == 0 ? false : dragToken == dragToken -> hitFind (lastRightClickPosition, unlocked);
 		wxMenu menu;
-		if (dragToken == 0) menu . Append (4001, _T ("New token"));
-		if (dragToken == 0) menu . Append (4002, _T ("New grid"));
-		if (dragToken != 0) menu . Append (4101, _T ("Rotate right"));
-		if (dragToken != 0) menu . Append (4102, _T ("Rotate left"));
-		if (dragToken != 0) menu . Append (4103, _T ("Delete token"));
+		if (! onToken) menu . Append (4001, _T ("New token"));
+		if (! onToken) menu . Append (4002, _T ("New grid"));
+		if (! onToken) menu . Append (4003, _T ("New dice"));
+		if (onToken) menu . Append (4101, _T ("Rotate right"));
+		if (onToken) menu . Append (4102, _T ("Rotate left"));
+		if (onToken) menu . Append (4103, _T ("Delete token"));
 		PopupMenu (& menu, lastRightClickPosition);
 	}
 	void OnNewToken (wxCommandEvent & event) {
@@ -669,17 +676,18 @@ public:
 		if (picker . ShowModal () == wxID_OK) {
 			wxString file_name = picker . GetDirectory () + _T ("/") + picker . GetFilename ();
 			file_name . Replace (_T ("\\"), _T ("/"));
-			dragToken = tokens = new BoardToken (file_name, lastRightClickPosition, tokens);
+			dragToken = tokens = new BoardToken (file_name, lastRightClickPosition, true, tokens);
 			modified = true;
 			Refresh ();
 		}
 	}
 	void insertNewToken (wxPoint location, wxString file_name) {
-		dragToken = tokens = new BoardToken (file_name, location, tokens);
+		dragToken = tokens = new BoardToken (file_name, location, true, tokens);
 		modified = true;
 		Refresh ();
 	}
-	void OnNewGrid (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, tokens);modified = true; Refresh ();}
+	void OnNewGrid (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, tokens); modified = true; Refresh ();}
+	void OnNewDice (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, * wxBLACK, * wxRED, true, true, tokens); modified = true; Refresh ();}
 	void rotateRight (void) {
 		if (dragToken != 0) dragToken -> rotateRight ();
 		modified = true;
@@ -860,6 +868,7 @@ EVT_MOTION(BoardWindow :: OnMotion)
 EVT_RIGHT_DOWN(BoardWindow :: OnRightDown)
 EVT_MENU(4001, BoardWindow :: OnNewToken)
 EVT_MENU(4002, BoardWindow :: OnNewGrid)
+EVT_MENU(4003, BoardWindow :: OnNewDice)
 EVT_MENU(4101, BoardWindow :: OnRotateRight)
 EVT_MENU(4102, BoardWindow :: OnRotateLeft)
 EVT_MENU(4103, BoardWindow :: OnDeleteToken)
@@ -931,7 +940,7 @@ public:
 	void OnGridColour (wxCommandEvent & event) {
 		if (board == 0) return;
 		if (board -> dragToken == 0) return;
-		if (! board -> dragToken -> isGrid) return;
+		if (board -> dragToken -> tokenType == BoardToken :: PictureToken) return;
 		wxColourDialog picker (this);
 		if (picker . ShowModal () == wxID_OK) {
 			board -> dragToken -> gridColour = picker . GetColourData () . GetColour ();
@@ -1006,7 +1015,7 @@ public:
 					if (fr . id ("selectable")) selectable = true;
 					fr . skip ();
 				}
-				board -> tokens = new BoardToken (wxString :: From8BitData (command), position, board -> tokens);
+				board -> tokens = new BoardToken (wxString :: From8BitData (command), position, false, board -> tokens);
 				board -> tokens -> rotate (rotation);
 				board -> tokens -> isSelectable = selectable;
 			}
@@ -1234,6 +1243,7 @@ public:
 	int previous_key_down;
 	bool shiftDown;
 	bool OnInit (void) {
+		srand (time (0));
 		shiftDown = false;
 		previous_key_down = -1;
 		wxInitAllImageHandlers ();
