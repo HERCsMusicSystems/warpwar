@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-//#define PROTECT
+#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -235,6 +235,8 @@ public:
 	}
 };
 
+static bool stop_threads = false;
+
 class BoardToken {
 public:
 	enum TokenType {PictureToken = 0, GridToken, DiceToken};
@@ -389,7 +391,8 @@ public:
 	void drawDice (wxDC & dc) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
-		dc . DrawRoundedRectangle (position . x + 10, position . y + 10, gridSide, gridSide, 6);
+		int shift = gridSide * 2; shift /= 30;
+		dc . DrawRoundedRectangle (position . x + shift, position . y + shift, gridSide - shift - shift, gridSide - shift - shift, 6);
 
 		wxFont f = dc . GetFont ();
 		f . SetFaceName (_T ("arial"));
@@ -398,7 +401,46 @@ public:
 		dc . SetTextForeground (gridColour);
 		wxString text = wxString :: Format (_T ("%i"), diceValue);
 		wxSize extent = dc . GetTextExtent (text);
-		dc . DrawText (text, position . x + 10 + gridSide / 2 - extent . x / 2, position . y + 10 + gridSide / 2 - extent . y / 2);
+		if (choosenRotation != 6) dc . DrawText (text, position . x + gridSide / 2 - extent . x / 2, position . y + gridSide / 2 - extent . y / 2);
+		else {
+			dc . SetBrush (wxBrush (gridColour));
+			int middle = gridSide / 2;
+			int edge = gridSide / 4;
+			int radius = gridSide / 10;
+			switch (diceValue) {
+			case 1: dc . DrawCircle (position . x + middle, position . y + middle, radius); break;
+			case 2:
+				dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+				break;
+			case 3:
+				dc . DrawCircle (position . x + middle, position . y + middle, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+				dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+				break;
+			case 4:
+				dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+				dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+				break;
+			case 5:
+				dc . DrawCircle (position . x + middle, position . y + middle, radius);
+				dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+				dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+				break;
+			case 6:
+				dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+				dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+				dc . DrawCircle (position . x + middle - edge, position . y + middle, radius);
+				dc . DrawCircle (position . x + middle + edge, position . y + middle, radius);
+				break;
+			}
+		}
 	}
 	void rotate (int angle) {
 		switch (tokenType) {
@@ -482,6 +524,14 @@ public:
 		if (next == 0) return 0;
 		return next -> hitFind (position, selectableOverride);
 	}
+	void roll (void) {
+		if (tokenType != DiceToken) return;
+		this -> diceValue = 1 + clock () % choosenRotation;
+	}
+	void rollNext (void) {
+		if (tokenType != DiceToken) return; this -> diceValue++;
+		if (this -> diceValue > choosenRotation) this -> diceValue = 1;
+	}
 	BoardToken (wxString file_name, wxPoint position, bool centered, BoardToken * next = 0) {
 		this -> tokenType = PictureToken;
 		this -> gridColour = * wxWHITE;
@@ -520,30 +570,53 @@ public:
 	}
 	BoardToken (wxPoint position, int diceType, int side, wxColour foreground, wxColour background, bool centered, bool selectable, BoardToken * next = 0) {
 		this -> tokenType = DiceToken;
-		this -> diceValue = 1 + rand () % diceType;
+		//this -> diceValue = 1 + rand () % diceType;
 		this -> choosenRotation = diceType;
+		roll ();
+		this -> gridIndexing = true;
 		this -> gridSide = side;
 		this -> gridColour = foreground;
 		this -> backgroundColour = background;
 		this -> next = next;
 		this -> position = position;
-		if (centered) this -> position -= wxPoint (side / 2 + 10, side / 2 + 10);
-		this -> token_size = wxSize (side + 20, side + 20);
+		if (centered) this -> position -= wxPoint (side / 2, side / 2);
+		this -> token_size = wxSize (side, side);
 		this -> isSelectable = selectable;
 	}
 	~ BoardToken (void) {
+		stop_threads = true;
 		if (next != 0) delete next;
 	}
 	void changeGridSide (int change) {
 		if (tokenType == PictureToken) return;
 		gridSide += change;
 		if (gridSide < 10) gridSide = 10;
-		if (tokenType == DiceToken) token_size = wxSize (gridSide + 20, gridSide + 20);
+		if (tokenType == DiceToken) token_size = wxSize (gridSide, gridSide);
 //		buildGrid ();
 	}
-	void setIndexedGrid (void) {if (tokenType != GridToken) return; gridIndexing = ! gridIndexing;}// buildGrid ();}
+	void setIndexedGrid (void) {if (tokenType == PictureToken) return; gridIndexing = ! gridIndexing;}// buildGrid ();}
 	void changeGridIndexing (wxPoint change) {if (tokenType != GridToken) return; gridStart += change;}// buildGrid ();}
 	void changeRows (wxSize change) {if (tokenType != GridToken) return; gridSize += change;}// buildGrid ();}
+};
+
+class AnimateDiceThread : public wxThread {
+public:
+	BoardToken * token;
+	wxWindow * w;
+	AnimateDiceThread (BoardToken * token, wxWindow * w) {this -> token = token; this -> w = w; this -> Create (16384); this -> Run ();}
+	virtual ExitCode Entry (void) {
+		stop_threads = false;
+		token -> roll ();
+		w -> Refresh ();
+		for (int ind = 0; ind < token -> choosenRotation; ind++) {
+			Sleep (80);
+			if (stop_threads) {Exit (); return Wait ();}
+			token -> rollNext ();
+			w -> Refresh ();
+		}
+		Exit ();
+		return Wait ();
+	}
 };
 
 class BoardFrame;
@@ -571,6 +644,14 @@ public:
 	bool possibleTokenCirculation;
 	bool unlocked;
 	bool modified;
+	wxColour dicePenColour, diceBrushColour;
+	wxColour tetrahedronPenColour, tetrahedronBrushColour;
+	wxColour cubePenColour, cubeBrushColour;
+	wxColour octahedronPenColour, octahedronBrushColour;
+	wxColour deltahedronPenColour, deltahedronBrushColour;
+	wxColour deltahedron10PenColour, deltahedron10BrushColour;
+	wxColour dodecahedronPenColour, dodecahedronBrushColour;
+	wxColour icosahedronPenColour, icosahedronBrushColour;
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
 		modified = false;
 		unlocked = false;
@@ -584,8 +665,17 @@ public:
 		dragToken = 0;
 //		lastRightClickPosition = capturedPosition = boardLocation = wxPoint (10, 10);
 		lastRightClickPosition = capturedPosition = wxPoint (10, 10);
+		dicePenColour = * wxBLACK; diceBrushColour = * wxWHITE;
+		tetrahedronPenColour = * wxWHITE; tetrahedronBrushColour = * wxRED;
+		cubePenColour = * wxWHITE; cubeBrushColour = * wxBLUE;
+		octahedronPenColour = * wxWHITE; octahedronBrushColour = * wxGREEN;
+		deltahedronPenColour = * wxWHITE; deltahedronBrushColour = wxColour (0xff, 0x8c, 0x00);
+		deltahedron10PenColour = * wxWHITE; deltahedron10BrushColour = wxColour (0x8a, 0x2b, 0xe2);
+		dodecahedronPenColour = * wxWHITE; dodecahedronBrushColour = wxColour (0x80, 0x80, 0x80);
+		icosahedronPenColour = * wxWHITE; icosahedronBrushColour = * wxRED;
 	}
 	~ BoardWindow (void) {
+		stop_threads = true;
 	}
 	void SaveTokens (FILE * fw) {
 		if (tokens != 0) tokens -> Save (fw);
@@ -610,6 +700,11 @@ public:
 			dragToken -> drawBorder (dc);
 		}
 	}
+	void RollDice (void) {
+		if (dragToken == 0) return;
+		if (dragToken -> tokenType != BoardToken :: DiceToken) return;
+		new AnimateDiceThread (dragToken, this);
+	}
 	void OnLeftDown (wxMouseEvent & event) {
 		CaptureMouse ();
 		capturedPosition = event . GetPosition ();
@@ -633,11 +728,15 @@ public:
 	void OnLeftUp (wxMouseEvent & event) {
 		if (notMoved && possibleTokenCirculation) {
 			if (tokens != 0) {
+//				BoardToken * tokenToRoll = dragToken;
 				if (dragToken != 0) {
 					if (dragToken -> next == 0) dragToken = 0;
 					else dragToken = dragToken -> next -> hitFind (capturedPosition, unlocked);
 				}
 				if (dragToken == 0) dragToken = tokens -> hitFind (capturedPosition, unlocked);
+//				if (dragToken != 0) {
+//					if (tokenToRoll == dragToken) new AnimateDiceThread (tokenToRoll, this); //tokenToRoll -> roll ();
+//				}
 				Refresh ();
 			}
 		}
@@ -664,7 +763,14 @@ public:
 		wxMenu menu;
 		if (! onToken) menu . Append (4001, _T ("New token"));
 		if (! onToken) menu . Append (4002, _T ("New grid"));
-		if (! onToken) menu . Append (4003, _T ("New dice"));
+		if (! onToken) menu . Append (4201, _T ("New dice"));
+		if (! onToken) menu . Append (4202, _T ("New tetrahedron"));
+		if (! onToken) menu . Append (4203, _T ("New cube"));
+		if (! onToken) menu . Append (4204, _T ("New octahedron"));
+		if (! onToken) menu . Append (4205, _T ("New deltahedron"));
+		if (! onToken) menu . Append (4206, _T ("New deltahedron 10"));
+		if (! onToken) menu . Append (4207, _T ("New dodecahedron"));
+		if (! onToken) menu . Append (4208, _T ("New icosahedron"));
 		if (onToken) menu . Append (4101, _T ("Rotate right"));
 		if (onToken) menu . Append (4102, _T ("Rotate left"));
 		if (onToken) menu . Append (4103, _T ("Delete token"));
@@ -687,7 +793,14 @@ public:
 		Refresh ();
 	}
 	void OnNewGrid (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, tokens); modified = true; Refresh ();}
-	void OnNewDice (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, * wxBLACK, * wxRED, true, true, tokens); modified = true; Refresh ();}
+	void OnNewDice (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, dicePenColour, diceBrushColour, true, true, tokens); dragToken -> gridIndexing = false; modified = true; Refresh ();}
+	void OnNewTetrahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 4, 60, tetrahedronPenColour, tetrahedronBrushColour, true, true, tokens); modified = true; Refresh ();}
+	void OnNewCube (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, cubePenColour, cubeBrushColour, true, true, tokens); modified = true; Refresh ();}
+	void OnNewOctahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 8, 60, octahedronPenColour, octahedronBrushColour, true, true, tokens); modified = true; Refresh ();}
+	void OnNewDeltahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 10, 60, deltahedronPenColour, deltahedronBrushColour, true, true, tokens); dragToken -> gridIndexing = false; modified = true; Refresh ();}
+	void OnNewDeltahedron10 (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 10, 60, deltahedron10PenColour, deltahedron10BrushColour, true, true, tokens); modified = true; Refresh ();}
+	void OnNewDodecahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 12, 60, dodecahedronPenColour, dodecahedronBrushColour, true, true, tokens); modified = true; Refresh ();}
+	void OnNewIcosahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 20, 60, icosahedronPenColour, icosahedronBrushColour, true, true, tokens); modified = true; Refresh ();}
 	void rotateRight (void) {
 		if (dragToken != 0) dragToken -> rotateRight ();
 		modified = true;
@@ -727,10 +840,6 @@ public:
 	BoardToken * getNextSelectableToken (BoardToken * bp, bool unlocked) {
 		if (unlocked) return bp;
 		while (bp != 0 && ! bp -> isSelectable) bp = bp -> next;
-//		if (bp == 0) {
-//			bp = tokens;
-//			while (bp != 0 && ! bp -> isSelectable) bp = bp -> next;
-//		}
 		return bp;
 	}
 	void TabForward (bool unlocked) {
@@ -868,10 +977,17 @@ EVT_MOTION(BoardWindow :: OnMotion)
 EVT_RIGHT_DOWN(BoardWindow :: OnRightDown)
 EVT_MENU(4001, BoardWindow :: OnNewToken)
 EVT_MENU(4002, BoardWindow :: OnNewGrid)
-EVT_MENU(4003, BoardWindow :: OnNewDice)
 EVT_MENU(4101, BoardWindow :: OnRotateRight)
 EVT_MENU(4102, BoardWindow :: OnRotateLeft)
 EVT_MENU(4103, BoardWindow :: OnDeleteToken)
+EVT_MENU(4201, BoardWindow :: OnNewDice)
+EVT_MENU(4202, BoardWindow :: OnNewTetrahedron)
+EVT_MENU(4203, BoardWindow :: OnNewCube)
+EVT_MENU(4204, BoardWindow :: OnNewOctahedron)
+EVT_MENU(4205, BoardWindow :: OnNewDeltahedron)
+EVT_MENU(4206, BoardWindow :: OnNewDeltahedron10)
+EVT_MENU(4207, BoardWindow :: OnNewDodecahedron)
+EVT_MENU(4208, BoardWindow :: OnNewIcosahedron)
 END_EVENT_TABLE()
 
 class BoardFrame : public wxFrame {
@@ -890,6 +1006,7 @@ public:
 
 		wxMenu * file_menu = new wxMenu ();
 		file_menu -> Append (6102, _T ("Load	L"));
+		file_menu -> Append (6105, _T ("Reload	E"));
 		file_menu -> Append (6103, _T ("Save	S"));
 		file_menu -> Append (6104, _T ("Save As	A"));
 		file_menu -> AppendSeparator ();
@@ -907,7 +1024,8 @@ public:
 		control_menu -> AppendRadioItem (6002, _T ("Grid indexing	F7"));
 		control_menu -> AppendRadioItem (6003, _T ("Grid cell size	F8"));
 		control_menu -> AppendSeparator ();
-		control_menu -> Append (6205, _T ("Change Indexing	I"));
+		control_menu -> Append (6205, _T ("Change indexing	I"));
+		control_menu -> Append (6206, _T ("Roll dice	D"));
 		bar -> Append (control_menu, _T ("Control"));
 
 		wxMenu * lock_menu = new wxMenu ();
@@ -924,6 +1042,7 @@ public:
 
 //		bar -> Check (6205, board -> indexedGrid);
 		bar -> Enable (6103, false);
+		bar -> Enable (6105, false);
 		bar -> Check (6005, true);
 		bar -> Check (6701, board -> unlocked);
 		
@@ -1022,7 +1141,7 @@ public:
 		}
 		this -> file_name = wxString :: From8BitData (file_name); //Format (_T ("%s"), file_name);
 		wxMenuBar * bar = GetMenuBar ();
-		if (bar != 0) bar -> Enable (6103, true);
+		if (bar != 0) {bar -> Enable (6103, true); bar -> Enable (6105, true);}
 	}
 	void LoadGrid (void) {
 		char command [1024];
@@ -1039,6 +1158,7 @@ public:
 			LoadGrid ();
 		}
 	}
+	void OnReload (wxCommandEvent & event) {LoadGrid ();}
 	void SaveGrid (char * file_name) {
 		FILE * fw = fopen (file_name, "wt");
 		if (fw == 0) return;
@@ -1051,7 +1171,7 @@ public:
 		fprintf (fw, "]\n");
 		fclose (fw);
 		wxMenuBar * bar = GetMenuBar ();
-		if (bar != 0) bar -> Enable (6103, true);
+		if (bar != 0) {bar -> Enable (6103, true); bar -> Enable (6105, true);}
 	}
 	void SaveGrid (void) {
 		char command [1024];
@@ -1158,6 +1278,10 @@ public:
 		if (bar == 0) return;
 		board -> setIndexedGrid ();
 	}
+	void OnRollDice (wxCommandEvent & event) {
+		if (board == 0) return;
+		board -> RollDice ();
+	}
 	void insertNewToken (wxPoint location, wxString file_name) {
 		if (board == 0) return;
 		file_name . Replace (_T ("\\"), _T ("/"));
@@ -1185,6 +1309,7 @@ public:
 	void OnNewGrid (wxCommandEvent & event) {if (board != 0) board -> OnNewGrid (event);}
 	void OnDeleteToken (wxCommandEvent & event) {if (board != 0) board -> OnDeleteToken (event);}
 	~ BoardFrame (void) {
+		stop_threads = true;
 		if (board != 0) {
 			if (board -> modified) {
 				if (wxYES == wxMessageBox (_T ("SAVE CHANGES ?"), _T ("INFO"), wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION, this)) {
@@ -1208,6 +1333,7 @@ EVT_MENU(6101, BoardFrame :: OnQuit)
 //EVT_MENU(6203, BoardFrame :: OnVerticalHexGrid)
 //EVT_MENU(6204, BoardFrame :: OnHorizontalHexGrid)
 EVT_MENU(6205, BoardFrame :: OnIndexed)
+EVT_MENU(6206, BoardFrame :: OnRollDice)
 //EVT_MENU(5001, BoardFrame :: OnArrow)
 //EVT_MENU(5002, BoardFrame :: OnArrow)
 //EVT_MENU(5003, BoardFrame :: OnArrow)
@@ -1215,6 +1341,7 @@ EVT_MENU(6205, BoardFrame :: OnIndexed)
 EVT_MENU(6102, BoardFrame :: OnLoad)
 EVT_MENU(6103, BoardFrame :: OnSave)
 EVT_MENU(6104, BoardFrame :: OnSaveAs)
+EVT_MENU(6105, BoardFrame :: OnReload)
 EVT_MENU(6601, BoardFrame :: OnBoardColour)
 EVT_MENU(6602, BoardFrame :: OnGridColour)
 EVT_MENU(6701, BoardFrame :: OnLock)
