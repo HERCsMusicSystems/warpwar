@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-#define PROTECT
+//#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -20,6 +20,8 @@
 #include "wx/spinctrl.h"
 #include "wx/dnd.h"
 #include "wx/colordlg.h"
+
+//#include <sys/time.h>
 
 void toCommand (char * command, wxString & file_name) {
 	char * cp = command;
@@ -526,7 +528,10 @@ public:
 	}
 	void roll (void) {
 		if (tokenType != DiceToken) return;
-		this -> diceValue = 1 + clock () % choosenRotation;
+		this -> diceValue = 1 + rand () % choosenRotation;
+//		timeval tv;
+//		gettimeofday (& tv, 0);
+//		this -> diceValue = 1 + tv . tv_usec % choosenRotation;
 	}
 	void rollNext (void) {
 		if (tokenType != DiceToken) return; this -> diceValue++;
@@ -570,7 +575,6 @@ public:
 	}
 	BoardToken (wxPoint position, int diceType, int side, wxColour foreground, wxColour background, bool centered, bool selectable, BoardToken * next = 0) {
 		this -> tokenType = DiceToken;
-		//this -> diceValue = 1 + rand () % diceType;
 		this -> choosenRotation = diceType;
 		roll ();
 		this -> gridIndexing = true;
@@ -607,13 +611,15 @@ public:
 	virtual ExitCode Entry (void) {
 		stop_threads = false;
 		token -> roll ();
+		w -> SetFocus ();
 		w -> Refresh ();
 		for (int ind = 0; ind < token -> choosenRotation; ind++) {
-			Sleep (80);
+			Sleep (100);
 			if (stop_threads) {Exit (); return Wait ();}
 			token -> rollNext ();
 			w -> Refresh ();
 		}
+		w -> SetFocus ();
 		Exit ();
 		return Wait ();
 	}
@@ -703,7 +709,16 @@ public:
 	void RollDice (void) {
 		if (dragToken == 0) return;
 		if (dragToken -> tokenType != BoardToken :: DiceToken) return;
+//		dragToken -> roll ();
+//		for (int ind = 0; ind < dragToken -> choosenRotation; ind++) {
+//			Refresh ();
+//			usleep (10000);
+//			dragToken -> rollNext ();
+//		}
+//		Refresh ();
 		new AnimateDiceThread (dragToken, this);
+		//dragToken -> roll ();
+		//Refresh ();
 	}
 	void OnLeftDown (wxMouseEvent & event) {
 		CaptureMouse ();
@@ -1278,10 +1293,11 @@ public:
 		if (bar == 0) return;
 		board -> setIndexedGrid ();
 	}
-	void OnRollDice (wxCommandEvent & event) {
+	void RollDice (void) {
 		if (board == 0) return;
 		board -> RollDice ();
 	}
+	void OnRollDice (wxCommandEvent & event) {RollDice ();}
 	void insertNewToken (wxPoint location, wxString file_name) {
 		if (board == 0) return;
 		file_name . Replace (_T ("\\"), _T ("/"));
@@ -1405,6 +1421,7 @@ public:
 		case WXK_DOWN: boardFrame -> OnArrow (key); break;
 		case WXK_TAB: if (shiftDown) boardFrame -> TabBackward (); else boardFrame -> TabForward (); break;
 		case WXK_DELETE: case WXK_BACK: boardFrame -> board -> deleteToken (); break;
+		case WXK_RETURN: boardFrame -> RollDice (); break;
 		default: break;
 		}
 		return -1;
