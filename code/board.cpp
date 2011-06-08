@@ -528,7 +528,9 @@ public:
 	}
 	void roll (void) {
 		if (tokenType != DiceToken) return;
-		this -> diceValue = 1 + rand () % choosenRotation;
+		int roller = rand ();
+//		wxMessageBox (wxString :: Format (_T ("%i"), roller), _T ("INFO"), wxOK, 0);
+		this -> diceValue = 1 + roller % choosenRotation;
 //		timeval tv;
 //		gettimeofday (& tv, 0);
 //		this -> diceValue = 1 + tv . tv_usec % choosenRotation;
@@ -610,8 +612,7 @@ public:
 	AnimateDiceThread (BoardToken * token, wxWindow * w) {this -> token = token; this -> w = w; this -> Create (16384); this -> Run ();}
 	virtual ExitCode Entry (void) {
 		stop_threads = false;
-		token -> roll ();
-		w -> SetFocus ();
+		//token -> roll ();
 		w -> Refresh ();
 		for (int ind = 0; ind < token -> choosenRotation; ind++) {
 			Sleep (100);
@@ -619,7 +620,7 @@ public:
 			token -> rollNext ();
 			w -> Refresh ();
 		}
-		w -> SetFocus ();
+		w -> UpdateWindowUI ();
 		Exit ();
 		return Wait ();
 	}
@@ -716,6 +717,7 @@ public:
 //			dragToken -> rollNext ();
 //		}
 //		Refresh ();
+		dragToken -> roll ();
 		new AnimateDiceThread (dragToken, this);
 		//dragToken -> roll ();
 		//Refresh ();
