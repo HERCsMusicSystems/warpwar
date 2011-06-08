@@ -605,6 +605,8 @@ public:
 	void changeRows (wxSize change) {if (tokenType != GridToken) return; gridSize += change;}// buildGrid ();}
 };
 
+static bool idleRepaint = false;
+
 class AnimateDiceThread : public wxThread {
 public:
 	BoardToken * token;
@@ -612,19 +614,34 @@ public:
 	AnimateDiceThread (BoardToken * token, wxWindow * w) {this -> token = token; this -> w = w; this -> Create (16384); this -> Run ();}
 	virtual ExitCode Entry (void) {
 		stop_threads = false;
-		//token -> roll ();
-		w -> Refresh ();
-		for (int ind = 0; ind < token -> choosenRotation; ind++) {
+		idleRepaint = true;
+		wxWakeUpIdle ();
+		int ind = token -> choosenRotation;
+		while (ind > 6) {token -> rollNext (); ind--;}
+		while (ind > 0) {
 			Sleep (100);
 			if (stop_threads) {Exit (); return Wait ();}
 			token -> rollNext ();
-			w -> Refresh ();
+			idleRepaint = true;
+			wxWakeUpIdle ();
+			ind--;
 		}
-		w -> UpdateWindowUI ();
 		Exit ();
 		return Wait ();
 	}
 };
+
+//		for (int ind = 0; ind < token -> choosenRotation; ind++) {
+//			Sleep (100);
+//			if (stop_threads) {Exit (); return Wait ();}
+//			token -> rollNext ();
+//			idleRepaint = true;
+//			wxWakeUpIdle ();
+//		}
+//		Exit ();
+//		return Wait ();
+//	}
+//};
 
 class BoardFrame;
 
@@ -680,6 +697,7 @@ public:
 		deltahedron10PenColour = * wxWHITE; deltahedron10BrushColour = wxColour (0x8a, 0x2b, 0xe2);
 		dodecahedronPenColour = * wxWHITE; dodecahedronBrushColour = wxColour (0x80, 0x80, 0x80);
 		icosahedronPenColour = * wxWHITE; icosahedronBrushColour = * wxRED;
+		idleRepaint = false;
 	}
 	~ BoardWindow (void) {
 		stop_threads = true;
@@ -897,6 +915,7 @@ public:
 		while (bp -> next != dragToken) bp = bp -> next;
 		bp -> next = dragToken -> next;
 		dragToken -> next = 0;
+
 		while (bp -> next != 0) bp = bp -> next;
 		bp -> next = dragToken;
 		modified = true;
@@ -983,6 +1002,7 @@ public:
 		return;
 	}
 	void OnDeleteToken (wxCommandEvent & event) {deleteToken ();}
+	void OnIdle (wxIdleEvent & event) {if (idleRepaint) Refresh (); idleRepaint = false;}
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -1005,6 +1025,7 @@ EVT_MENU(4205, BoardWindow :: OnNewDeltahedron)
 EVT_MENU(4206, BoardWindow :: OnNewDeltahedron10)
 EVT_MENU(4207, BoardWindow :: OnNewDodecahedron)
 EVT_MENU(4208, BoardWindow :: OnNewIcosahedron)
+EVT_IDLE(BoardWindow :: OnIdle)
 END_EVENT_TABLE()
 
 class BoardFrame : public wxFrame {
