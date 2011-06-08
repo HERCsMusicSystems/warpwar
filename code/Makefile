@@ -34,3 +34,7 @@ polygoon: ~/bin/polygoon
 
 tabletop: ~/bin/tabletop
 
+../tabletop.app/Contents/MacOS/tabletop: board.cpp
+	g++ -Wno-write-strings board.cpp -o ../tabletop.app/Contents/MacOS/tabletop `wx-config --cxxflags` `wx-config --libs`
+
+tabletopmac: ../tabletop.app/Contents/MacOS/tabletop
