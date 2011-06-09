@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-//#define PROTECT
+#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -259,6 +259,8 @@ public:
 	wxColour gridColour;
 	wxColour backgroundColour;
 	int diceValue;
+	int diceMultiplier;
+	int diceShift;
 	BoardToken * next;
 	void Save (FILE * fw) {
 		if (next != 0) next -> Save (fw);
@@ -282,7 +284,13 @@ public:
 		case DiceToken:
 			fprintf (fw, "	dice [\n");
 			fprintf (fw, "		type [%i]\n", choosenRotation);
+			fprintf (fw, "		side [%i]\n", gridSide);
+			fprintf (fw, "		shift [%i]\n", diceShift);
+			fprintf (fw, "		multiplier [%i]\n", diceMultiplier);
 			fprintf (fw, "		value [%i]\n", diceValue);
+			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
+			fprintf (fw, "		background [%i %i %i]\n", backgroundColour . Red (), backgroundColour . Green (), backgroundColour . Blue ());
+			if (gridIndexing) fprintf (fw, "		indexed []\n");
 			break;
 		default:
 			fprintf (fw, "	unknown [\n");
@@ -455,7 +463,11 @@ public:
 			positionShift = wxPoint ((token . GetWidth () - rotatedToken . GetWidth ()) / 2, (token . GetHeight () - rotatedToken . GetHeight ()) / 2);
 			choosenRotation = angle;
 			break;
-		case DiceToken: break;
+		case DiceToken:
+			if (angle < 1) angle = 1;
+			choosenRotation = angle;
+			diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			break;
 		default: break;
 		}
 	}
@@ -469,7 +481,10 @@ public:
 			}
 			rotate (330);
 			break;
-		case DiceToken: break;
+		case DiceToken:
+			choosenRotation++;
+			diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			break;
 		default: break;
 		}
 	}
@@ -483,7 +498,11 @@ public:
 			}
 			rotate (0);
 			break;
-		case DiceToken: break;
+		case DiceToken:
+			choosenRotation--;
+			if (choosenRotation < 1) choosenRotation = 1;
+			diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			break;
 		default: break;
 		}
 	}
@@ -528,16 +547,25 @@ public:
 	}
 	void roll (void) {
 		if (tokenType != DiceToken) return;
-		int roller = rand ();
-//		wxMessageBox (wxString :: Format (_T ("%i"), roller), _T ("INFO"), wxOK, 0);
-		this -> diceValue = 1 + roller % choosenRotation;
-//		timeval tv;
-//		gettimeofday (& tv, 0);
-//		this -> diceValue = 1 + tv . tv_usec % choosenRotation;
+		int roller = rand () % choosenRotation;
+		this -> diceValue = diceShift + roller * diceMultiplier;
+	}
+	void rollAll (void) {
+		roll ();
+		if (next != 0) next -> rollAll ();
 	}
 	void rollNext (void) {
-		if (tokenType != DiceToken) return; this -> diceValue++;
-		if (this -> diceValue > choosenRotation) this -> diceValue = 1;
+		if (tokenType != DiceToken) return; this -> diceValue += diceMultiplier;
+		if (this -> diceValue > diceMultiplier * (choosenRotation - 1) + diceShift) this -> diceValue = diceShift;
+	}
+	void rollAllNext (void) {
+		rollNext ();
+		if (next != 0) next -> rollAllNext ();
+	}
+	void rollAllNextBy (int ind) {
+		int top = choosenRotation;
+		while (top > ind) {rollNext (); top--;}
+		if (next != 0) next -> rollAllNextBy (ind);
 	}
 	BoardToken (wxString file_name, wxPoint position, bool centered, BoardToken * next = 0) {
 		this -> tokenType = PictureToken;
@@ -578,8 +606,10 @@ public:
 	BoardToken (wxPoint position, int diceType, int side, wxColour foreground, wxColour background, bool centered, bool selectable, BoardToken * next = 0) {
 		this -> tokenType = DiceToken;
 		this -> choosenRotation = diceType;
-		roll ();
 		this -> gridIndexing = true;
+		this -> diceMultiplier = 1;
+		this -> diceShift = 1;
+		roll ();
 		this -> gridSide = side;
 		this -> gridColour = foreground;
 		this -> backgroundColour = background;
@@ -598,11 +628,25 @@ public:
 		gridSide += change;
 		if (gridSide < 10) gridSide = 10;
 		if (tokenType == DiceToken) token_size = wxSize (gridSide, gridSide);
-//		buildGrid ();
 	}
-	void setIndexedGrid (void) {if (tokenType == PictureToken) return; gridIndexing = ! gridIndexing;}// buildGrid ();}
-	void changeGridIndexing (wxPoint change) {if (tokenType != GridToken) return; gridStart += change;}// buildGrid ();}
-	void changeRows (wxSize change) {if (tokenType != GridToken) return; gridSize += change;}// buildGrid ();}
+	void setIndexedGrid (void) {
+		if (tokenType == PictureToken) return;
+		gridIndexing = ! gridIndexing;
+	}
+	void changeGridIndexing (wxPoint change) {
+		switch (tokenType) {
+		case GridToken: gridStart += change; break;
+		case DiceToken: diceShift += change . x + change . y; diceValue = diceMultiplier * (choosenRotation - 1) + diceShift; break;
+		default: break;
+		}
+	}
+	void changeRows (wxSize change) {
+		switch (tokenType) {
+		case GridToken: gridSize += change; break;
+		case DiceToken: diceMultiplier += change . x + change . y; diceValue = diceMultiplier * (choosenRotation - 1) + diceShift; break;
+		default: break;
+		}
+	}
 };
 
 static bool idleRepaint = false;
@@ -610,8 +654,7 @@ static bool idleRepaint = false;
 class AnimateDiceThread : public wxThread {
 public:
 	BoardToken * token;
-	wxWindow * w;
-	AnimateDiceThread (BoardToken * token, wxWindow * w) {this -> token = token; this -> w = w; this -> Create (16384); this -> Run ();}
+	AnimateDiceThread (BoardToken * token) {this -> token = token; this -> Create (16384); this -> Run ();}
 	virtual ExitCode Entry (void) {
 		stop_threads = false;
 		idleRepaint = true;
@@ -631,17 +674,28 @@ public:
 	}
 };
 
-//		for (int ind = 0; ind < token -> choosenRotation; ind++) {
-//			Sleep (100);
-//			if (stop_threads) {Exit (); return Wait ();}
-//			token -> rollNext ();
-//			idleRepaint = true;
-//			wxWakeUpIdle ();
-//		}
-//		Exit ();
-//		return Wait ();
-//	}
-//};
+class AnimateAllDiceThread : public wxThread {
+public:
+	BoardToken * tokens;
+	AnimateAllDiceThread (BoardToken * tokens) {this -> tokens = tokens; this -> Create (16384); this -> Run ();}
+	virtual ExitCode Entry (void) {
+		stop_threads = false;
+		idleRepaint = true;
+		wxWakeUpIdle ();
+		int ind = 5;
+		tokens -> rollAllNextBy (ind);
+		while (ind > 0) {
+			Sleep (100);
+			if (stop_threads) {Exit (); return Wait ();}
+			tokens -> rollAllNext ();
+			idleRepaint = true;
+			wxWakeUpIdle ();
+			ind--;
+		}
+		Exit ();
+		return Wait ();
+	}
+};
 
 class BoardFrame;
 
@@ -654,8 +708,6 @@ public:
 
 class BoardWindow : public wxWindow {
 public:
-//	wxBitmap board;
-//	wxPoint boardLocation;
 	wxColour backgroundColour;
 	BoardToken * tokens;
 	wxPoint lastRightClickPosition;
@@ -728,17 +780,13 @@ public:
 	void RollDice (void) {
 		if (dragToken == 0) return;
 		if (dragToken -> tokenType != BoardToken :: DiceToken) return;
-//		dragToken -> roll ();
-//		for (int ind = 0; ind < dragToken -> choosenRotation; ind++) {
-//			Refresh ();
-//			usleep (10000);
-//			dragToken -> rollNext ();
-//		}
-//		Refresh ();
 		dragToken -> roll ();
-		new AnimateDiceThread (dragToken, this);
-		//dragToken -> roll ();
-		//Refresh ();
+		new AnimateDiceThread (dragToken);
+	}
+	void RollAllDices (void) {
+		if (tokens == 0) return;
+		tokens -> rollAll ();
+		new AnimateAllDiceThread (tokens);
 	}
 	void OnLeftDown (wxMouseEvent & event) {
 		CaptureMouse ();
@@ -827,15 +875,57 @@ public:
 		modified = true;
 		Refresh ();
 	}
-	void OnNewGrid (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, tokens); modified = true; Refresh ();}
-	void OnNewDice (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, dicePenColour, diceBrushColour, true, true, tokens); dragToken -> gridIndexing = false; modified = true; Refresh ();}
-	void OnNewTetrahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 4, 60, tetrahedronPenColour, tetrahedronBrushColour, true, true, tokens); modified = true; Refresh ();}
-	void OnNewCube (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, cubePenColour, cubeBrushColour, true, true, tokens); modified = true; Refresh ();}
-	void OnNewOctahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 8, 60, octahedronPenColour, octahedronBrushColour, true, true, tokens); modified = true; Refresh ();}
-	void OnNewDeltahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 10, 60, deltahedronPenColour, deltahedronBrushColour, true, true, tokens); dragToken -> gridIndexing = false; modified = true; Refresh ();}
-	void OnNewDeltahedron10 (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 10, 60, deltahedron10PenColour, deltahedron10BrushColour, true, true, tokens); modified = true; Refresh ();}
-	void OnNewDodecahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 12, 60, dodecahedronPenColour, dodecahedronBrushColour, true, true, tokens); modified = true; Refresh ();}
-	void OnNewIcosahedron (wxCommandEvent & event) {dragToken = tokens = new BoardToken (lastRightClickPosition, 20, 60, icosahedronPenColour, icosahedronBrushColour, true, true, tokens); modified = true; Refresh ();}
+	void OnNewGrid (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, tokens);
+		modified = true;
+		Refresh ();
+	}
+	void OnNewDice (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, dicePenColour, diceBrushColour, true, true, tokens);
+		dragToken -> gridIndexing = false;
+		modified = true;
+		Refresh ();
+	}
+	void OnNewTetrahedron (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, 4, 60, tetrahedronPenColour, tetrahedronBrushColour, true, true, tokens);
+		modified = true;
+		Refresh ();
+	}
+	void OnNewCube (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, cubePenColour, cubeBrushColour, true, true, tokens);
+		modified = true;
+		Refresh ();
+	}
+	void OnNewOctahedron (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, 8, 60, octahedronPenColour, octahedronBrushColour, true, true, tokens);
+		modified = true;
+		Refresh ();
+	}
+	void OnNewDeltahedron (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, 10, 60, deltahedronPenColour, deltahedronBrushColour, true, true, tokens);
+		dragToken -> diceShift = 0;
+		dragToken -> roll ();
+		modified = true;
+		Refresh ();
+	}
+	void OnNewDeltahedron10 (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, 10, 60, deltahedron10PenColour, deltahedron10BrushColour, true, true, tokens);
+		dragToken -> diceShift = 0;
+		dragToken -> diceMultiplier = 10;
+		dragToken -> roll ();
+		modified = true;
+		Refresh ();
+	}
+	void OnNewDodecahedron (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, 12, 60, dodecahedronPenColour, dodecahedronBrushColour, true, true, tokens);
+		modified = true;
+		Refresh ();
+	}
+	void OnNewIcosahedron (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, 20, 60, icosahedronPenColour, icosahedronBrushColour, true, true, tokens);
+		modified = true;
+		Refresh ();
+	}
 	void rotateRight (void) {
 		if (dragToken != 0) dragToken -> rotateRight ();
 		modified = true;
@@ -1072,8 +1162,8 @@ public:
 		bar -> Append (lock_menu, _T ("Locking"));
 
 		wxMenu * colour_menu = new wxMenu ();
-		colour_menu -> Append (6601, _T ("Board colour	B"));
-		colour_menu -> Append (6602, _T ("Grid colour	G"));
+		colour_menu -> Append (6601, _T ("Token brush colour	B"));
+		colour_menu -> Append (6602, _T ("Token pen colour	G"));
 		bar -> Append (colour_menu, _T ("Colours"));
 
 		SetMenuBar (bar);
@@ -1085,22 +1175,46 @@ public:
 		bar -> Check (6701, board -> unlocked);
 		
 	}
-	void OnBoardColour (wxCommandEvent & event) {
+	void OnBrushColour (wxCommandEvent & event) {
 		if (board == 0) return;
 		wxColourDialog picker (this);
 		if (picker . ShowModal () == wxID_OK) {
-			board -> backgroundColour = picker . GetColourData () . GetColour ();
+			if (board -> dragToken != 0) {
+				board -> dragToken -> backgroundColour = picker . GetColourData () . GetColour ();
+				if (board -> dragToken -> tokenType == BoardToken :: DiceToken) {
+				switch (board -> dragToken -> choosenRotation) {
+				case 4: board -> tetrahedronBrushColour = board -> dragToken -> gridColour; break;
+				case 6: if (board -> dragToken -> gridIndexing) board -> cubeBrushColour = board -> dragToken -> gridColour; else board -> diceBrushColour = board -> dragToken -> gridColour; break;
+				case 8: board -> octahedronBrushColour = board -> dragToken -> gridColour; break;
+				case 10: if (board -> dragToken -> diceMultiplier == 1) board -> deltahedronBrushColour = board -> dragToken -> gridColour; else board -> deltahedron10BrushColour = board -> dragToken -> gridColour; break;
+				case 12: board -> dodecahedronBrushColour = board -> dragToken -> gridColour; break;
+				case 20: board -> icosahedronBrushColour = board -> dragToken -> gridColour; break;
+				default: break;
+				}
+				}
+			} else board -> backgroundColour = picker . GetColourData () . GetColour ();
 			board -> modified = true;
 			Refresh ();
 		}
 	}
-	void OnGridColour (wxCommandEvent & event) {
+	void OnPenColour (wxCommandEvent & event) {
 		if (board == 0) return;
 		if (board -> dragToken == 0) return;
 		if (board -> dragToken -> tokenType == BoardToken :: PictureToken) return;
 		wxColourDialog picker (this);
 		if (picker . ShowModal () == wxID_OK) {
 			board -> dragToken -> gridColour = picker . GetColourData () . GetColour ();
+			if (board -> dragToken -> tokenType == BoardToken :: DiceToken) {
+				switch (board -> dragToken -> choosenRotation) {
+				case 4: board -> tetrahedronPenColour = board -> dragToken -> gridColour; break;
+				case 6: if (board -> dragToken -> gridIndexing) board -> cubePenColour = board -> dragToken -> gridColour; else board -> dicePenColour = board -> dragToken -> gridColour; break;
+				case 8: board -> octahedronPenColour = board -> dragToken -> gridColour; break;
+				case 10: if (board -> dragToken -> diceMultiplier == 1) board -> deltahedronPenColour = board -> dragToken -> gridColour; else board -> deltahedron10PenColour = board -> dragToken -> gridColour; break;
+				case 12: board -> dodecahedronPenColour = board -> dragToken -> gridColour; break;
+				case 20: board -> icosahedronPenColour = board -> dragToken -> gridColour; break;
+				default: break;
+				}
+			}
 			board -> modified = true;
 			Refresh ();
 		}
@@ -1121,6 +1235,146 @@ public:
 				if (! fr . get_int ()) return; int blue = fr . int_symbol;
 				board -> backgroundColour = wxColour (red, green, blue);
 				fr . skip ();
+			}
+			if (fr . id ("defaults")) {
+				while (fr . get_id ()) {
+					if (fr . id ("dice")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> dicePenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> diceBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+					if (fr . id ("tetrahedron")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> tetrahedronPenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> tetrahedronBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+					if (fr . id ("cube")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> cubePenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> cubeBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+					if (fr . id ("octahedron")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> octahedronPenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> octahedronBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+					if (fr . id ("deltahedron")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> deltahedronPenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> deltahedronBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+					if (fr . id ("deltahedron10")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> deltahedron10PenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> deltahedron10BrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+					if (fr . id ("dodecahedron")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> dodecahedronPenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> dodecahedronBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+					if (fr . id ("icosahedron")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> icosahedronPenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> icosahedronBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+				}
 			}
 			if (fr . id ("grid")) {
 				int type = 0;
@@ -1154,6 +1408,45 @@ public:
 					fr . skip ();
 				}
 				board -> tokens = new BoardToken (position, type, side, size, index, indexed, selectable, wxColour (red, green, blue), board -> tokens);
+			}
+			if (fr . id ("dice")) {
+				int type = 0;
+				int side = 60;
+				int shift = 1;
+				int multiplier = 1;
+				int value = 1;
+				int fred = 255, fgreen = 255, fblue = 255;
+				int bred = 0, bgreen = 0, bblue = 0;
+				bool indexed = false;
+				while (fr . get_id ()) {
+					if (fr . id ("type")) {if (! fr . get_int ()) return; type = fr . int_symbol;}
+					if (fr . id ("side")) {if (! fr . get_int ()) return; side = fr . int_symbol;}
+					if (fr . id ("shift")) {if (! fr . get_int ()) return; shift = fr . int_symbol;}
+					if (fr . id ("multiplier")) {if (! fr . get_int ()) return; multiplier = fr . int_symbol;}
+					if (fr . id ("value")) {if (! fr . get_int ()) return; value = fr . int_symbol;}
+					if (fr . id ("colour")) {
+						if (! fr . get_int ()) return; fred = fr . int_symbol;
+						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; fblue = fr . int_symbol;
+					}
+					if (fr . id ("background")) {
+						if (! fr . get_int ()) return; bred = fr . int_symbol;
+						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; bblue = fr . int_symbol;
+					}
+					if (fr . id ("indexed")) indexed = true;
+					if (fr . id ("position")) {
+						if (! fr . get_int ()) return; position . x = fr . int_symbol;
+						if (! fr . get_int ()) return; position . y = fr . int_symbol;
+					}
+					if (fr . id ("selectable")) selectable = true;
+					fr . skip ();
+				}
+				board -> tokens = new BoardToken (position, type, side, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), false, selectable, board -> tokens);
+				board -> tokens -> diceShift = shift;
+				board -> tokens -> diceMultiplier = multiplier;
+				board -> tokens -> gridIndexing = indexed;
+				board -> tokens -> diceValue = value;
 			}
 			if (fr . id ("token")) {
 				char command [1024];
@@ -1203,6 +1496,40 @@ public:
 		fprintf (fw, "board [\n");
 		if (board != 0) {
 			fprintf (fw, "	background [%i %i %i]\n", board -> backgroundColour . Red (), board -> backgroundColour . Green (), board -> backgroundColour . Blue ());
+			fprintf (fw, "	defaults [\n");
+			fprintf (fw, "		dice [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> dicePenColour . Red (), board -> dicePenColour . Green (), board -> dicePenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> diceBrushColour . Red (), board -> diceBrushColour . Green (), board -> diceBrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		tetrahedron [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> tetrahedronPenColour . Red (), board -> tetrahedronPenColour . Green (), board -> tetrahedronPenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> tetrahedronBrushColour . Red (), board -> tetrahedronBrushColour . Green (), board -> tetrahedronBrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		cube [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> cubePenColour . Red (), board -> cubePenColour . Green (), board -> cubePenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> cubeBrushColour . Red (), board -> cubeBrushColour . Green (), board -> cubeBrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		octahedron [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> octahedronPenColour . Red (), board -> octahedronPenColour . Green (), board -> octahedronPenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> octahedronBrushColour . Red (), board -> octahedronBrushColour . Green (), board -> octahedronBrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		deltahedron [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> deltahedronPenColour . Red (), board -> deltahedronPenColour . Green (), board -> deltahedronPenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> deltahedronBrushColour . Red (), board -> deltahedronBrushColour . Green (), board -> deltahedronBrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		deltahedron10 [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> deltahedron10PenColour . Red (), board -> deltahedron10PenColour . Green (), board -> deltahedron10PenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> deltahedron10BrushColour . Red (), board -> deltahedron10BrushColour . Green (), board -> deltahedron10BrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		dodecahedron [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> dodecahedronPenColour . Red (), board -> dodecahedronPenColour . Green (), board -> dodecahedronPenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> dodecahedronBrushColour . Red (), board -> dodecahedronBrushColour . Green (), board -> dodecahedronBrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		icosahedron [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> icosahedronPenColour . Red (), board -> icosahedronPenColour . Green (), board -> icosahedronPenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> icosahedronBrushColour . Red (), board -> icosahedronBrushColour . Green (), board -> icosahedronBrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "	]\n");
 			board -> SaveTokens (fw);
 			board -> modified = false;
 		}
@@ -1239,24 +1566,6 @@ public:
 	void OnQuit (wxCommandEvent & event) {OnEscape ();}
 	//void OnEscape (void) {if (wxYES == wxMessageBox (_T ("EXIT?"), _T ("INFO"), wxYES_NO | wxNO_DEFAULT | wxICON_EXCLAMATION, this)) delete this;}
 	void OnEscape (void) {delete this;}
-/*	void OnLockGrid (wxCommandEvent & event) {
-		wxMenuBar * bar = GetMenuBar ();
-		bar -> Check (4202, board -> moveGrid);
-		board -> moveGrid = ! board -> moveGrid;
-		Refresh ();
-	}
-	void OnLockBoard (wxCommandEvent & event) {
-		wxMenuBar * bar = GetMenuBar ();
-		bar -> Check (4203, board -> moveBoard);
-		board -> moveBoard = ! board -> moveBoard;
-		Refresh ();
-	}
-	void OnLockTokens (wxCommandEvent & event) {
-		wxMenuBar * bar = GetMenuBar ();
-		bar -> Check (4204, board -> moveTokens);
-		board -> moveTokens = ! board -> moveTokens;
-		Refresh ();
-	}*/
 	void OnArrow (int key) {
 		if (board == 0) return;
 		switch (gridControlType) {
@@ -1320,6 +1629,10 @@ public:
 		if (board == 0) return;
 		board -> RollDice ();
 	}
+	void RollAllDices (void) {
+		if (board == 0) return;
+		board -> RollAllDices ();
+	}
 	void OnRollDice (wxCommandEvent & event) {RollDice ();}
 	void insertNewToken (wxPoint location, wxString file_name) {
 		if (board == 0) return;
@@ -1381,8 +1694,8 @@ EVT_MENU(6102, BoardFrame :: OnLoad)
 EVT_MENU(6103, BoardFrame :: OnSave)
 EVT_MENU(6104, BoardFrame :: OnSaveAs)
 EVT_MENU(6105, BoardFrame :: OnReload)
-EVT_MENU(6601, BoardFrame :: OnBoardColour)
-EVT_MENU(6602, BoardFrame :: OnGridColour)
+EVT_MENU(6601, BoardFrame :: OnBrushColour)
+EVT_MENU(6602, BoardFrame :: OnPenColour)
 EVT_MENU(6701, BoardFrame :: OnLock)
 EVT_MENU(6703, BoardFrame :: OnLockToken)
 EVT_MENU(6121, BoardFrame :: OnNewToken)
@@ -1445,6 +1758,7 @@ public:
 		case WXK_TAB: if (shiftDown) boardFrame -> TabBackward (); else boardFrame -> TabForward (); break;
 		case WXK_DELETE: case WXK_BACK: boardFrame -> board -> deleteToken (); break;
 		case WXK_RETURN: boardFrame -> RollDice (); break;
+		case WXK_SPACE: boardFrame -> RollAllDices (); break;
 		default: break;
 		}
 		return -1;
