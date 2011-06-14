@@ -408,30 +408,30 @@ public:
 		int edge = gridSide / 4;
 		int radius = gridSide / 10;
 		switch (diceValue) {
-		case 1: dc . DrawCircle (position . x + middle, position . y + middle, radius); break;
-		case 2:
+		case 0: dc . DrawCircle (position . x + middle, position . y + middle, radius); break;
+		case 1:
 			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
 			dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
 			break;
-		case 3:
+		case 2:
 			dc . DrawCircle (position . x + middle, position . y + middle, radius);
 			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
 			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
 			break;
+		case 3:
+			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+			break;
 		case 4:
+			dc . DrawCircle (position . x + middle, position . y + middle, radius);
 			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
 			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
 			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
 			dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
 			break;
 		case 5:
-			dc . DrawCircle (position . x + middle, position . y + middle, radius);
-			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
-			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
-			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
-			dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
-			break;
-		case 6:
 			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
 			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
 			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
@@ -452,13 +452,96 @@ public:
 		f . SetPointSize (gridSide / 2);
 		dc . SetFont (f);
 		dc . SetTextForeground (gridColour);
-		wxString text = wxString :: Format (_T ("%i"), diceValue);
+		wxString text = wxString :: Format (diceMultiplier * choosenRotation > 10 ? _T ("%02i") : _T ("%i"), diceShift + diceValue * diceMultiplier);
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + gridSide / 2 - extent . x / 2, position . y + gridSide / 2 - extent . y / 2);
 	}
+	void drawTetrahedron (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		double half = (double) gridSide * 0.5;
+		double quarter = half * 0.5;
+		double H = half * 0.866025404;
+		wxPoint centre = position + wxPoint (half, half);
+		wxPoint corners [3];
+		switch (diceValue) {
+		case 0:
+			corners [0] = centre + wxPoint (0, - half);
+			corners [1] = centre + wxPoint (H, quarter);
+			corners [2] = centre + wxPoint (-H, quarter);
+			break;
+		case 1:
+			corners [0] = centre + wxPoint (half, 0);
+			corners [1] = centre + wxPoint (- quarter, H);
+			corners [2] = centre + wxPoint (- quarter, - H);
+			break;
+		case 2:
+			corners [0] = centre + wxPoint (0, half);
+			corners [1] = centre + wxPoint (- H, - quarter);
+			corners [2] = centre + wxPoint (H, - quarter);
+			break;
+		case 3:
+			corners [0] = centre + wxPoint (- half, 0);
+			corners [1] = centre + wxPoint (quarter, - H);
+			corners [2] = centre + wxPoint (quarter, H);
+			break;
+		}
+		dc . DrawPolygon (3, corners);
+		wxFont f = dc . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (gridSide / 3);
+		dc . SetFont (f);
+		dc . SetTextForeground (gridColour);
+		wxString text = wxString :: Format (diceMultiplier * choosenRotation > 10 ? _T ("%02i") : _T ("%i"), diceShift + diceValue * diceMultiplier);
+		wxSize extent = dc . GetTextExtent (text);
+		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
+	}
+	void drawOctahedron (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		double half = (double) gridSide * 0.5;
+		double quarter = half * 0.5;
+		double H = half * 0.866025404;
+		wxPoint centre = position + wxPoint (half, half);
+		wxPoint corners [6];
+		switch (diceValue) {
+		case 0: case 2: case 4: case 6:
+			corners [0] = centre + wxPoint (0, - half);
+			corners [1] = centre + wxPoint (H, - quarter);
+			corners [2] = centre + wxPoint (H, quarter);
+			corners [3] = centre + wxPoint (0, half);
+			corners [4] = centre + wxPoint (-H, quarter);
+			corners [5] = centre + wxPoint (-H, - quarter);
+			break;
+		default:
+			corners [0] = centre + wxPoint (- half, 0);
+			corners [1] = centre + wxPoint (- quarter, - H);
+			corners [2] = centre + wxPoint (quarter, - H);
+			corners [3] = centre + wxPoint (half, 0);
+			corners [4] = centre + wxPoint (quarter, H);
+			corners [5] = centre + wxPoint (- quarter, H);
+			break;
+		};
+		dc . DrawPolygon (6, corners);
+		switch (diceValue) {
+		case 0: case 1: case 2: case 3: corners [1] = corners [2]; corners [2] = corners [4]; break;
+		default: corners [0] = corners [1]; corners [1] = corners [3]; corners [2] = corners [5]; break;
+		}
+		dc . DrawPolygon (3, corners);
+		wxFont f = dc . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (gridSide / 3);
+		dc . SetFont (f);
+		dc . SetTextForeground (gridColour);
+		wxString text = wxString :: Format (diceMultiplier * choosenRotation > 10 ? _T ("%02i") : _T ("%i"), diceShift + diceValue * diceMultiplier);
+		wxSize extent = dc . GetTextExtent (text);
+		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
+	}
 	void drawDice (wxDC & dc) {
 		switch (choosenRotation) {
+		case 4: drawTetrahedron (dc); break;
 		case 6: if (gridIndexing) drawOtherDice (dc); else drawRegularDice (dc); break;
+		case 8: drawOctahedron (dc); break;
 		default: drawOtherDice (dc); break;
 		}
 	}
@@ -476,7 +559,8 @@ public:
 		case DiceToken:
 			if (angle < 1) angle = 1;
 			choosenRotation = angle;
-			diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			//diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			diceValue = choosenRotation - 1;
 			break;
 		default: break;
 		}
@@ -493,7 +577,8 @@ public:
 			break;
 		case DiceToken:
 			choosenRotation++;
-			diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			//diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			diceValue = choosenRotation - 1;
 			break;
 		default: break;
 		}
@@ -511,7 +596,8 @@ public:
 		case DiceToken:
 			choosenRotation--;
 			if (choosenRotation < 1) choosenRotation = 1;
-			diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			//diceValue = diceMultiplier * (choosenRotation - 1) + diceShift;
+			diceValue = choosenRotation - 1;
 			break;
 		default: break;
 		}
@@ -557,17 +643,22 @@ public:
 	}
 	void roll (void) {
 		if (tokenType != DiceToken) return;
-		int roller = rand () % choosenRotation;
-		this -> diceValue = diceShift + roller * diceMultiplier;
+		this -> diceValue = rand () % choosenRotation;
+		//int roller = rand () % choosenRotation;
+		//this -> diceValue = diceShift + roller * diceMultiplier;
 	}
 	void rollAll (void) {
 		roll ();
 		if (next != 0) next -> rollAll ();
 	}
 	void rollNext (void) {
-		if (tokenType != DiceToken) return; this -> diceValue += diceMultiplier;
-		if (this -> diceValue > diceMultiplier * (choosenRotation - 1) + diceShift) this -> diceValue = diceShift;
+		if (tokenType != DiceToken) return;
+		this -> diceValue++;
+		if (this -> diceValue > choosenRotation - 1) this -> diceValue = 0;
 	}
+		//this -> diceValue += diceMultiplier;
+		//if (this -> diceValue > diceMultiplier * (choosenRotation - 1) + diceShift) this -> diceValue = diceShift;
+//	}
 	void rollAllNext (void) {
 		rollNext ();
 		if (next != 0) next -> rollAllNext ();
@@ -646,14 +737,14 @@ public:
 	void changeGridIndexing (wxPoint change) {
 		switch (tokenType) {
 		case GridToken: gridStart += change; break;
-		case DiceToken: diceShift += change . x + change . y; diceValue = diceMultiplier * (choosenRotation - 1) + diceShift; break;
+		case DiceToken: diceShift += change . x + change . y; diceValue = choosenRotation - 1; break; //diceValue = diceMultiplier * (choosenRotation - 1) + diceShift; break;
 		default: break;
 		}
 	}
 	void changeRows (wxSize change) {
 		switch (tokenType) {
 		case GridToken: gridSize += change; break;
-		case DiceToken: diceMultiplier += change . x + change . y; diceValue = diceMultiplier * (choosenRotation - 1) + diceShift; break;
+		case DiceToken: diceMultiplier += change . x + change . y; diceValue = choosenRotation - 1; break; //diceValue = diceMultiplier * (choosenRotation - 1) + diceShift; break;
 		default: break;
 		}
 	}
