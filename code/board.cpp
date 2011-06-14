@@ -398,12 +398,55 @@ public:
 			horizontal_shift = horizontal_shift == location . x ? location . x + H : location . x;
 		}
 	}
-	void drawDice (wxDC & dc) {
+	void drawRegularDice (wxDC & dc) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		int shift = gridSide * 2; shift /= 30;
 		dc . DrawRoundedRectangle (position . x + shift, position . y + shift, gridSide - shift - shift, gridSide - shift - shift, 6);
-
+		dc . SetBrush (wxBrush (gridColour));
+		int middle = gridSide / 2;
+		int edge = gridSide / 4;
+		int radius = gridSide / 10;
+		switch (diceValue) {
+		case 1: dc . DrawCircle (position . x + middle, position . y + middle, radius); break;
+		case 2:
+			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+			break;
+		case 3:
+			dc . DrawCircle (position . x + middle, position . y + middle, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+			break;
+		case 4:
+			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+			break;
+		case 5:
+			dc . DrawCircle (position . x + middle, position . y + middle, radius);
+			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+			break;
+		case 6:
+			dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
+			dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
+			dc . DrawCircle (position . x + middle - edge, position . y + middle, radius);
+			dc . DrawCircle (position . x + middle + edge, position . y + middle, radius);
+			break;
+		default: break;
+		}
+	}
+	void drawOtherDice (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		int shift = gridSide * 2; shift /= 30;
+		dc . DrawRoundedRectangle (position . x + shift, position . y + shift, gridSide - shift - shift, gridSide - shift - shift, 6);
 		wxFont f = dc . GetFont ();
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (gridSide / 2);
@@ -411,45 +454,12 @@ public:
 		dc . SetTextForeground (gridColour);
 		wxString text = wxString :: Format (_T ("%i"), diceValue);
 		wxSize extent = dc . GetTextExtent (text);
-		if (choosenRotation != 6) dc . DrawText (text, position . x + gridSide / 2 - extent . x / 2, position . y + gridSide / 2 - extent . y / 2);
-		else {
-			dc . SetBrush (wxBrush (gridColour));
-			int middle = gridSide / 2;
-			int edge = gridSide / 4;
-			int radius = gridSide / 10;
-			switch (diceValue) {
-			case 1: dc . DrawCircle (position . x + middle, position . y + middle, radius); break;
-			case 2:
-				dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
-				break;
-			case 3:
-				dc . DrawCircle (position . x + middle, position . y + middle, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
-				dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
-				break;
-			case 4:
-				dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
-				dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
-				break;
-			case 5:
-				dc . DrawCircle (position . x + middle, position . y + middle, radius);
-				dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
-				dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
-				break;
-			case 6:
-				dc . DrawCircle (position . x + middle - edge, position . y + middle - edge, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle - edge, radius);
-				dc . DrawCircle (position . x + middle - edge, position . y + middle + edge, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle + edge, radius);
-				dc . DrawCircle (position . x + middle - edge, position . y + middle, radius);
-				dc . DrawCircle (position . x + middle + edge, position . y + middle, radius);
-				break;
-			}
+		dc . DrawText (text, position . x + gridSide / 2 - extent . x / 2, position . y + gridSide / 2 - extent . y / 2);
+	}
+	void drawDice (wxDC & dc) {
+		switch (choosenRotation) {
+		case 6: if (gridIndexing) drawOtherDice (dc); else drawRegularDice (dc); break;
+		default: drawOtherDice (dc); break;
 		}
 	}
 	void rotate (int angle) {
