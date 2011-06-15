@@ -568,12 +568,52 @@ public:
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
+	void drawIcosahedron (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		double half = (double) gridSide * 0.5;
+		double smaller = half / 1.6180339887498948482045868343656;
+		wxPoint centre = position + wxPoint (half, half);
+		wxPoint externals [6];
+		wxPoint internals [3];
+		double angleShift = (double) diceValue * 2.0 * M_PI / 20.0;
+		for (int ind = 0; ind < 6; ind++) {
+			double angle = angleShift + (double) ind * 2.0 * M_PI / 6.0;
+			externals [ind] = centre + wxPoint (0.499 + half * sin (angle), 0.499 - half * cos (angle));
+		}
+		for (int ind = 0; ind < 3; ind++) {
+			double angle = angleShift + (double) ind * 2.0 * M_PI / 3.0;
+			internals [ind] = centre + wxPoint (0.499 + smaller * sin (angle), 0.499 - smaller * cos (angle));
+		}
+		dc . DrawPolygon (6, externals);
+		dc . DrawLine (internals [0], externals [0]);
+		dc . DrawLine (internals [0], externals [1]);
+		dc . DrawLine (internals [0], internals [1]);
+		dc . DrawLine (internals [1], externals [1]);
+		dc . DrawLine (internals [1], externals [2]);
+		dc . DrawLine (internals [1], externals [3]);
+		dc . DrawLine (internals [1], internals [2]);
+		dc . DrawLine (internals [2], externals [3]);
+		dc . DrawLine (internals [2], externals [4]);
+		dc . DrawLine (internals [2], externals [5]);
+		dc . DrawLine (internals [0], externals [5]);
+		dc . DrawLine (internals [2], internals [0]);
+		wxFont f = dc . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (gridSide / 6);
+		dc . SetFont (f);
+		dc . SetTextForeground (gridColour);
+		wxString text = wxString :: Format (_T ("%i"), diceShift + diceValue * diceMultiplier);
+		wxSize extent = dc . GetTextExtent (text);
+		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
+	}
 	void drawDice (wxDC & dc) {
 		switch (choosenRotation) {
 		case 4: drawTetrahedron (dc); break;
 		case 6: if (gridIndexing) drawOtherDice (dc); else drawRegularDice (dc); break;
 		case 8: drawOctahedron (dc); break;
 		case 12: drawDodecahedron (dc); break;
+		case 20: drawIcosahedron (dc); break;
 		default: drawOtherDice (dc); break;
 		}
 	}
