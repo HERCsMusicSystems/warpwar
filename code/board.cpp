@@ -3,7 +3,7 @@
 //        ALL RIGHTS RESERVED        //
 ///////////////////////////////////////
 
-#define PROTECT
+//#define PROTECT
 
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
@@ -492,7 +492,7 @@ public:
 		f . SetPointSize (gridSide / 3);
 		dc . SetFont (f);
 		dc . SetTextForeground (gridColour);
-		wxString text = wxString :: Format (diceMultiplier * choosenRotation > 10 ? _T ("%02i") : _T ("%i"), diceShift + diceValue * diceMultiplier);
+		wxString text = wxString :: Format (_T ("%i"), diceShift + diceValue * diceMultiplier);
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
@@ -533,7 +533,38 @@ public:
 		f . SetPointSize (gridSide / 3);
 		dc . SetFont (f);
 		dc . SetTextForeground (gridColour);
-		wxString text = wxString :: Format (diceMultiplier * choosenRotation > 10 ? _T ("%02i") : _T ("%i"), diceShift + diceValue * diceMultiplier);
+		wxString text = wxString :: Format (_T ("%i"), diceShift + diceValue * diceMultiplier);
+		wxSize extent = dc . GetTextExtent (text);
+		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
+	}
+	void drawDodecahedron (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		double half = (double) gridSide * 0.5;
+		double smaller = half / 1.6180339887498948482045868343656;
+		wxPoint centre = position + wxPoint (half, half);
+		wxPoint externals [10];
+		wxPoint internals [5];
+		double angleShift = (double) diceValue * 2.0 * M_PI / 12.0;
+		for (int ind = 0; ind < 10; ind++) {
+			double angle = angleShift + (double) ind * 2.0 * M_PI / 10.0;
+			externals [ind] = centre + wxPoint (0.499 + half * sin (angle), 0.499 - half * cos (angle));
+		}
+		for (int ind = 0; ind < 5; ind++) {
+			double angle = angleShift + (double) ind * 2.0 * M_PI / 5.0;
+			internals [ind] = centre + wxPoint (0.499 + smaller * sin (angle), 0.499 - smaller * cos (angle));
+		}
+		dc . DrawPolygon (10, externals);
+		dc . DrawPolygon (5, internals);
+		for (int ind = 0; ind < 5; ind++) {
+			dc . DrawLine (internals [ind], externals [ind << 1]);
+		}
+		wxFont f = dc . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (gridSide / 4);
+		dc . SetFont (f);
+		dc . SetTextForeground (gridColour);
+		wxString text = wxString :: Format (_T ("%i"), diceShift + diceValue * diceMultiplier);
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
@@ -542,6 +573,7 @@ public:
 		case 4: drawTetrahedron (dc); break;
 		case 6: if (gridIndexing) drawOtherDice (dc); else drawRegularDice (dc); break;
 		case 8: drawOctahedron (dc); break;
+		case 12: drawDodecahedron (dc); break;
 		default: drawOtherDice (dc); break;
 		}
 	}
