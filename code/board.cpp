@@ -537,6 +537,12 @@ public:
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
+	void drawDeltahedron (wxDC & dc) {
+		// side = 1.0
+		// big delta = V 2 = 1.414213562
+		// delta = 1.414213562 / 1.6180339887498948482045868343656 = 0.874032049
+		// half delta = 0.437016024
+	}
 	void drawDodecahedron (wxDC & dc) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
