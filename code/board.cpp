@@ -542,6 +542,29 @@ public:
 		// big delta = V 2 = 1.414213562
 		// delta = 1.414213562 / 1.6180339887498948482045868343656 = 0.874032049
 		// half delta = 0.437016024
+		// other side = 0.485868271
+		// across 1 = 0.89945372
+		// across 2 = 0.21233222
+		// across = across 1 + across 2 = 1.11178594
+		// half angle = 25.913646158 degrees
+		// angle = 51.827292316 degrees
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		double half = (double) gridSide * 0.5;
+		wxPoint p [4];
+		p [0] = position;
+		p [1] = position + wxPoint ((double) gridSide * 0.485868271, 0);
+		p [2] = position + wxPoint ((double) gridSide * sin (51.827292316 * M_PI / 180.0), (double) gridSide - (double) gridSide * cos (51.827292316 * M_PI / 180.0));
+		p [3] = position + wxPoint (0, gridSide);
+		dc . DrawPolygon (4, p);
+		wxFont f = dc . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (gridSide / 2);
+		dc . SetFont (f);
+		dc . SetTextForeground (gridColour);
+		wxString text = wxString :: Format (diceMultiplier * choosenRotation > 10 ? _T ("%02i") : _T ("%i"), diceShift + diceValue * diceMultiplier);
+		wxSize extent = dc . GetTextExtent (text);
+		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
 	void drawDodecahedron (wxDC & dc) {
 		dc . SetPen (wxPen (gridColour));
@@ -618,6 +641,7 @@ public:
 		case 4: drawTetrahedron (dc); break;
 		case 6: if (gridIndexing) drawOtherDice (dc); else drawRegularDice (dc); break;
 		case 8: drawOctahedron (dc); break;
+		case 10: drawDeltahedron (dc); break;
 		case 12: drawDodecahedron (dc); break;
 		case 20: drawIcosahedron (dc); break;
 		default: drawOtherDice (dc); break;
