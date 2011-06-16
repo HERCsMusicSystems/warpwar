@@ -8,6 +8,8 @@
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
 #define BOARD_SIZE wxSize (120, 120)
+#define BOARD_POSITION wxPoint (2000, 300)
+#define BOARD_SIZE wxSize (600, 400)
 #else
 #define BOARD_POSITION wxPoint (100, 100)
 #define BOARD_SIZE wxSize (800, 500)
@@ -548,18 +550,48 @@ public:
 		// across = across 1 + across 2 = 1.11178594
 		// half angle = 25.913646158 degrees
 		// angle = 51.827292316 degrees
+		// skirt angle = 64.086353842 degress = 1.1185178801410178944429780442195 radians
+		// skirt side = 
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		double half = (double) gridSide * 0.5;
-		wxPoint p [4];
-		p [0] = position;
-		p [1] = position + wxPoint ((double) gridSide * 0.485868271, 0);
-		p [2] = position + wxPoint ((double) gridSide * sin (51.827292316 * M_PI / 180.0), (double) gridSide - (double) gridSide * cos (51.827292316 * M_PI / 180.0));
-		p [3] = position + wxPoint (0, gridSide);
+		wxPoint p [6];
+//		p [0] = position;
+//		p [1] = position + wxPoint ((double) gridSide * 0.485868271, 0);
+//		p [2] = position + wxPoint ((double) gridSide * sin (2.0 * 0.45227844665387872478834364742025), (double) gridSide - (double) gridSide * cos (2.0 * 0.45227844665387872478834364742025));
+//		p [3] = position + wxPoint (0, gridSide);
+//		dc . DrawPolygon (4, p);
+
+		double across = (double) gridSide * 3.0 / 4.0;
+		double gridside = across / 1.11178594;
+		//double across = (double) gridSide * 1.11178594;
+		double half_angle = 0.45227844665387872478834364742025;
+		double skirt_angle = 1.1185178801410178944429780442195;
+		double angled_across_angle = 0.5 * (half_angle + skirt_angle);
+		double angled_across = gridside / cos (angled_across_angle - half_angle);
+		double skirt_side = gridside * sin (2.0 * 0.45227844665387872478834364742025);
+		double angle_shift = (double) diceValue * 2.0 * M_PI / 10.0;
+		//angle_shift = 0.0;
+
+		wxPoint centre = position + wxPoint (half, half);
+		wxPoint start = centre + wxPoint (half * 3.0 / 4.0 * sin (- angle_shift), - half * 3.0 / 4.0 * cos (- angle_shift)); //position + wxPoint (gridSide, 0);
+		p [0] = start;
+		p [1] = start + wxPoint (0.499 + skirt_side * sin (angle_shift + skirt_angle), 0.499 + skirt_side * cos (angle_shift + skirt_angle));
+		p [2] = start + wxPoint (0.499 + angled_across * sin (angle_shift + angled_across_angle), 0.499 + angled_across * cos (angle_shift + angled_across_angle));
+		p [3] = start + wxPoint (0.499 + across * sin (angle_shift), 0.499 + across * cos (angle_shift));
+		p [4] = start + wxPoint (0.499 + angled_across * sin (angle_shift - angled_across_angle), 0.499 + angled_across * cos (angle_shift - angled_across_angle));
+		p [5] = start + wxPoint (0.499 + skirt_side * sin (angle_shift - skirt_angle), 0.499 + skirt_side * cos (angle_shift - skirt_angle));
+		dc . DrawPolygon (6, p);
+
+		p [0] = start;
+		p [1] = start + wxPoint (0.499 + gridside * sin (angle_shift + half_angle), 0.499 + gridside * cos (angle_shift + half_angle));
+		p [2] = start + wxPoint (0.499 + across * sin (angle_shift), 0.499 + across * cos (angle_shift));
+		p [3] = start + wxPoint (0.499 + gridside * sin (angle_shift - half_angle), 0.499 + gridside * cos (angle_shift - half_angle));
 		dc . DrawPolygon (4, p);
+
 		wxFont f = dc . GetFont ();
 		f . SetFaceName (_T ("arial"));
-		f . SetPointSize (gridSide / 2);
+		f . SetPointSize (gridSide / 5);
 		dc . SetFont (f);
 		dc . SetTextForeground (gridColour);
 		wxString text = wxString :: Format (diceMultiplier * choosenRotation > 10 ? _T ("%02i") : _T ("%i"), diceShift + diceValue * diceMultiplier);
@@ -984,11 +1016,13 @@ public:
 		if (dragToken == 0) return;
 		if (dragToken -> tokenType != BoardToken :: DiceToken) return;
 		dragToken -> roll ();
+		modified = true;
 		new AnimateDiceThread (dragToken);
 	}
 	void RollAllDices (void) {
 		if (tokens == 0) return;
 		tokens -> rollAll ();
+		modified = true;
 		new AnimateAllDiceThread (tokens);
 	}
 	void OnLeftDown (wxMouseEvent & event) {
