@@ -246,6 +246,8 @@ public:
 	enum TokenType {PictureToken = 0, GridToken, DiceToken};
 	wxString original_file;
 	wxBitmap token;
+	int tokenSide;
+	int tokenSides;
 	wxBitmap rotatedToken;
 	wxPoint position;
 	wxPoint positionShift;
@@ -282,6 +284,7 @@ public:
 			toCommand (command, original_file);
 			fprintf (fw, "		location [\"%s\"]\n", command);
 			fprintf (fw, "		rotation [%i]\n", choosenRotation);
+			if (tokenSide != 0) fprintf (fw, "		side [%i]\n", tokenSide);
 			break;
 		case DiceToken:
 			fprintf (fw, "	dice [\n");
@@ -682,13 +685,16 @@ public:
 	void rotate (int angle) {
 		switch (tokenType) {
 		case GridToken: this -> choosenRotation = angle; break;
-		case PictureToken:
-			while (angle > 360) angle -= 360;
-			while (angle < 0) angle += 360;
-			rotatedToken = wxBitmap (token . ConvertToImage () . Rotate (M_PI * (double) angle / 180.0, wxPoint (token . GetWidth () / 2, token . GetHeight () / 2)));
-			token_size = wxSize (rotatedToken . GetWidth (), rotatedToken . GetHeight ());
-			positionShift = wxPoint ((token . GetWidth () - rotatedToken . GetWidth ()) / 2, (token . GetHeight () - rotatedToken . GetHeight ()) / 2);
-			choosenRotation = angle;
+		case PictureToken: {
+				while (angle > 360) angle -= 360;
+				while (angle < 0) angle += 360;
+				int w = token . GetWidth ();
+				int h = tokenSides > 1 ? w : token . GetHeight ();
+				rotatedToken = wxBitmap (token . GetSubBitmap (wxRect (wxPoint (0, h * tokenSide), wxSize (w, h))) . ConvertToImage () . Rotate (M_PI * (double) angle / 180.0, wxPoint (w / 2, h / 2)));
+				token_size = wxSize (rotatedToken . GetWidth (), rotatedToken . GetHeight ());
+				positionShift = wxPoint ((w - rotatedToken . GetWidth ()) / 2, (h - rotatedToken . GetHeight ()) / 2);
+				choosenRotation = angle;
+			}
 			break;
 		case DiceToken:
 			if (angle < 1) angle = 1;
@@ -736,6 +742,7 @@ public:
 		default: break;
 		}
 	}
+	void changeSide (void) {if (++tokenSide >= tokenSides) tokenSide = 0; rotate (choosenRotation);}
 	void move (wxPoint & delta) {
 		position += delta;
 	}
@@ -802,7 +809,8 @@ public:
 		while (top > ind) {rollNext (); top--;}
 		if (next != 0) next -> rollAllNextBy (ind);
 	}
-	BoardToken (wxString file_name, wxPoint position, bool centered, BoardToken * next = 0) {
+	BoardToken (wxString file_name, wxPoint position, bool centered, BoardToken * next = 0, int side = 0, int rotation = 0) {
+		tokenSide = side; tokenSides = 1;
 		this -> tokenType = PictureToken;
 		this -> gridColour = * wxWHITE;
 		this -> isSelectable = true;
@@ -811,9 +819,13 @@ public:
 		token . LoadFile (file_name, wxBITMAP_TYPE_PNG);
 		this -> position = position;
 		if (centered) this -> position -= wxPoint (token . GetWidth () / 2, token . GetHeight () / 2);
-		rotate (0);
+		int h = token . GetHeight ();
+		int w = token . GetWidth ();
+		if (h % w == 0) tokenSides = h / w;
+		rotate (rotation);
 	}
 	BoardToken (wxPoint position, BoardToken * next = 0) {
+		tokenSide = 0; tokenSides = 1;
 		this -> tokenType = GridToken;
 		this -> gridColour = * wxWHITE;
 		this -> isSelectable = true;
@@ -827,6 +839,7 @@ public:
 		rotate (0);
 	}
 	BoardToken (wxPoint position, int type, int side, wxSize size, wxPoint start, bool indexing, bool selectable, wxColour colour, BoardToken * next = 0) {
+		tokenSide = 0; tokenSides = 1;
 		this -> tokenType = GridToken;
 		this -> gridColour = colour;
 		this -> isSelectable = selectable;
@@ -839,6 +852,7 @@ public:
 		gridIndexing = indexing;
 	}
 	BoardToken (wxPoint position, int diceType, int side, wxColour foreground, wxColour background, bool centered, bool selectable, BoardToken * next = 0) {
+		tokenSide = 0; tokenSides = 1;
 		this -> tokenType = DiceToken;
 		this -> choosenRotation = diceType;
 		this -> gridIndexing = true;
@@ -1093,6 +1107,7 @@ public:
 		if (! onToken) menu . Append (4208, _T ("New icosahedron"));
 		if (onToken) menu . Append (4101, _T ("Rotate right"));
 		if (onToken) menu . Append (4102, _T ("Rotate left"));
+		if (onToken) menu . Append (4104, _T ("Flip to other side"));
 		if (onToken) menu . Append (4103, _T ("Delete token"));
 		PopupMenu (& menu, lastRightClickPosition);
 	}
@@ -1175,6 +1190,12 @@ public:
 		Refresh ();
 	}
 	void OnRotateLeft (wxCommandEvent & event) {rotateLeft ();}
+	void flipToken (void) {
+		if (dragToken != 0) dragToken -> changeSide ();
+		modified = true;
+		Refresh ();
+	}
+	void OnFlip (wxCommandEvent & event) {flipToken ();}
 	void changeGridSide (int change) {
 		if (dragToken == 0) return;
 		dragToken -> changeGridSide (change);
@@ -1344,6 +1365,7 @@ EVT_MENU(4002, BoardWindow :: OnNewGrid)
 EVT_MENU(4101, BoardWindow :: OnRotateRight)
 EVT_MENU(4102, BoardWindow :: OnRotateLeft)
 EVT_MENU(4103, BoardWindow :: OnDeleteToken)
+EVT_MENU(4104, BoardWindow :: OnFlip)
 EVT_MENU(4201, BoardWindow :: OnNewDice)
 EVT_MENU(4202, BoardWindow :: OnNewTetrahedron)
 EVT_MENU(4203, BoardWindow :: OnNewCube)
@@ -1383,7 +1405,7 @@ public:
 		bar -> Append (file_menu, _T ("File"));
 
 		wxMenu * control_menu = new wxMenu ();
-		control_menu -> AppendRadioItem (6005, _T ("Toker ordering	F4"));
+		control_menu -> AppendRadioItem (6009, _T ("Toker ordering	F4"));
 		control_menu -> AppendRadioItem (6004, _T ("Rotation	F5"));
 		control_menu -> AppendRadioItem (6001, _T ("Grid size	F6"));
 		control_menu -> AppendRadioItem (6002, _T ("Grid indexing	F7"));
@@ -1391,6 +1413,7 @@ public:
 		control_menu -> AppendSeparator ();
 		control_menu -> Append (6205, _T ("Change indexing	I"));
 		control_menu -> Append (6206, _T ("Roll dice	D"));
+		control_menu -> Append (6207, _T ("Flip to other side	F"));
 		bar -> Append (control_menu, _T ("Control"));
 
 		wxMenu * lock_menu = new wxMenu ();
@@ -1688,6 +1711,7 @@ public:
 			if (fr . id ("token")) {
 				char command [1024];
 				int rotation = 0;
+				int side = 0;
 				while (fr . get_id ()) {
 					if (fr . id ("location")) {
 						if (! fr . get_string ()) return; strcpy (command, fr . symbol);
@@ -1699,11 +1723,15 @@ public:
 					if (fr . id ("rotation")) {
 						if (! fr . get_int ()) return; rotation = fr . int_symbol;
 					}
+					if (fr . id ("side")) {
+						if (! fr . get_int ()) return; side = fr . int_symbol;
+					}
 					if (fr . id ("selectable")) selectable = true;
 					fr . skip ();
 				}
-				board -> tokens = new BoardToken (wxString :: From8BitData (command), position, false, board -> tokens);
-				board -> tokens -> rotate (rotation);
+				board -> tokens = new BoardToken (wxString :: From8BitData (command), position, false, board -> tokens, side, rotation);
+//				board -> tokens -> tokenSide = side;
+//				board -> tokens -> rotate (rotation);
 				board -> tokens -> isSelectable = selectable;
 			}
 		}
@@ -1871,6 +1899,10 @@ public:
 		board -> RollAllDices ();
 	}
 	void OnRollDice (wxCommandEvent & event) {RollDice ();}
+	void OnFlip (wxCommandEvent & event) {
+		if (board == 0) return;
+		board -> flipToken ();
+	}
 	void insertNewToken (wxPoint location, wxString file_name) {
 		if (board == 0) return;
 		file_name . Replace (_T ("\\"), _T ("/"));
@@ -1915,7 +1947,7 @@ EVT_MENU(6001, BoardFrame :: OnGridSizeControl)
 EVT_MENU(6002, BoardFrame :: OnGridIndexControl)
 EVT_MENU(6003, BoardFrame :: OnGridCellSizeControl)
 EVT_MENU(6004, BoardFrame :: OnRotateControl)
-EVT_MENU(6005, BoardFrame :: OnTokenOrdering)
+EVT_MENU(6009, BoardFrame :: OnTokenOrdering)
 EVT_MENU(6101, BoardFrame :: OnQuit)
 //EVT_MENU(6201, BoardFrame :: OnNoGrid)
 //EVT_MENU(6202, BoardFrame :: OnSquareGrid)
@@ -1923,6 +1955,7 @@ EVT_MENU(6101, BoardFrame :: OnQuit)
 //EVT_MENU(6204, BoardFrame :: OnHorizontalHexGrid)
 EVT_MENU(6205, BoardFrame :: OnIndexed)
 EVT_MENU(6206, BoardFrame :: OnRollDice)
+EVT_MENU(6207, BoardFrame :: OnFlip)
 //EVT_MENU(5001, BoardFrame :: OnArrow)
 //EVT_MENU(5002, BoardFrame :: OnArrow)
 //EVT_MENU(5003, BoardFrame :: OnArrow)
