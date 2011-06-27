@@ -243,7 +243,7 @@ static bool stop_threads = false;
 
 class BoardToken {
 public:
-	enum TokenType {PictureToken = 0, GridToken, DiceToken};
+	enum TokenType {PictureToken = 0, GridToken, DiceToken, TextToken};
 	wxString original_file;
 	wxBitmap token;
 	int tokenSide;
@@ -265,6 +265,7 @@ public:
 	int diceValue;
 	int diceMultiplier;
 	int diceShift;
+	wxString tokenText;
 	BoardToken * next;
 	void Save (FILE * fw) {
 		if (next != 0) next -> Save (fw);
@@ -304,6 +305,16 @@ public:
 		fprintf (fw, "		position [%i %i]\n", position . x, position . y);
 		if (isSelectable) fprintf (fw, "		selectable []\n");
 		fprintf (fw, "	]\n");
+	}
+	void drawText (wxDC & dc) {
+		wxFont f = dc . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (gridSide);
+		dc . SetFont (f);
+		dc . SetTextForeground (gridColour);
+		dc . SetTextBackground (backgroundColour);
+		token_size = dc . GetTextExtent (tokenText);
+		dc . DrawText (tokenText, position);
 	}
 	void drawSquareGrid (wxDC & gridDC, wxPoint location) {
 		token_size = wxSize (gridSide * gridSize . x + 1, gridSide * gridSize . y + 1);
@@ -653,6 +664,7 @@ public:
 		dc . DrawLine (internals [0], externals [0]);
 		dc . DrawLine (internals [0], externals [1]);
 		dc . DrawLine (internals [0], internals [1]);
+
 		dc . DrawLine (internals [1], externals [1]);
 		dc . DrawLine (internals [1], externals [2]);
 		dc . DrawLine (internals [1], externals [3]);
@@ -765,6 +777,7 @@ public:
 			break;
 		case PictureToken: dc . DrawBitmap (rotatedToken, position + positionShift, true); break;
 		case DiceToken: drawDice (dc); break;
+		case TextToken: drawText (dc); break;
 		default: break;
 		}
 	}
@@ -808,6 +821,15 @@ public:
 		int top = choosenRotation;
 		while (top > ind) {rollNext (); top--;}
 		if (next != 0) next -> rollAllNextBy (ind);
+	}
+	BoardToken (wxPoint position, wxString text, int side, wxColour colour, BoardToken * next = 0) {
+		this -> tokenType = TextToken;
+		this -> tokenText = text;
+		this -> gridColour = colour;
+		this -> isSelectable = true;
+		this -> next = next;
+		this -> position = position;
+		this -> gridSide = side;
 	}
 	BoardToken (wxString file_name, wxPoint position, bool centered, BoardToken * next = 0, int side = 0, int rotation = 0) {
 		tokenSide = side; tokenSides = 1;
@@ -1097,6 +1119,7 @@ public:
 		wxMenu menu;
 		if (! onToken) menu . Append (4001, _T ("New token"));
 		if (! onToken) menu . Append (4002, _T ("New grid"));
+		if (! onToken) menu . Append (4209, _T ("New text"));
 		if (! onToken) menu . Append (4201, _T ("New dice"));
 		if (! onToken) menu . Append (4202, _T ("New tetrahedron"));
 		if (! onToken) menu . Append (4203, _T ("New cube"));
@@ -1126,6 +1149,14 @@ public:
 		dragToken = tokens = new BoardToken (file_name, location, true, tokens);
 		modified = true;
 		Refresh ();
+	}
+	void OnNewText (wxCommandEvent & event) {
+		wxTextEntryDialog te (this, _T ("ENTER TEXT"));
+		if (te . ShowModal () == wxID_OK) {
+			dragToken = tokens = new BoardToken (lastRightClickPosition, te . GetValue (), 18, * wxWHITE, tokens);
+			modified = true;
+			Refresh ();
+		}
 	}
 	void OnNewGrid (wxCommandEvent & event) {
 		dragToken = tokens = new BoardToken (lastRightClickPosition, tokens);
@@ -1374,6 +1405,7 @@ EVT_MENU(4205, BoardWindow :: OnNewDeltahedron)
 EVT_MENU(4206, BoardWindow :: OnNewDeltahedron10)
 EVT_MENU(4207, BoardWindow :: OnNewDodecahedron)
 EVT_MENU(4208, BoardWindow :: OnNewIcosahedron)
+EVT_MENU(4209, BoardWindow :: OnNewText)
 EVT_IDLE(BoardWindow :: OnIdle)
 END_EVENT_TABLE()
 
@@ -1892,6 +1924,7 @@ public:
 	}
 	void RollDice (void) {
 		if (board == 0) return;
+
 		board -> RollDice ();
 	}
 	void RollAllDices (void) {
