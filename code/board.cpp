@@ -268,6 +268,8 @@ public:
 	wxString tokenText;
 	BoardToken * next;
 	void Save (FILE * fw) {
+		wxString texter;
+		char command [1024];
 		if (next != 0) next -> Save (fw);
 		switch (tokenType) {
 		case GridToken:
@@ -281,7 +283,6 @@ public:
 			break;
 		case PictureToken:
 			fprintf (fw, "	token [\n");
-			char command [1024];
 			toCommand (command, original_file);
 			fprintf (fw, "		location [\"%s\"]\n", command);
 			fprintf (fw, "		rotation [%i]\n", choosenRotation);
@@ -297,6 +298,15 @@ public:
 			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
 			fprintf (fw, "		background [%i %i %i]\n", backgroundColour . Red (), backgroundColour . Green (), backgroundColour . Blue ());
 			if (gridIndexing) fprintf (fw, "		indexed []\n");
+			break;
+		case TextToken:
+			fprintf (fw, "	text [\n");
+			texter = tokenText;
+			texter . Replace (_T ("\""), _T ("\"\""));
+			toCommand (command, texter);
+			fprintf (fw, "		text [\"%s\"]\n", command);
+			fprintf (fw, "		size [%i]\n", gridSide);
+			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
 			break;
 		default:
 			fprintf (fw, "	unknown [\n");
@@ -999,10 +1009,13 @@ public:
 	wxColour deltahedron10PenColour, deltahedron10BrushColour;
 	wxColour dodecahedronPenColour, dodecahedronBrushColour;
 	wxColour icosahedronPenColour, icosahedronBrushColour;
+	wxColour textColour;
+	int textSize;
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
 		modified = false;
 		unlocked = false;
 		notMoved = true;
+		textSize = 18;
 		possibleTokenCirculation = false;
 		backgroundColour = * wxBLUE;
 		moveGrid = moveBoard = moveTokens = true;
@@ -1020,6 +1033,7 @@ public:
 		deltahedron10PenColour = * wxWHITE; deltahedron10BrushColour = wxColour (0x8a, 0x2b, 0xe2);
 		dodecahedronPenColour = * wxWHITE; dodecahedronBrushColour = wxColour (0x80, 0x80, 0x80);
 		icosahedronPenColour = * wxWHITE; icosahedronBrushColour = * wxRED;
+		textColour = * wxWHITE;
 		idleRepaint = false;
 	}
 	~ BoardWindow (void) {
@@ -1153,7 +1167,7 @@ public:
 	void OnNewText (wxCommandEvent & event) {
 		wxTextEntryDialog te (this, _T ("ENTER TEXT"));
 		if (te . ShowModal () == wxID_OK) {
-			dragToken = tokens = new BoardToken (lastRightClickPosition, te . GetValue (), 18, * wxWHITE, tokens);
+			dragToken = tokens = new BoardToken (lastRightClickPosition, te . GetValue (), textSize, textColour, tokens);
 			modified = true;
 			Refresh ();
 		}
@@ -1230,6 +1244,7 @@ public:
 	void changeGridSide (int change) {
 		if (dragToken == 0) return;
 		dragToken -> changeGridSide (change);
+		if (dragToken -> tokenType == BoardToken :: TextToken) {textSize = dragToken -> gridSide;}
 		modified = true;
 		Refresh ();
 	}
@@ -1431,7 +1446,8 @@ public:
 		file_menu -> AppendSeparator ();
 		file_menu -> Append (6121, _T ("New token	N"));
 		file_menu -> Append (6122, _T ("New grid	M"));
-		file_menu -> Append (6123, _T ("Delete token / grid	R"));
+		file_menu -> Append (6124, _T ("New text	Y"));
+		file_menu -> Append (6123, _T ("Delete token	R"));
 		file_menu -> AppendSeparator ();
 		file_menu -> Append (6101, _T ("EXIT	Q"));
 		bar -> Append (file_menu, _T ("File"));
@@ -1506,6 +1522,9 @@ public:
 				case 20: board -> icosahedronPenColour = board -> dragToken -> gridColour; break;
 				default: break;
 				}
+			}
+			if (board -> dragToken -> tokenType == BoardToken :: TextToken) {
+				board -> textColour = board -> dragToken -> gridColour;
 			}
 			board -> modified = true;
 			Refresh ();
@@ -1666,6 +1685,21 @@ public:
 							fr . skip ();
 						}
 					}
+					if (fr . id ("text")) {
+						while (fr . get_id ()) {
+							if (fr . id ("size")) {
+								if (! fr . get_int ()) return;
+								board -> textSize = fr . int_symbol;
+							}
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> textColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
 				}
 			}
 			if (fr . id ("grid")) {
@@ -1766,6 +1800,32 @@ public:
 //				board -> tokens -> rotate (rotation);
 				board -> tokens -> isSelectable = selectable;
 			}
+			if (fr . id ("text")) {
+				char command [1024];
+				int size = 18;
+				int fred = 255, fgreen = 255, fblue = 255;
+				while (fr . get_id ()) {
+					if (fr . id ("text")) {
+						if (! fr . get_string ()) return; strcpy (command, fr . symbol);
+					}
+					if (fr . id ("size")) {
+						if (! fr . get_int ()) return; size = fr . int_symbol;
+					}
+					if (fr . id ("colour")) {
+						if (! fr . get_int ()) return; fred = fr . int_symbol;
+						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; fblue = fr . int_symbol;
+					}
+					if (fr . id ("position")) {
+						if (! fr . get_int ()) return; position . x = fr . int_symbol;
+						if (! fr . get_int ()) return; position . y = fr . int_symbol;
+					}
+					if (fr . id ("selectable")) selectable = true;
+					fr . skip ();
+				}
+				board -> tokens = new BoardToken (position, wxString :: From8BitData (command), size, wxColour (fred, fgreen, fblue), board -> tokens);
+				board -> tokens -> isSelectable = selectable;
+			}
 		}
 		this -> file_name = wxString :: From8BitData (file_name); //Format (_T ("%s"), file_name);
 		wxMenuBar * bar = GetMenuBar ();
@@ -1825,6 +1885,10 @@ public:
 			fprintf (fw, "		icosahedron [\n");
 			fprintf (fw, "			colour [%i %i %i]\n", board -> icosahedronPenColour . Red (), board -> icosahedronPenColour . Green (), board -> icosahedronPenColour . Blue ());
 			fprintf (fw, "			background [%i %i %i]\n", board -> icosahedronBrushColour . Red (), board -> icosahedronBrushColour . Green (), board -> icosahedronBrushColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		text [\n");
+			fprintf (fw, "			size [%i]\n", board -> textSize);
+			fprintf (fw, "			colour [%i %i %i]\n", board -> textColour . Red (), board -> textColour . Green (), board -> textColour . Blue ());
 			fprintf (fw, "		]\n");
 			fprintf (fw, "	]\n");
 			board -> SaveTokens (fw);
@@ -1961,6 +2025,7 @@ public:
 	}
 	void OnNewToken (wxCommandEvent & event) {if (board != 0) board -> OnNewToken (event);}
 	void OnNewGrid (wxCommandEvent & event) {if (board != 0) board -> OnNewGrid (event);}
+	void OnNewText (wxCommandEvent & event) {if (board != 0) board -> OnNewText (event);}
 	void OnDeleteToken (wxCommandEvent & event) {if (board != 0) board -> OnDeleteToken (event);}
 	~ BoardFrame (void) {
 		stop_threads = true;
@@ -2004,6 +2069,7 @@ EVT_MENU(6703, BoardFrame :: OnLockToken)
 EVT_MENU(6121, BoardFrame :: OnNewToken)
 EVT_MENU(6122, BoardFrame :: OnNewGrid)
 EVT_MENU(6123, BoardFrame :: OnDeleteToken)
+EVT_MENU(6124, BoardFrame :: OnNewText)
 END_EVENT_TABLE()
 
 BoardFrame * boardFrame = 0;
