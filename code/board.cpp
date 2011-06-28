@@ -8,8 +8,8 @@
 #ifdef PROTECT
 #define BOARD_POSITION wxPoint (1450, 900)
 #define BOARD_SIZE wxSize (120, 120)
-#define BOARD_POSITION wxPoint (2000, 300)
-#define BOARD_SIZE wxSize (600, 400)
+//#define BOARD_POSITION wxPoint (2000, 300)
+//#define BOARD_SIZE wxSize (600, 400)
 #else
 #define BOARD_POSITION wxPoint (100, 100)
 #define BOARD_SIZE wxSize (800, 500)
@@ -243,7 +243,7 @@ static bool stop_threads = false;
 
 class BoardToken {
 public:
-	enum TokenType {PictureToken = 0, GridToken, DiceToken, TextToken};
+	enum TokenType {PictureToken = 0, GridToken, DiceToken, TextToken, RectangleToken, CircleToken, EllipseToken};
 	wxString original_file;
 	wxBitmap token;
 	int tokenSide;
@@ -308,6 +308,24 @@ public:
 			fprintf (fw, "		size [%i]\n", gridSide);
 			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
 			break;
+		case RectangleToken:
+			fprintf (fw, "	rectangle [\n");
+			fprintf (fw, "		size [%i %i]\n", token_size . x, token_size . y);
+			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
+			fprintf (fw, "		background [%i %i %i]\n", backgroundColour . Red (), backgroundColour . Green (), backgroundColour . Blue ());
+			break;
+		case CircleToken:
+			fprintf (fw, "	circle [\n");
+			fprintf (fw, "		radius [%i]\n", gridSide);
+			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
+			fprintf (fw, "		background [%i %i %i]\n", backgroundColour . Red (), backgroundColour . Green (), backgroundColour . Blue ());
+			break;
+		case EllipseToken:
+			fprintf (fw, "	ellipse [\n");
+			fprintf (fw, "		size [%i %i]\n", token_size . x, token_size . y);
+			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
+			fprintf (fw, "		background [%i %i %i]\n", backgroundColour . Red (), backgroundColour . Green (), backgroundColour . Blue ());
+			break;
 		default:
 			fprintf (fw, "	unknown [\n");
 			break;
@@ -315,6 +333,21 @@ public:
 		fprintf (fw, "		position [%i %i]\n", position . x, position . y);
 		if (isSelectable) fprintf (fw, "		selectable []\n");
 		fprintf (fw, "	]\n");
+	}
+	void drawRectangle (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		dc . DrawRectangle (position, token_size);
+	}
+	void drawCircle (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		dc . DrawCircle (position + wxPoint (gridSide, gridSide), gridSide);
+	}
+	void drawEllipse (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		dc . DrawEllipse (position, token_size);
 	}
 	void drawText (wxDC & dc) {
 		wxFont f = dc . GetFont ();
@@ -788,6 +821,9 @@ public:
 		case PictureToken: dc . DrawBitmap (rotatedToken, position + positionShift, true); break;
 		case DiceToken: drawDice (dc); break;
 		case TextToken: drawText (dc); break;
+		case RectangleToken: drawRectangle (dc); break;
+		case CircleToken: drawCircle (dc); break;
+		case EllipseToken: drawEllipse (dc); break;
 		default: break;
 		}
 	}
@@ -831,6 +867,38 @@ public:
 		int top = choosenRotation;
 		while (top > ind) {rollNext (); top--;}
 		if (next != 0) next -> rollAllNextBy (ind);
+	}
+	BoardToken (wxPoint position, wxSize size, wxColour colour, wxColour background, BoardToken * next = 0) {
+		if (size . x < 0) {size . x = - size . x; position . x -= size . x;}
+		if (size . y < 0) {size . y = - size . y; position . y -= size . y;}
+		this -> tokenType = RectangleToken;
+		this -> token_size = size;
+		this -> gridColour = colour;
+		this -> backgroundColour = background;
+		this -> isSelectable = true;
+		this -> next = next;
+		this -> position = position;
+	}
+	BoardToken (wxPoint position, int radius, wxColour colour, wxColour background, BoardToken * next = 0) {
+		this -> tokenType = CircleToken;
+		this -> gridSide = radius;
+		this -> token_size = wxSize (radius + radius, radius + radius);
+		this -> gridColour = colour;
+		this -> backgroundColour = background;
+		this -> isSelectable = true;
+		this -> next = next;
+		this -> position = position;
+	}
+	BoardToken (wxPoint position, int width, int height, wxColour colour, wxColour background, BoardToken * next = 0) {
+		if (width < 0) {width = - width; position . x -= width;}
+		if (height < 0) {height = - height; position . y -= height;}
+		this -> tokenType = EllipseToken;
+		this -> token_size = wxSize (width, height);
+		this -> gridColour = colour;
+		this -> backgroundColour = background;
+		this -> isSelectable = true;
+		this -> next = next;
+		this -> position = position;
 	}
 	BoardToken (wxPoint position, wxString text, int side, wxColour colour, BoardToken * next = 0) {
 		this -> tokenType = TextToken;
@@ -1011,7 +1079,12 @@ public:
 	wxColour icosahedronPenColour, icosahedronBrushColour;
 	wxColour textColour;
 	int textSize;
+	wxColour figurePenColour, figureBrushColour;
+	bool creatingRectangle, creatingCircle, creatingEllipse;
+	wxSize creationSize;
 	BoardWindow (wxWindow * parent, wxWindowID id) : wxWindow (parent, id) {
+		creatingRectangle = creatingCircle = creatingEllipse = false;
+		creationSize = wxSize (0, 0);
 		modified = false;
 		unlocked = false;
 		notMoved = true;
@@ -1033,6 +1106,7 @@ public:
 		deltahedron10PenColour = * wxWHITE; deltahedron10BrushColour = wxColour (0x8a, 0x2b, 0xe2);
 		dodecahedronPenColour = * wxWHITE; dodecahedronBrushColour = wxColour (0x80, 0x80, 0x80);
 		icosahedronPenColour = * wxWHITE; icosahedronBrushColour = * wxRED;
+		figurePenColour = * wxWHITE; figureBrushColour = * wxBLUE;
 		textColour = * wxWHITE;
 		idleRepaint = false;
 	}
@@ -1061,6 +1135,13 @@ public:
 			dc . SetBrush (* wxTRANSPARENT_BRUSH);
 			dragToken -> drawBorder (dc);
 		}
+		if (creationSize . x != 0 && creationSize . y != 0) {
+			dc . SetPen (wxPen (figurePenColour));
+			dc . SetBrush (wxBrush (figureBrushColour));
+			if (creatingRectangle) dc . DrawRectangle (capturedPosition, creationSize);
+			if (creatingCircle) dc . DrawCircle (capturedPosition, (int) sqrt ((double) (creationSize . x * creationSize . x + creationSize . y * creationSize . y)));
+			if (creatingEllipse) dc . DrawEllipse (capturedPosition, creationSize);
+		}
 	}
 	void RollDice (void) {
 		if (dragToken == 0) return;
@@ -1078,6 +1159,7 @@ public:
 	void OnLeftDown (wxMouseEvent & event) {
 		CaptureMouse ();
 		capturedPosition = event . GetPosition ();
+		if (creatingRectangle || creatingCircle || creatingEllipse) return;
 		notMoved = true;
 		possibleTokenCirculation = false;
 		if (tokens == 0) {dragToken = 0; return;}
@@ -1087,15 +1169,25 @@ public:
 			else dragToken = 0;
 		}
 		if (dragToken == 0) dragToken = tokens -> hitFind (capturedPosition, unlocked);
-//		if (tokens == 0) {dragToken = 0; return;}
-//		if (dragToken != 0) {
-//			if (dragToken -> next == 0) dragToken = 0;
-//			else dragToken = dragToken -> next -> hitFind (capturedPosition);
-//		}
-//		if (dragToken == 0) dragToken = tokens -> hitFind (capturedPosition);
 		Refresh ();
 	}
 	void OnLeftUp (wxMouseEvent & event) {
+		ReleaseMouse ();
+		if (creatingRectangle || creatingCircle || creatingEllipse) {
+			if (creationSize . x != 0 && creationSize . y != 0) {
+				if (creatingRectangle) dragToken = tokens = new BoardToken (capturedPosition, creationSize, figurePenColour, figureBrushColour, tokens);
+				if (creatingCircle) {
+					int radius = (int) sqrt ((double) (creationSize . x * creationSize . x + creationSize . y * creationSize . y));
+					dragToken = tokens = new BoardToken (capturedPosition - wxPoint (radius, radius), radius, figurePenColour, figureBrushColour, tokens);
+				}
+				if (creatingEllipse) dragToken = tokens = new BoardToken (capturedPosition, creationSize . x, creationSize . y, figurePenColour, figureBrushColour, tokens);
+			}
+			creatingRectangle = creatingCircle = creatingEllipse = false;
+			modified = true;
+			creationSize = wxSize (0, 0);
+			Refresh ();
+			return;
+		}
 		if (notMoved && possibleTokenCirculation) {
 			if (tokens != 0) {
 //				BoardToken * tokenToRoll = dragToken;
@@ -1111,12 +1203,16 @@ public:
 			}
 		}
 		notMoved = true; possibleTokenCirculation = false;
-		ReleaseMouse ();
 	}
 	void OnMotion (wxMouseEvent & event) {
 		if (! event . Dragging ()) return;
-		notMoved = false;
 		wxPoint p = event . GetPosition ();
+		if (creatingRectangle || creatingCircle || creatingEllipse) {
+			creationSize = wxSize (p . x - capturedPosition . x, p . y - capturedPosition . y);
+			Refresh ();
+			return;
+		}
+		notMoved = false;
 		wxPoint delta = p - capturedPosition;
 		if (dragToken == 0) {
 			if (moveTokens && tokens != 0) tokens -> moveAll (delta);
@@ -1142,6 +1238,9 @@ public:
 		if (! onToken) menu . Append (4206, _T ("New deltahedron 10"));
 		if (! onToken) menu . Append (4207, _T ("New dodecahedron"));
 		if (! onToken) menu . Append (4208, _T ("New icosahedron"));
+		if (! onToken) menu . Append (4221, _T ("New rectangle"));
+		if (! onToken) menu . Append (4222, _T ("New circle"));
+		if (! onToken) menu . Append (4223, _T ("New ellipse"));
 		if (onToken) menu . Append (4101, _T ("Rotate right"));
 		if (onToken) menu . Append (4102, _T ("Rotate left"));
 		if (onToken) menu . Append (4104, _T ("Flip to other side"));
@@ -1397,6 +1496,9 @@ public:
 	}
 	void OnDeleteToken (wxCommandEvent & event) {deleteToken ();}
 	void OnIdle (wxIdleEvent & event) {if (idleRepaint) Refresh (); idleRepaint = false;}
+	void OnNewRectangle (wxCommandEvent & event) {creatingRectangle = true;}
+	void OnNewCircle (wxCommandEvent & event) {creatingCircle = true;}
+	void OnNewEllipse (wxCommandEvent & event) {creatingEllipse = true;}
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -1421,6 +1523,9 @@ EVT_MENU(4206, BoardWindow :: OnNewDeltahedron10)
 EVT_MENU(4207, BoardWindow :: OnNewDodecahedron)
 EVT_MENU(4208, BoardWindow :: OnNewIcosahedron)
 EVT_MENU(4209, BoardWindow :: OnNewText)
+EVT_MENU(4221, BoardWindow :: OnNewRectangle)
+EVT_MENU(4222, BoardWindow :: OnNewCircle)
+EVT_MENU(4223, BoardWindow :: OnNewEllipse)
 EVT_IDLE(BoardWindow :: OnIdle)
 END_EVENT_TABLE()
 
@@ -1490,15 +1595,18 @@ public:
 			if (board -> dragToken != 0) {
 				board -> dragToken -> backgroundColour = picker . GetColourData () . GetColour ();
 				if (board -> dragToken -> tokenType == BoardToken :: DiceToken) {
-				switch (board -> dragToken -> choosenRotation) {
-				case 4: board -> tetrahedronBrushColour = board -> dragToken -> gridColour; break;
-				case 6: if (board -> dragToken -> gridIndexing) board -> cubeBrushColour = board -> dragToken -> gridColour; else board -> diceBrushColour = board -> dragToken -> gridColour; break;
-				case 8: board -> octahedronBrushColour = board -> dragToken -> gridColour; break;
-				case 10: if (board -> dragToken -> diceMultiplier == 1) board -> deltahedronBrushColour = board -> dragToken -> gridColour; else board -> deltahedron10BrushColour = board -> dragToken -> gridColour; break;
-				case 12: board -> dodecahedronBrushColour = board -> dragToken -> gridColour; break;
-				case 20: board -> icosahedronBrushColour = board -> dragToken -> gridColour; break;
-				default: break;
+					switch (board -> dragToken -> choosenRotation) {
+					case 4: board -> tetrahedronBrushColour = board -> dragToken -> backgroundColour; break;
+					case 6: if (board -> dragToken -> gridIndexing) board -> cubeBrushColour = board -> dragToken -> backgroundColour; else board -> diceBrushColour = board -> dragToken -> backgroundColour; break;
+					case 8: board -> octahedronBrushColour = board -> dragToken -> backgroundColour; break;
+					case 10: if (board -> dragToken -> diceMultiplier == 1) board -> deltahedronBrushColour = board -> dragToken -> backgroundColour; else board -> deltahedron10BrushColour = board -> dragToken -> backgroundColour; break;
+					case 12: board -> dodecahedronBrushColour = board -> dragToken -> backgroundColour; break;
+					case 20: board -> icosahedronBrushColour = board -> dragToken -> backgroundColour; break;
+					default: break;
+					}
 				}
+				if (board -> dragToken -> tokenType == BoardToken :: RectangleToken || board -> dragToken -> tokenType == BoardToken :: CircleToken || board -> dragToken -> tokenType == BoardToken :: EllipseToken) {
+					board -> figureBrushColour = board -> dragToken -> backgroundColour;
 				}
 			} else board -> backgroundColour = picker . GetColourData () . GetColour ();
 			board -> modified = true;
@@ -1525,6 +1633,9 @@ public:
 			}
 			if (board -> dragToken -> tokenType == BoardToken :: TextToken) {
 				board -> textColour = board -> dragToken -> gridColour;
+			}
+			if (board -> dragToken -> tokenType == BoardToken :: RectangleToken || board -> dragToken -> tokenType == BoardToken :: CircleToken || board -> dragToken -> tokenType == BoardToken :: EllipseToken) {
+				board -> figurePenColour = board -> dragToken -> gridColour;
 			}
 			board -> modified = true;
 			Refresh ();
@@ -1700,6 +1811,23 @@ public:
 							fr . skip ();
 						}
 					}
+					if (fr . id ("figure")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> figurePenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> figureBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
 				}
 			}
 			if (fr . id ("grid")) {
@@ -1826,8 +1954,96 @@ public:
 				board -> tokens = new BoardToken (position, wxString :: From8BitData (command), size, wxColour (fred, fgreen, fblue), board -> tokens);
 				board -> tokens -> isSelectable = selectable;
 			}
+			if (fr . id ("rectangle")) {
+				int fred = 255, fgreen = 255, fblue = 255;
+				int bred = 0, bgreen = 0, bblue = 0;
+				wxSize size (10, 10);
+				while (fr . get_id ()) {
+					if (fr . id ("size")) {
+						if (! fr . get_int ()) return; int x = fr . int_symbol;
+						if (! fr . get_int ()) return; int y = fr . int_symbol;
+						size = wxSize (x, y);
+					}
+					if (fr . id ("colour")) {
+						if (! fr . get_int ()) return; fred = fr . int_symbol;
+						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; fblue = fr . int_symbol;
+					}
+					if (fr . id ("background")) {
+						if (! fr . get_int ()) return; bred = fr . int_symbol;
+						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; bblue = fr . int_symbol;
+					}
+					if (fr . id ("position")) {
+						if (! fr . get_int ()) return; position . x = fr . int_symbol;
+						if (! fr . get_int ()) return; position . y = fr . int_symbol;
+					}
+					if (fr . id ("selectable")) selectable = true;
+					fr . skip ();
+				}
+				board -> tokens = new BoardToken (position, size, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+				board -> tokens -> isSelectable = selectable;
+			}
+			if (fr . id ("circle")) {
+				int fred = 255, fgreen = 255, fblue = 255;
+				int bred = 0, bgreen = 0, bblue = 0;
+				int radius = 10;
+				while (fr . get_id ()) {
+					if (fr . id ("radius")) {
+						if (! fr . get_int ()) return; radius = fr . int_symbol;
+					}
+					if (fr . id ("colour")) {
+						if (! fr . get_int ()) return; fred = fr . int_symbol;
+						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; fblue = fr . int_symbol;
+					}
+					if (fr . id ("background")) {
+						if (! fr . get_int ()) return; bred = fr . int_symbol;
+						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; bblue = fr . int_symbol;
+					}
+					if (fr . id ("position")) {
+						if (! fr . get_int ()) return; position . x = fr . int_symbol;
+						if (! fr . get_int ()) return; position . y = fr . int_symbol;
+					}
+					if (fr . id ("selectable")) selectable = true;
+					fr . skip ();
+				}
+				board -> tokens = new BoardToken (position, radius, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+				board -> tokens -> isSelectable = selectable;
+			}
+			if (fr . id ("ellipse")) {
+				int fred = 255, fgreen = 255, fblue = 255;
+				int bred = 0, bgreen = 0, bblue = 0;
+				wxSize size (10, 10);
+				while (fr . get_id ()) {
+					if (fr . id ("size")) {
+						if (! fr . get_int ()) return; int x = fr . int_symbol;
+						if (! fr . get_int ()) return; int y = fr . int_symbol;
+						size = wxSize (x, y);
+					}
+					if (fr . id ("colour")) {
+						if (! fr . get_int ()) return; fred = fr . int_symbol;
+						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; fblue = fr . int_symbol;
+					}
+					if (fr . id ("background")) {
+						if (! fr . get_int ()) return; bred = fr . int_symbol;
+						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; bblue = fr . int_symbol;
+					}
+					if (fr . id ("position")) {
+						if (! fr . get_int ()) return; position . x = fr . int_symbol;
+						if (! fr . get_int ()) return; position . y = fr . int_symbol;
+					}
+					if (fr . id ("selectable")) selectable = true;
+					fr . skip ();
+				}
+				board -> tokens = new BoardToken (position, size . x, size . y, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+				board -> tokens -> isSelectable = selectable;
+			}
 		}
-		this -> file_name = wxString :: From8BitData (file_name); //Format (_T ("%s"), file_name);
+		this -> file_name = wxString :: From8BitData (file_name);
 		wxMenuBar * bar = GetMenuBar ();
 		if (bar != 0) {bar -> Enable (6103, true); bar -> Enable (6105, true);}
 	}
@@ -1889,6 +2105,10 @@ public:
 			fprintf (fw, "		text [\n");
 			fprintf (fw, "			size [%i]\n", board -> textSize);
 			fprintf (fw, "			colour [%i %i %i]\n", board -> textColour . Red (), board -> textColour . Green (), board -> textColour . Blue ());
+			fprintf (fw, "		]\n");
+			fprintf (fw, "		figure [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> figurePenColour . Red (), board -> figurePenColour . Green (), board -> figurePenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> figureBrushColour . Red (), board -> figureBrushColour . Green (), board -> figureBrushColour . Blue ());
 			fprintf (fw, "		]\n");
 			fprintf (fw, "	]\n");
 			board -> SaveTokens (fw);
