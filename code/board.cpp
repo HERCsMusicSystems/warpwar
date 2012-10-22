@@ -243,7 +243,7 @@ static bool stop_threads = false;
 
 class BoardToken {
 public:
-	enum TokenType {PictureToken = 0, GridToken, DiceToken, TextToken, RectangleToken, CircleToken, EllipseToken};
+	enum TokenType {PictureToken = 0, GridToken, DiceToken, TextToken, RectangleToken, CircleToken, EllipseToken, DeckToken};
 	wxString original_file;
 	wxBitmap token;
 	int tokenSide;
@@ -267,6 +267,7 @@ public:
 	int diceShift;
 	wxString tokenText;
 	BoardToken * next;
+	BoardToken * deckTokens;
 	void Save (FILE * fw) {
 		wxString texter;
 		char command [1024];
@@ -350,6 +351,18 @@ public:
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		dc . DrawEllipse (position, token_size);
+	}
+	void drawDeck (wxDC & dc) {
+		dc . SetPen (wxPen (gridColour));
+		dc . SetBrush (wxBrush (backgroundColour));
+		dc . DrawRectangle (position, token_size);
+		wxFont f = dc . GetFont ();
+		f . SetFaceName (_T ("arial"));
+		f . SetPointSize (16);
+		dc . SetFont (f);
+		dc . SetTextForeground (gridColour);
+		dc . SetTextBackground (backgroundColour);
+		dc . DrawText (_T ("Empty DECK"), position);
 	}
 	void drawText (wxDC & dc) {
 		wxFont f = dc . GetFont ();
@@ -835,6 +848,7 @@ public:
 		case RectangleToken: drawRectangle (dc); break;
 		case CircleToken: drawCircle (dc); break;
 		case EllipseToken: drawEllipse (dc); break;
+		case DeckToken: drawDeck (dc); break;
 		default: break;
 		}
 	}
@@ -970,6 +984,16 @@ public:
 		this -> token_size = wxSize (side, side);
 		this -> isSelectable = selectable;
 	}
+	BoardToken (wxPoint position, wxColour foreground, wxColour background, BoardToken * next = 0) {
+		this -> tokenType = DeckToken;
+		this -> gridColour = foreground;
+		this -> backgroundColour = background;
+		this -> position = position;
+		this -> isSelectable = true;
+		this -> token_size = wxSize (100, 100);
+		this -> next = next;
+		this -> deckTokens = 0;
+	}
 	~ BoardToken (void) {
 		stop_threads = true;
 		if (next != 0) delete next;
@@ -1103,6 +1127,7 @@ public:
 	wxColour deltahedron10PenColour, deltahedron10BrushColour;
 	wxColour dodecahedronPenColour, dodecahedronBrushColour;
 	wxColour icosahedronPenColour, icosahedronBrushColour;
+	wxColour deckPenColour, deckBrushColour;
 	wxColour textColour;
 	int textSize;
 	wxColour figurePenColour, figureBrushColour;
@@ -1131,6 +1156,7 @@ public:
 		dodecahedronPenColour = * wxWHITE; dodecahedronBrushColour = wxColour (0x80, 0x80, 0x80);
 		icosahedronPenColour = * wxWHITE; icosahedronBrushColour = * wxRED;
 		figurePenColour = * wxWHITE; figureBrushColour = * wxBLUE;
+		deckPenColour = wxColour (0xff, 0xff, 0x00); deckBrushColour = * wxBLACK;
 		textColour = * wxWHITE;
 		idleRepaint = false;
 	}
@@ -1240,6 +1266,7 @@ public:
 			menu . Append (4001, _T ("New token"));
 			menu . Append (4002, _T ("New grid"));
 			menu . Append (4209, _T ("New text"));
+			menu . Append (4301, _T ("New deck"));
 			wxMenu * dicesubmenu = new wxMenu;
 			dicesubmenu -> Append (4201, _T ("Dice"));
 			dicesubmenu -> Append (4202, _T ("Tetrahedron"));
@@ -1345,6 +1372,11 @@ public:
 	}
 	void OnNewIcosahedron (wxCommandEvent & event) {
 		dragToken = tokens = new BoardToken (lastRightClickPosition, 20, 60, icosahedronPenColour, icosahedronBrushColour, true, true, tokens);
+		modified = true;
+		Refresh ();
+	}
+	void OnNewDeck (wxCommandEvent & event) {
+		dragToken = tokens = new BoardToken (lastRightClickPosition, deckPenColour, deckBrushColour, tokens);
 		modified = true;
 		Refresh ();
 	}
@@ -1552,6 +1584,7 @@ EVT_MENU(4209, BoardWindow :: OnNewText)
 EVT_MENU(4221, BoardWindow :: OnNewRectangle)
 EVT_MENU(4222, BoardWindow :: OnNewCircle)
 EVT_MENU(4223, BoardWindow :: OnNewEllipse)
+EVT_MENU(4301, BoardWindow :: OnNewDeck)
 EVT_IDLE(BoardWindow :: OnIdle)
 END_EVENT_TABLE()
 
@@ -1595,6 +1628,7 @@ public:
 		figuresubmenu -> Append (8223, _T ("Ellipse"));
 		file_menu -> AppendSubMenu (figuresubmenu, _T ("New figure"));
 		//------------
+		file_menu -> Append (6131, _T ("New deck	C"));
 		file_menu -> Append (6123, _T ("Delete token	R"));
 		file_menu -> AppendSeparator ();
 		file_menu -> Append (6101, _T ("EXIT	Q"));
@@ -1654,6 +1688,9 @@ public:
 					board -> figureBrushColour = board -> dragToken -> backgroundColour;
 					board -> dragToken -> rotate (board -> dragToken -> choosenRotation);
 				}
+				if (board -> dragToken -> tokenType == BoardToken :: DeckToken) {
+					board -> deckBrushColour = board -> dragToken -> backgroundColour;
+				}
 			} else board -> backgroundColour = picker . GetColourData () . GetColour ();
 			board -> modified = true;
 			Refresh ();
@@ -1685,6 +1722,9 @@ public:
 			if (board -> dragToken -> tokenType == BoardToken :: PictureToken) {
 				board -> figurePenColour = board -> dragToken -> gridColour;
 				board -> dragToken -> rotate (board -> dragToken -> choosenRotation);
+			}
+			if (board -> dragToken -> tokenType == BoardToken :: DeckToken) {
+				board -> deckPenColour = board -> dragToken -> gridColour;
 			}
 			board -> modified = true;
 			Refresh ();
@@ -1873,6 +1913,23 @@ public:
 								if (! fr . get_int ()) return; int green = fr . int_symbol;
 								if (! fr . get_int ()) return; int blue = fr . int_symbol;
 								board -> figureBrushColour = wxColour (red, green, blue);
+							}
+							fr . skip ();
+						}
+					}
+					if (fr . id ("deck")) {
+						while (fr . get_id ()) {
+							if (fr . id ("colour")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> deckPenColour = wxColour (red, green, blue);
+							}
+							if (fr . id ("background")) {
+								if (! fr . get_int ()) return; int red = fr . int_symbol;
+								if (! fr . get_int ()) return; int green = fr . int_symbol;
+								if (! fr . get_int ()) return; int blue = fr . int_symbol;
+								board -> deckBrushColour = wxColour (red, green, blue);
 							}
 							fr . skip ();
 						}
@@ -2169,6 +2226,10 @@ public:
 			fprintf (fw, "			colour [%i %i %i]\n", board -> figurePenColour . Red (), board -> figurePenColour . Green (), board -> figurePenColour . Blue ());
 			fprintf (fw, "			background [%i %i %i]\n", board -> figureBrushColour . Red (), board -> figureBrushColour . Green (), board -> figureBrushColour . Blue ());
 			fprintf (fw, "		]\n");
+			fprintf (fw, "		deck [\n");
+			fprintf (fw, "			colour [%i %i %i]\n", board -> deckPenColour . Red (), board -> deckPenColour . Green (), board -> deckPenColour . Blue ());
+			fprintf (fw, "			background [%i %i %i]\n", board -> deckBrushColour . Red (), board -> deckBrushColour . Green (), board -> deckBrushColour . Blue ());
+			fprintf (fw, "		]\n");
 			fprintf (fw, "	]\n");
 			board -> SaveTokens (fw);
 			board -> modified = false;
@@ -2314,6 +2375,7 @@ public:
 	void OnNewRectangle (wxCommandEvent & event) {if (board != 0) board -> OnNewRectangle (event);}
 	void OnNewCircle (wxCommandEvent & event) {if (board != 0) board -> OnNewCircle (event);}
 	void OnNewEllipse (wxCommandEvent & event) {if (board != 0) board -> OnNewEllipse (event);}
+	void OnNewDeck (wxCommandEvent & event) {if (board != 0) board -> OnNewDeck (event);}
 	void OnDeleteToken (wxCommandEvent & event) {if (board != 0) board -> OnDeleteToken (event);}
 	~ BoardFrame (void) {
 		stop_threads = true;
@@ -2361,6 +2423,7 @@ EVT_MENU(8208, BoardFrame :: OnNewIcosahedron)
 EVT_MENU(8221, BoardFrame :: OnNewRectangle)
 EVT_MENU(8222, BoardFrame :: OnNewCircle)
 EVT_MENU(8223, BoardFrame :: OnNewEllipse)
+EVT_MENU(6131, BoardFrame :: OnNewDeck)
 END_EVENT_TABLE()
 
 BoardFrame * boardFrame = 0;
