@@ -829,12 +829,7 @@ public:
 		return next;
 	}
 	BoardToken * hitFind (wxPoint position, bool selectableOverride) {
-		if ((isSelectable || selectableOverride)
-			&& position . x >= this -> position . x
-			&& position . x < this -> position . x + token_size . GetWidth ()
-			&& position . y >= this -> position . y
-			&& position . y < this -> position . y + token_size . GetHeight ()
-			) return this;
+		if ((isSelectable || selectableOverride) && wxRect (this -> position + this -> positionShift, this -> token_size) . Contains (position)) return this;
 		if (next == 0) return 0;
 		return next -> hitFind (position, selectableOverride);
 	}
