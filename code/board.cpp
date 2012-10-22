@@ -286,6 +286,8 @@ public:
 			toCommand (command, original_file);
 			fprintf (fw, "		location [\"%s\"]\n", command);
 			fprintf (fw, "		rotation [%i]\n", choosenRotation);
+			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
+			fprintf (fw, "		background [%i %i %i]\n", backgroundColour . Red (), backgroundColour . Green (), backgroundColour . Blue ());
 			if (tokenSide != 0) fprintf (fw, "		side [%i]\n", tokenSide);
 			break;
 		case DiceToken:
@@ -745,7 +747,19 @@ public:
 				while (angle < 0) angle += 360;
 				int w = token . GetWidth ();
 				int h = tokenSides > 1 ? w : token . GetHeight ();
-				rotatedToken = wxBitmap (token . GetSubBitmap (wxRect (wxPoint (0, h * tokenSide), wxSize (w, h))) . ConvertToImage () . Rotate (M_PI * (double) angle / 180.0, wxPoint (w / 2, h / 2)));
+				if (tokenSide == tokenSides) {
+					wxBitmap bmp (w, h);
+					wxMemoryDC dc (bmp);
+					dc . SetBackground (backgroundColour);
+					dc . SetPen (wxPen (gridColour));
+					dc . SetBrush (wxBrush (backgroundColour));
+					dc . Clear ();
+					dc . DrawRectangle (wxRect (0, 0, w, h));
+					dc . CrossHair (w / 2, h  / 2);
+					wxImage img = bmp . ConvertToImage ();
+					img . SetMaskColour (gridColour . Red () / 2, gridColour . Green () / 2, gridColour . Blue () / 2);
+					rotatedToken = wxBitmap (img . Rotate (M_PI * (double) angle / 180.0, wxPoint (w / 2, h / 2)));
+				} else rotatedToken = wxBitmap (token . GetSubBitmap (wxRect (wxPoint (0, h * tokenSide), wxSize (w, h))) . ConvertToImage () . Rotate (M_PI * (double) angle / 180.0, wxPoint (w / 2, h / 2)));
 				token_size = wxSize (rotatedToken . GetWidth (), rotatedToken . GetHeight ());
 				positionShift = wxPoint ((w - rotatedToken . GetWidth ()) / 2, (h - rotatedToken . GetHeight ()) / 2);
 				choosenRotation = angle;
@@ -794,7 +808,7 @@ public:
 		default: break;
 		}
 	}
-	void changeSide (void) {if (++tokenSide >= tokenSides) tokenSide = 0; rotate (choosenRotation);}
+	void changeSide (void) {if (++tokenSide > tokenSides) tokenSide = 0; rotate (choosenRotation);}
 	void move (wxPoint & delta) {
 		position += delta;
 	}
@@ -896,10 +910,11 @@ public:
 		this -> position = position;
 		this -> gridSide = side;
 	}
-	BoardToken (wxString file_name, wxPoint position, bool centered, BoardToken * next = 0, int side = 0, int rotation = 0) {
+	BoardToken (wxString file_name, wxColour colour, wxColour background, wxPoint position, bool centered, BoardToken * next = 0, int side = 0, int rotation = 0) {
 		tokenSide = side; tokenSides = 1;
 		this -> tokenType = PictureToken;
-		this -> gridColour = * wxWHITE;
+		this -> gridColour = colour;
+		this -> backgroundColour = background;
 		this -> isSelectable = true;
 		this -> next = next;
 		this -> original_file = file_name;
@@ -1264,13 +1279,13 @@ public:
 		if (picker . ShowModal () == wxID_OK) {
 			wxString file_name = picker . GetDirectory () + _T ("/") + picker . GetFilename ();
 			file_name . Replace (_T ("\\"), _T ("/"));
-			dragToken = tokens = new BoardToken (file_name, lastRightClickPosition, true, tokens);
+			dragToken = tokens = new BoardToken (file_name, figurePenColour, figureBrushColour, lastRightClickPosition, true, tokens);
 			modified = true;
 			Refresh ();
 		}
 	}
 	void insertNewToken (wxPoint location, wxString file_name) {
-		dragToken = tokens = new BoardToken (file_name, location, true, tokens);
+		dragToken = tokens = new BoardToken (file_name, figurePenColour, figureBrushColour, location, true, tokens);
 		modified = true;
 		Refresh ();
 	}
@@ -1618,6 +1633,10 @@ public:
 				if (board -> dragToken -> tokenType == BoardToken :: RectangleToken || board -> dragToken -> tokenType == BoardToken :: CircleToken || board -> dragToken -> tokenType == BoardToken :: EllipseToken) {
 					board -> figureBrushColour = board -> dragToken -> backgroundColour;
 				}
+				if (board -> dragToken -> tokenType == BoardToken :: PictureToken) {
+					board -> figureBrushColour = board -> dragToken -> backgroundColour;
+					board -> dragToken -> rotate (board -> dragToken -> choosenRotation);
+				}
 			} else board -> backgroundColour = picker . GetColourData () . GetColour ();
 			board -> modified = true;
 			Refresh ();
@@ -1626,7 +1645,6 @@ public:
 	void OnPenColour (wxCommandEvent & event) {
 		if (board == 0) return;
 		if (board -> dragToken == 0) return;
-		if (board -> dragToken -> tokenType == BoardToken :: PictureToken) return;
 		wxColourDialog picker (this);
 		if (picker . ShowModal () == wxID_OK) {
 			board -> dragToken -> gridColour = picker . GetColourData () . GetColour ();
@@ -1646,6 +1664,10 @@ public:
 			}
 			if (board -> dragToken -> tokenType == BoardToken :: RectangleToken || board -> dragToken -> tokenType == BoardToken :: CircleToken || board -> dragToken -> tokenType == BoardToken :: EllipseToken) {
 				board -> figurePenColour = board -> dragToken -> gridColour;
+			}
+			if (board -> dragToken -> tokenType == BoardToken :: PictureToken) {
+				board -> figurePenColour = board -> dragToken -> gridColour;
+				board -> dragToken -> rotate (board -> dragToken -> choosenRotation);
 			}
 			board -> modified = true;
 			Refresh ();
@@ -1916,9 +1938,21 @@ public:
 				char command [1024];
 				int rotation = 0;
 				int side = 0;
+				int fred = 255, fgreen = 255, fblue = 255;
+				int bred = 0, bgreen = 0, bblue = 0;
 				while (fr . get_id ()) {
 					if (fr . id ("location")) {
 						if (! fr . get_string ()) return; strcpy (command, fr . symbol);
+					}
+					if (fr . id ("colour")) {
+						if (! fr . get_int ()) return; fred = fr . int_symbol;
+						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; fblue = fr . int_symbol;
+					}
+					if (fr . id ("background")) {
+						if (! fr . get_int ()) return; bred = fr . int_symbol;
+						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; bblue = fr . int_symbol;
 					}
 					if (fr . id ("position")) {
 						if (! fr . get_int ()) return; position . x = fr . int_symbol;
@@ -1933,7 +1967,7 @@ public:
 					if (fr . id ("selectable")) selectable = true;
 					fr . skip ();
 				}
-				board -> tokens = new BoardToken (wxString :: From8BitData (command), position, false, board -> tokens, side, rotation);
+				board -> tokens = new BoardToken (wxString :: From8BitData (command), wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), position, false, board -> tokens, side, rotation);
 				board -> tokens -> isSelectable = selectable;
 			}
 			if (fr . id ("text")) {
