@@ -1578,6 +1578,23 @@ public:
 		file_menu -> Append (6121, _T ("New token	N"));
 		file_menu -> Append (6122, _T ("New grid	M"));
 		file_menu -> Append (6124, _T ("New text	Y"));
+		//------------
+		wxMenu * dicesubmenu = new wxMenu;
+		dicesubmenu -> Append (8201, _T ("Dice"));
+		dicesubmenu -> Append (8202, _T ("Tetrahedron"));
+		dicesubmenu -> Append (8203, _T ("Cube"));
+		dicesubmenu -> Append (8204, _T ("Octahedron"));
+		dicesubmenu -> Append (8205, _T ("Deltahedron"));
+		dicesubmenu -> Append (8206, _T ("Deltahedron 10"));
+		dicesubmenu -> Append (8207, _T ("Dodecahedron"));
+		dicesubmenu -> Append (8208, _T ("Icosahedron"));
+		file_menu -> AppendSubMenu (dicesubmenu, _T ("New dice"));
+		wxMenu * figuresubmenu = new wxMenu;
+		figuresubmenu -> Append (8221, _T ("Rectangle"));
+		figuresubmenu -> Append (8222, _T ("Circle"));
+		figuresubmenu -> Append (8223, _T ("Ellipse"));
+		file_menu -> AppendSubMenu (figuresubmenu, _T ("New figure"));
+		//------------
 		file_menu -> Append (6123, _T ("Delete token	R"));
 		file_menu -> AppendSeparator ();
 		file_menu -> Append (6101, _T ("EXIT	Q"));
@@ -2286,6 +2303,17 @@ public:
 	void OnNewToken (wxCommandEvent & event) {if (board != 0) board -> OnNewToken (event);}
 	void OnNewGrid (wxCommandEvent & event) {if (board != 0) board -> OnNewGrid (event);}
 	void OnNewText (wxCommandEvent & event) {if (board != 0) board -> OnNewText (event);}
+	void OnNewDice (wxCommandEvent & event) {if (board != 0) board -> OnNewDice (event);}
+	void OnNewTetrahedron (wxCommandEvent & event) {if (board != 0) board -> OnNewTetrahedron (event);}
+	void OnNewCube (wxCommandEvent & event) {if (board != 0) board -> OnNewCube (event);}
+	void OnNewOctahedron (wxCommandEvent & event) {if (board != 0) board -> OnNewOctahedron (event);}
+	void OnNewDeltahedron (wxCommandEvent & event) {if (board != 0) board -> OnNewDeltahedron (event);}
+	void OnNewDeltahedron10 (wxCommandEvent & event) {if (board != 0) board -> OnNewDeltahedron10 (event);}
+	void OnNewDodecahedron (wxCommandEvent & event) {if (board != 0) board -> OnNewDodecahedron (event);}
+	void OnNewIcosahedron (wxCommandEvent & event) {if (board != 0) board -> OnNewIcosahedron (event);}
+	void OnNewRectangle (wxCommandEvent & event) {if (board != 0) board -> OnNewRectangle (event);}
+	void OnNewCircle (wxCommandEvent & event) {if (board != 0) board -> OnNewCircle (event);}
+	void OnNewEllipse (wxCommandEvent & event) {if (board != 0) board -> OnNewEllipse (event);}
 	void OnDeleteToken (wxCommandEvent & event) {if (board != 0) board -> OnDeleteToken (event);}
 	~ BoardFrame (void) {
 		stop_threads = true;
@@ -2322,6 +2350,17 @@ EVT_MENU(6121, BoardFrame :: OnNewToken)
 EVT_MENU(6122, BoardFrame :: OnNewGrid)
 EVT_MENU(6123, BoardFrame :: OnDeleteToken)
 EVT_MENU(6124, BoardFrame :: OnNewText)
+EVT_MENU(8201, BoardFrame :: OnNewDice)
+EVT_MENU(8202, BoardFrame :: OnNewTetrahedron)
+EVT_MENU(8203, BoardFrame :: OnNewCube)
+EVT_MENU(8204, BoardFrame :: OnNewOctahedron)
+EVT_MENU(8205, BoardFrame :: OnNewDeltahedron)
+EVT_MENU(8206, BoardFrame :: OnNewDeltahedron10)
+EVT_MENU(8207, BoardFrame :: OnNewDodecahedron)
+EVT_MENU(8208, BoardFrame :: OnNewIcosahedron)
+EVT_MENU(8221, BoardFrame :: OnNewRectangle)
+EVT_MENU(8222, BoardFrame :: OnNewCircle)
+EVT_MENU(8223, BoardFrame :: OnNewEllipse)
 END_EVENT_TABLE()
 
 BoardFrame * boardFrame = 0;
