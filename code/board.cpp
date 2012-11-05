@@ -329,6 +329,15 @@ public:
 			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
 			fprintf (fw, "		background [%i %i %i]\n", backgroundColour . Red (), backgroundColour . Green (), backgroundColour . Blue ());
 			break;
+		case DeckToken:
+			fprintf (fw, "	deck [\n");
+			fprintf (fw, "		size [%i %i]\n", token_size . x, token_size . y);
+			fprintf (fw, "		colour [%i %i %i]\n", gridColour . Red (), gridColour . Green (), gridColour . Blue ());
+			fprintf (fw, "		background [%i %i %i]\n", backgroundColour . Red (), backgroundColour . Green (), backgroundColour . Blue ());
+			fprintf (fw, "		content [\n");
+			if (deckTokens != NULL) deckTokens -> Save (fw);
+			fprintf (fw, "		]\n");
+			break;
 		default:
 			fprintf (fw, "	unknown [\n");
 			break;
@@ -362,7 +371,10 @@ public:
 		dc . SetFont (f);
 		dc . SetTextForeground (gridColour);
 		dc . SetTextBackground (backgroundColour);
-		dc . DrawText (_T ("Empty DECK"), position);
+		BoardToken * bp = deckTokens;
+		int counter = 0;
+		while (bp != NULL) {bp = bp -> next; counter++;}
+		dc . DrawText (wxString :: Format (_T ("DECK [%i]"), counter), position);
 	}
 	void drawText (wxDC & dc) {
 		wxFont f = dc . GetFont ();
@@ -853,13 +865,18 @@ public:
 		}
 	}
 	BoardToken * drawBorder (wxDC & dc) {
-		dc . DrawRectangle (position + positionShift, token_size);
+		dc . DrawRectangle (position + positionShift - wxPoint (2, 2), token_size + wxSize (4, 4));
 		return next;
 	}
 	BoardToken * hitFind (wxPoint position, bool selectableOverride) {
 		if ((isSelectable || selectableOverride) && wxRect (this -> position + this -> positionShift, this -> token_size) . Contains (position)) return this;
 		if (next == 0) return 0;
 		return next -> hitFind (position, selectableOverride);
+	}
+	BoardToken * hitFindDeck (wxPoint position, BoardToken * avoid) {
+		if (wxRect (this -> position + this -> positionShift, this -> token_size) . Contains (position) && tokenType == DeckToken && this != avoid) return this;
+		if (next == 0) return 0;
+		return next -> hitFindDeck (position, avoid);
 	}
 	void roll (void) {
 		if (tokenType != DiceToken) return;
@@ -893,6 +910,7 @@ public:
 		this -> isSelectable = true;
 		this -> next = next;
 		this -> position = position;
+		this -> deckTokens = NULL;
 	}
 	BoardToken (wxPoint position, int radius, wxColour colour, wxColour background, BoardToken * next = 0) {
 		this -> tokenType = CircleToken;
@@ -903,6 +921,7 @@ public:
 		this -> isSelectable = true;
 		this -> next = next;
 		this -> position = position;
+		this -> deckTokens = NULL;
 	}
 	BoardToken (wxPoint position, int width, int height, wxColour colour, wxColour background, BoardToken * next = 0) {
 		if (width < 0) {width = - width; position . x -= width;}
@@ -914,6 +933,7 @@ public:
 		this -> isSelectable = true;
 		this -> next = next;
 		this -> position = position;
+		this -> deckTokens = NULL;
 	}
 	BoardToken (wxPoint position, wxString text, int side, wxColour colour, BoardToken * next = 0) {
 		this -> tokenType = TextToken;
@@ -923,6 +943,7 @@ public:
 		this -> next = next;
 		this -> position = position;
 		this -> gridSide = side;
+		this -> deckTokens = NULL;
 	}
 	BoardToken (wxString file_name, wxColour colour, wxColour background, wxPoint position, bool centered, BoardToken * next = 0, int side = 0, int rotation = 0) {
 		tokenSide = side; tokenSides = 1;
@@ -931,6 +952,7 @@ public:
 		this -> backgroundColour = background;
 		this -> isSelectable = true;
 		this -> next = next;
+		this -> deckTokens = NULL;
 		this -> original_file = file_name;
 		token . LoadFile (file_name, wxBITMAP_TYPE_PNG);
 		this -> position = position;
@@ -947,6 +969,7 @@ public:
 		this -> isSelectable = true;
 		this -> position = position - wxPoint (120, 120);
 		this -> next = next;
+		this -> deckTokens = NULL;
 		choosenRotation = 0;
 		gridSide = 60;
 		gridSize = wxSize (4, 4);
@@ -961,6 +984,7 @@ public:
 		this -> isSelectable = selectable;
 		this -> position = position;
 		this -> next = next;
+		this -> deckTokens = NULL;
 		choosenRotation = type;
 		gridSide = side;
 		gridSize = size;
@@ -979,6 +1003,7 @@ public:
 		this -> gridColour = foreground;
 		this -> backgroundColour = background;
 		this -> next = next;
+		this -> deckTokens = NULL;
 		this -> position = position;
 		if (centered) this -> position -= wxPoint (side / 2, side / 2);
 		this -> token_size = wxSize (side, side);
@@ -992,11 +1017,13 @@ public:
 		this -> isSelectable = true;
 		this -> token_size = wxSize (100, 100);
 		this -> next = next;
+		this -> deckTokens = NULL;
 		this -> deckTokens = 0;
 	}
 	~ BoardToken (void) {
 		stop_threads = true;
 		if (next != 0) delete next;
+		if (deckTokens != 0) delete deckTokens;
 	}
 	void changeGridSide (int x, int y) {
 		switch (tokenType) {
@@ -1016,6 +1043,7 @@ public:
 			break;
 		case RectangleToken:
 		case EllipseToken:
+		case DeckToken:
 			token_size += wxSize (x, y);
 			if (token_size . x < 1) token_size . x = 1;
 			if (token_size . y < 1) token_size . y = 1;
@@ -1112,6 +1140,7 @@ public:
 	wxPoint lastRightClickPosition;
 	BoardToken * dragToken;
 	wxPoint capturedPosition;
+	wxPoint startingPosition;
 	bool moveGrid;
 	bool moveBoard;
 	bool moveTokens;
@@ -1147,7 +1176,7 @@ public:
 		SetBackgroundStyle (wxBG_STYLE_CUSTOM);
 		tokens = 0;
 		dragToken = 0;
-		lastRightClickPosition = capturedPosition = wxPoint (10, 10);
+		lastRightClickPosition = startingPosition = capturedPosition = wxPoint (10, 10);
 		dicePenColour = * wxBLACK; diceBrushColour = * wxWHITE;
 		tetrahedronPenColour = * wxWHITE; tetrahedronBrushColour = * wxRED;
 		cubePenColour = * wxWHITE; cubeBrushColour = * wxBLUE;
@@ -1164,6 +1193,7 @@ public:
 	}
 	~ BoardWindow (void) {
 		stop_threads = true;
+		if (tokens != NULL) delete tokens;
 	}
 	void SaveTokens (FILE * fw) {
 		if (tokens != 0) tokens -> Save (fw);
@@ -1188,6 +1218,25 @@ public:
 	}
 	void RollDice (void) {
 		if (dragToken == 0) return;
+		if (dragToken -> tokenType == BoardToken :: DeckToken) {
+			if (dragToken -> deckTokens == NULL) return;
+			BoardToken * bp = dragToken -> deckTokens;
+			dragToken -> deckTokens = bp -> next;
+			bp -> next = dragToken;
+			if (tokens == dragToken) tokens = bp;
+			else {
+				BoardToken * bo = tokens;
+				while (bo -> next != dragToken) bo = bo -> next;
+				bo -> next = bp;
+			}
+			bp -> position = dragToken -> position;
+			dragToken = bp;
+//			bp -> next = dragToken -> next;
+//			dragToken -> next = bp;
+			modified = true;
+			Refresh ();
+			return;
+		}
 		if (dragToken -> tokenType != BoardToken :: DiceToken) return;
 		dragToken -> roll ();
 		modified = true;
@@ -1201,7 +1250,7 @@ public:
 	}
 	void OnLeftDown (wxMouseEvent & event) {
 		CaptureMouse ();
-		capturedPosition = event . GetPosition ();
+		startingPosition = capturedPosition = event . GetPosition ();
 		if (creatingRectangle || creatingCircle || creatingEllipse) return;
 		notMoved = true;
 		possibleTokenCirculation = false;
@@ -1216,6 +1265,24 @@ public:
 	}
 	void OnLeftUp (wxMouseEvent & event) {
 		ReleaseMouse ();
+		wxPoint p = event . GetPosition ();
+		BoardToken * deck_token = tokens;
+		if (deck_token != NULL) deck_token = deck_token -> hitFindDeck (p, dragToken);
+		if (deck_token != NULL && deck_token -> tokenType == BoardToken :: DeckToken) {
+			BoardToken * starting_deck = tokens -> hitFindDeck (startingPosition, NULL);
+			if (starting_deck != NULL) {Refresh (); return;}
+			if (tokens == dragToken) tokens = dragToken -> next;
+			else {
+				BoardToken * bp = tokens;
+				while (bp -> next != dragToken) bp = bp -> next;
+				bp -> next = dragToken -> next;
+			}
+			dragToken -> next = deck_token -> deckTokens;
+			deck_token -> deckTokens = dragToken;
+			dragToken = NULL;
+			Refresh ();
+			return;
+		}
 		if (creatingRectangle || creatingCircle || creatingEllipse) {
 			if (creationSize . x != 0 && creationSize . y != 0) {
 				if (creatingRectangle) dragToken = tokens = new BoardToken (capturedPosition, creationSize, figurePenColour, figureBrushColour, tokens);
@@ -1313,8 +1380,10 @@ public:
 			Refresh ();
 		}
 	}
-	void insertNewToken (wxPoint location, wxString file_name) {
-		dragToken = tokens = new BoardToken (file_name, reversePenColour, reverseBrushColour, location, true, tokens);
+	void insertNewToken (wxPoint location, int ind, wxString file_name, BoardToken * deck) {
+		location += wxSize (ind, ind);
+		if (deck != NULL) deck -> deckTokens = new BoardToken (file_name, reversePenColour, reverseBrushColour, location, true, deck -> deckTokens);
+		else dragToken = tokens = new BoardToken (file_name, reversePenColour, reverseBrushColour, location, true, tokens);
 		modified = true;
 		Refresh ();
 	}
@@ -2177,6 +2246,37 @@ public:
 				board -> tokens = new BoardToken (position, size . x, size . y, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
 				board -> tokens -> isSelectable = selectable;
 			}
+			if (fr . id ("deck")) {
+				int fred = 255, fgreen = 255, fblue = 255;
+				int bred = 0, bgreen = 0, bblue = 0;
+				wxSize size (100, 100);
+				while (fr . get_id ()) {
+					if (fr . id ("size")) {
+						if (! fr . get_int ()) return; int x = fr . int_symbol;
+						if (! fr . get_int ()) return; int y = fr . int_symbol;
+						size = wxSize (x, y);
+					}
+					if (fr . id ("colour")) {
+						if (! fr . get_int ()) return; fred = fr . int_symbol;
+						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; fblue = fr . int_symbol;
+					}
+					if (fr . id ("background")) {
+						if (! fr . get_int ()) return; bred = fr . int_symbol;
+						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
+						if (! fr . get_int ()) return; bblue = fr . int_symbol;
+					}
+					if (fr . id ("position")) {
+						if (! fr . get_int ()) return; position . x = fr . int_symbol;
+						if (! fr . get_int ()) return; position . y = fr . int_symbol;
+					}
+					if (fr . id ("selectable")) selectable = true;
+					fr . skip ();
+				}
+				board -> tokens = new BoardToken (position, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+				board -> tokens -> token_size = size;
+				board -> tokens -> isSelectable = selectable;
+			}
 		}
 		this -> file_name = wxString :: From8BitData (file_name);
 		wxMenuBar * bar = GetMenuBar ();
@@ -2349,7 +2449,6 @@ public:
 	}
 	void RollDice (void) {
 		if (board == 0) return;
-
 		board -> RollDice ();
 	}
 	void RollAllDices (void) {
@@ -2361,10 +2460,10 @@ public:
 		if (board == 0) return;
 		board -> flipToken ();
 	}
-	void insertNewToken (wxPoint location, wxString file_name) {
+	void insertNewToken (wxPoint location, int ind, wxString file_name, BoardToken * deck) {
 		if (board == 0) return;
 		file_name . Replace (_T ("\\"), _T ("/"));
-		board -> insertNewToken (location, file_name);
+		board -> insertNewToken (location, ind, file_name, deck);
 	}
 	void TabForward (void) {if (board != 0) board -> TabForward (board -> unlocked);}
 	void TabBackward (void) {if (board != 0) board -> TabBackward (board -> unlocked);}
@@ -2456,8 +2555,10 @@ FileReceiver :: FileReceiver (BoardFrame * frame) {this -> frame = frame;}
 bool FileReceiver :: OnDropFiles (wxCoord x, wxCoord y, const wxArrayString & files) {
 	if (frame == NULL) return true;
 	if ((int) files . GetCount () < 1) return true;
+	BoardToken * deck = frame -> board -> tokens;
+	if (deck != NULL) deck = deck -> hitFindDeck (wxPoint (x, y), NULL);
 	for (int ind = 0; ind < (int) files . GetCount (); ind++) {
-		if (files [ind] . Lower () . Find (_T (".png")) >= 0) frame -> insertNewToken (wxPoint (x, y) + wxPoint (20 *ind, 20 * ind), files [ind]);
+		if (files [ind] . Lower () . Find (_T (".png")) >= 0) frame -> insertNewToken (wxPoint (x, y), ind, files [ind], deck);
 		if (files [ind] . Lower () . Find (_T (".grid")) >= 0) {frame -> file_name = files [ind]; frame -> LoadGrid ();}
 	}
 	return true;
