@@ -371,10 +371,7 @@ public:
 		dc . SetFont (f);
 		dc . SetTextForeground (gridColour);
 		dc . SetTextBackground (backgroundColour);
-		BoardToken * bp = deckTokens;
-		int counter = 0;
-		while (bp != NULL) {bp = bp -> next; counter++;}
-		dc . DrawText (wxString :: Format (_T ("DECK [%i]"), counter), position);
+		dc . DrawText (wxString :: Format (_T ("DECK [%i]"), deckTokenCount ()), position);
 	}
 	void drawText (wxDC & dc) {
 		wxFont f = dc . GetFont ();
@@ -834,7 +831,41 @@ public:
 		}
 	}
 	void changeSide (void) {if (++tokenSide > tokenSides) tokenSide = 0; rotate (choosenRotation);}
+	int deckTokenCount (void) {
+		BoardToken * bp = deckTokens;
+		int counter = 0;
+		while (bp != NULL) {bp = bp -> next; counter++;}
+		return counter;
+	}
+	BoardToken * getFromDeck (int location) {
+		if (deckTokens == NULL) return NULL;
+		BoardToken * bp = deckTokens;
+		if (location < 1) {
+			deckTokens = bp -> next;
+			return bp;
+		}
+		while (bp != NULL && location > 1) {bp = bp -> next; location--;}
+		if (bp != NULL) {
+			BoardToken * ret = bp -> next;
+			if (ret != NULL) bp -> next = ret -> next;
+			else bp -> next = NULL;
+			return ret;
+		}
+		return NULL;
+	}
+	BoardToken * getRandomFromDeck (void) {
+		if (deckTokens == NULL) return NULL;
+		return getFromDeck (rand () % deckTokenCount ());
+	}
+	void shuffle (void) {
+		if (deckTokens == NULL) return;
+		BoardToken * accumulator = NULL;
+		BoardToken * bp = getRandomFromDeck ();
+		while (bp != NULL) {bp -> next = accumulator; accumulator = bp; bp = getRandomFromDeck ();}
+		deckTokens = accumulator;
+	}
 	void move (wxPoint & delta) {
+		if (tokenType == BoardToken :: DeckToken && ! isSelectable) return;
 		position += delta;
 	}
 	void moveAll (wxPoint & delta) {
@@ -869,7 +900,7 @@ public:
 		return next;
 	}
 	BoardToken * hitFind (wxPoint position, bool selectableOverride) {
-		if ((isSelectable || selectableOverride) && wxRect (this -> position + this -> positionShift, this -> token_size) . Contains (position)) return this;
+		if ((isSelectable || selectableOverride || tokenType == BoardToken :: DeckToken) && wxRect (this -> position + this -> positionShift, this -> token_size) . Contains (position)) return this;
 		if (next == 0) return 0;
 		return next -> hitFind (position, selectableOverride);
 	}
@@ -1464,7 +1495,10 @@ public:
 	}
 	void OnRotateLeft (wxCommandEvent & event) {rotateLeft ();}
 	void flipToken (void) {
-		if (dragToken != 0) dragToken -> changeSide ();
+		if (dragToken != 0) {
+			if (dragToken -> tokenType == BoardToken :: DeckToken) dragToken -> shuffle ();
+			else dragToken -> changeSide ();
+		}
 		modified = true;
 		Refresh ();
 	}
@@ -1713,8 +1747,8 @@ public:
 		control_menu -> AppendRadioItem (6003, _T ("Grid cell size	F8"));
 		control_menu -> AppendSeparator ();
 		control_menu -> Append (6205, _T ("Change indexing	I"));
-		control_menu -> Append (6206, _T ("Roll dice	D"));
-		control_menu -> Append (6207, _T ("Flip to other side	F"));
+		control_menu -> Append (6206, _T ("Roll dice / Release from deck	D"));
+		control_menu -> Append (6207, _T ("Flip to other side / Shuffle deck	F"));
 		bar -> Append (control_menu, _T ("Control"));
 
 		wxMenu * lock_menu = new wxMenu ();
@@ -1801,6 +1835,530 @@ public:
 			Refresh ();
 		}
 	}
+	bool LoadToken (SetupFileReader & fr, BoardToken * deck) {
+		bool selectable = false;
+		wxPoint position (0, 0);
+		if (fr . id ("background")) {
+			if (! fr . get_int ()) return false; int red = fr . int_symbol;
+			if (! fr . get_int ()) return false; int green = fr . int_symbol;
+			if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+			board -> backgroundColour = wxColour (red, green, blue);
+			fr . skip ();
+		}
+		if (fr . id ("defaults")) {
+			while (fr . get_id ()) {
+				if (fr . id ("dice")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> dicePenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> diceBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("tetrahedron")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> tetrahedronPenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> tetrahedronBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("cube")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> cubePenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> cubeBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("octahedron")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> octahedronPenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> octahedronBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("deltahedron")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> deltahedronPenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> deltahedronBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("deltahedron10")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> deltahedron10PenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> deltahedron10BrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("dodecahedron")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> dodecahedronPenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> dodecahedronBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("icosahedron")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> icosahedronPenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> icosahedronBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("text")) {
+					while (fr . get_id ()) {
+						if (fr . id ("size")) {
+							if (! fr . get_int ()) return false;
+							board -> textSize = fr . int_symbol;
+						}
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> textColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("figure")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> figurePenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> figureBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("deck")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> deckPenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> deckBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+				if (fr . id ("reverse")) {
+					while (fr . get_id ()) {
+						if (fr . id ("colour")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> reversePenColour = wxColour (red, green, blue);
+						}
+						if (fr . id ("background")) {
+							if (! fr . get_int ()) return false; int red = fr . int_symbol;
+							if (! fr . get_int ()) return false; int green = fr . int_symbol;
+							if (! fr . get_int ()) return false; int blue = fr . int_symbol;
+							board -> reverseBrushColour = wxColour (red, green, blue);
+						}
+						fr . skip ();
+					}
+				}
+			}
+		}
+		if (fr . id ("grid")) {
+			int type = 0;
+			int side = 60;
+			wxSize size (4, 4);
+			wxPoint index (0, 0);
+			bool indexed = false;
+			int red = 255, green = 255, blue = 255;
+			while (fr . get_id ()) {
+				if (fr . id ("type")) {if (! fr . get_int ()) return false; type = fr . int_symbol;}
+				if (fr . id ("side")) {if (! fr . get_int ()) return false; side = fr . int_symbol;}
+				if (fr . id ("size")) {
+					if (! fr . get_int ()) return false; size . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; size . y = fr . int_symbol;
+				}
+				if (fr . id ("index")) {
+					if (! fr . get_int ()) return false; index . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; index . y = fr . int_symbol;
+				}
+				if (fr . id ("colour")) {
+					if (! fr . get_int ()) return false; red = fr . int_symbol;
+					if (! fr . get_int ()) return false; green = fr . int_symbol;
+					if (! fr . get_int ()) return false; blue = fr . int_symbol;
+				}
+				if (fr . id ("indexed")) indexed = true;
+				if (fr . id ("position")) {
+					if (! fr . get_int ()) return false; position . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; position . y = fr . int_symbol;
+				}
+				if (fr . id ("selectable")) selectable = true;
+				fr . skip ();
+			}
+			if (deck == NULL) board -> tokens = new BoardToken (position, type, side, size, index, indexed, selectable, wxColour (red, green, blue), board -> tokens);
+			else deck -> deckTokens = new BoardToken (position, type, side, size, index, indexed, selectable, wxColour (red, green, blue), deck -> deckTokens);
+		}
+		if (fr . id ("dice")) {
+			int type = 0;
+			int side = 60;
+			int shift = 1;
+			int multiplier = 1;
+			int value = 1;
+			int fred = 255, fgreen = 255, fblue = 255;
+			int bred = 0, bgreen = 0, bblue = 0;
+			bool indexed = false;
+			while (fr . get_id ()) {
+				if (fr . id ("type")) {if (! fr . get_int ()) return false; type = fr . int_symbol;}
+				if (fr . id ("side")) {if (! fr . get_int ()) return false; side = fr . int_symbol;}
+				if (fr . id ("shift")) {if (! fr . get_int ()) return false; shift = fr . int_symbol;}
+				if (fr . id ("multiplier")) {if (! fr . get_int ()) return false; multiplier = fr . int_symbol;}
+				if (fr . id ("value")) {if (! fr . get_int ()) return false; value = fr . int_symbol;}
+				if (fr . id ("colour")) {
+					if (! fr . get_int ()) return false; fred = fr . int_symbol;
+					if (! fr . get_int ()) return false; fgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; fblue = fr . int_symbol;
+				}
+				if (fr . id ("background")) {
+					if (! fr . get_int ()) return false; bred = fr . int_symbol;
+					if (! fr . get_int ()) return false; bgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; bblue = fr . int_symbol;
+				}
+				if (fr . id ("indexed")) indexed = true;
+				if (fr . id ("position")) {
+					if (! fr . get_int ()) return false; position . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; position . y = fr . int_symbol;
+				}
+				if (fr . id ("selectable")) selectable = true;
+				fr . skip ();
+			}
+			if (deck == NULL) {
+				board -> tokens = new BoardToken (position, type, side, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), false, selectable, board -> tokens);
+				board -> tokens -> diceShift = shift;
+				board -> tokens -> diceMultiplier = multiplier;
+				board -> tokens -> gridIndexing = indexed;
+				board -> tokens -> diceValue = value;
+			} else {
+				deck -> deckTokens = new BoardToken (position, type, side, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), false, selectable, deck -> deckTokens);
+				deck -> deckTokens -> diceShift = shift;
+				deck -> deckTokens -> diceMultiplier = multiplier;
+				deck -> deckTokens -> gridIndexing = indexed;
+				deck -> deckTokens -> diceValue = value;
+			}
+		}
+		if (fr . id ("token")) {
+			char command [1024];
+			int rotation = 0;
+			int side = 0;
+			int fred = 255, fgreen = 255, fblue = 255;
+			int bred = 0, bgreen = 0, bblue = 0;
+			while (fr . get_id ()) {
+				if (fr . id ("location")) {
+					if (! fr . get_string ()) return false; strcpy (command, fr . symbol);
+				}
+				if (fr . id ("colour")) {
+					if (! fr . get_int ()) return false; fred = fr . int_symbol;
+					if (! fr . get_int ()) return false; fgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; fblue = fr . int_symbol;
+				}
+				if (fr . id ("background")) {
+					if (! fr . get_int ()) return false; bred = fr . int_symbol;
+					if (! fr . get_int ()) return false; bgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; bblue = fr . int_symbol;
+				}
+				if (fr . id ("position")) {
+					if (! fr . get_int ()) return false; position . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; position . y = fr . int_symbol;
+				}
+				if (fr . id ("rotation")) {
+					if (! fr . get_int ()) return false; rotation = fr . int_symbol;
+				}
+				if (fr . id ("side")) {
+					if (! fr . get_int ()) return false; side = fr . int_symbol;
+				}
+				if (fr . id ("selectable")) selectable = true;
+				fr . skip ();
+			}
+			if (deck == NULL) {
+				board -> tokens = new BoardToken (wxString :: From8BitData (command), wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), position, false, board -> tokens, side, rotation);
+				board -> tokens -> isSelectable = selectable;
+			} else {
+				deck -> deckTokens = new BoardToken (wxString :: From8BitData (command), wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), position, false, deck -> deckTokens, side, rotation);
+				deck -> deckTokens -> isSelectable = selectable;
+			}
+		}
+		if (fr . id ("text")) {
+			char command [1024];
+			int size = 18;
+			int fred = 255, fgreen = 255, fblue = 255;
+			while (fr . get_id ()) {
+				if (fr . id ("text")) {
+					if (! fr . get_string ()) return false; strcpy (command, fr . symbol);
+				}
+				if (fr . id ("size")) {
+					if (! fr . get_int ()) return false; size = fr . int_symbol;
+				}
+				if (fr . id ("colour")) {
+					if (! fr . get_int ()) return false; fred = fr . int_symbol;
+					if (! fr . get_int ()) return false; fgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; fblue = fr . int_symbol;
+				}
+				if (fr . id ("position")) {
+					if (! fr . get_int ()) return false; position . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; position . y = fr . int_symbol;
+				}
+				if (fr . id ("selectable")) selectable = true;
+				fr . skip ();
+			}
+			if (deck == NULL) {
+				board -> tokens = new BoardToken (position, wxString :: From8BitData (command), size, wxColour (fred, fgreen, fblue), board -> tokens);
+				board -> tokens -> isSelectable = selectable;
+			} else {
+				deck -> deckTokens = new BoardToken (position, wxString :: From8BitData (command), size, wxColour (fred, fgreen, fblue), deck -> deckTokens);
+				deck -> deckTokens -> isSelectable = selectable;
+			}
+		}
+		if (fr . id ("rectangle")) {
+			int fred = 255, fgreen = 255, fblue = 255;
+			int bred = 0, bgreen = 0, bblue = 0;
+			wxSize size (10, 10);
+			while (fr . get_id ()) {
+				if (fr . id ("size")) {
+					if (! fr . get_int ()) return false; int x = fr . int_symbol;
+					if (! fr . get_int ()) return false; int y = fr . int_symbol;
+					size = wxSize (x, y);
+				}
+				if (fr . id ("colour")) {
+					if (! fr . get_int ()) return false; fred = fr . int_symbol;
+					if (! fr . get_int ()) return false; fgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; fblue = fr . int_symbol;
+				}
+				if (fr . id ("background")) {
+					if (! fr . get_int ()) return false; bred = fr . int_symbol;
+					if (! fr . get_int ()) return false; bgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; bblue = fr . int_symbol;
+				}
+				if (fr . id ("position")) {
+					if (! fr . get_int ()) return false; position . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; position . y = fr . int_symbol;
+				}
+				if (fr . id ("selectable")) selectable = true;
+				fr . skip ();
+			}
+			if (deck == NULL) {
+				board -> tokens = new BoardToken (position, size, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+				board -> tokens -> isSelectable = selectable;
+			} else {
+				deck -> deckTokens = new BoardToken (position, size, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), deck -> deckTokens);
+				deck -> deckTokens -> isSelectable = selectable;
+			}
+		}
+		if (fr . id ("circle")) {
+			int fred = 255, fgreen = 255, fblue = 255;
+			int bred = 0, bgreen = 0, bblue = 0;
+			int radius = 10;
+			while (fr . get_id ()) {
+				if (fr . id ("radius")) {
+					if (! fr . get_int ()) return false; radius = fr . int_symbol;
+				}
+				if (fr . id ("colour")) {
+					if (! fr . get_int ()) return false; fred = fr . int_symbol;
+					if (! fr . get_int ()) return false; fgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; fblue = fr . int_symbol;
+				}
+				if (fr . id ("background")) {
+					if (! fr . get_int ()) return false; bred = fr . int_symbol;
+					if (! fr . get_int ()) return false; bgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; bblue = fr . int_symbol;
+				}
+				if (fr . id ("position")) {
+					if (! fr . get_int ()) return false; position . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; position . y = fr . int_symbol;
+				}
+				if (fr . id ("selectable")) selectable = true;
+				fr . skip ();
+			}
+			if (deck == NULL) {
+				board -> tokens = new BoardToken (position, radius, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+				board -> tokens -> isSelectable = selectable;
+			} else {
+				deck -> deckTokens = new BoardToken (position, radius, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), deck -> deckTokens);
+				deck -> deckTokens -> isSelectable = selectable;
+			}
+		}
+		if (fr . id ("ellipse")) {
+			int fred = 255, fgreen = 255, fblue = 255;
+			int bred = 0, bgreen = 0, bblue = 0;
+			wxSize size (10, 10);
+			while (fr . get_id ()) {
+				if (fr . id ("size")) {
+					if (! fr . get_int ()) return false; int x = fr . int_symbol;
+					if (! fr . get_int ()) return false; int y = fr . int_symbol;
+					size = wxSize (x, y);
+				}
+				if (fr . id ("colour")) {
+					if (! fr . get_int ()) return false; fred = fr . int_symbol;
+					if (! fr . get_int ()) return false; fgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; fblue = fr . int_symbol;
+				}
+				if (fr . id ("background")) {
+					if (! fr . get_int ()) return false; bred = fr . int_symbol;
+					if (! fr . get_int ()) return false; bgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; bblue = fr . int_symbol;
+				}
+				if (fr . id ("position")) {
+					if (! fr . get_int ()) return false; position . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; position . y = fr . int_symbol;
+				}
+				if (fr . id ("selectable")) selectable = true;
+				fr . skip ();
+			}
+			if (deck == NULL) {
+				board -> tokens = new BoardToken (position, size . x, size . y, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+				board -> tokens -> isSelectable = selectable;
+			} else {
+				deck -> deckTokens = new BoardToken (position, size . x, size . y, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), deck -> deckTokens);
+				deck -> deckTokens -> isSelectable = selectable;
+			}
+		}
+		if (fr . id ("deck")) {
+			int fred = 255, fgreen = 255, fblue = 255;
+			int bred = 0, bgreen = 0, bblue = 0;
+			wxSize size (100, 100);
+			while (fr . get_id ()) {
+				bool skipper = true;
+				if (fr . id ("size")) {
+					if (! fr . get_int ()) return false; int x = fr . int_symbol;
+					if (! fr . get_int ()) return false; int y = fr . int_symbol;
+					size = wxSize (x, y);
+				}
+				if (fr . id ("colour")) {
+					if (! fr . get_int ()) return false; fred = fr . int_symbol;
+					if (! fr . get_int ()) return false; fgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; fblue = fr . int_symbol;
+				}
+				if (fr . id ("background")) {
+					if (! fr . get_int ()) return false; bred = fr . int_symbol;
+					if (! fr . get_int ()) return false; bgreen = fr . int_symbol;
+					if (! fr . get_int ()) return false; bblue = fr . int_symbol;
+				}
+				if (fr . id ("content")) {
+					if (deck == NULL) {
+						board -> tokens = new BoardToken (position, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+						while (fr . get_id ()) {if (! LoadToken (fr, board -> tokens)) return false;}
+					} else {
+						deck -> deckTokens = new BoardToken (position, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), deck -> deckTokens);
+						while (fr . get_id ()) {if (! LoadToken (fr, deck -> deckTokens)) return false;}
+					}
+					skipper = false;
+				}
+				if (fr . id ("position")) {
+					if (! fr . get_int ()) return false; position . x = fr . int_symbol;
+					if (! fr . get_int ()) return false; position . y = fr . int_symbol;
+				}
+				if (fr . id ("selectable")) selectable = true;
+				if (skipper) fr . skip ();
+			}
+			if (deck == NULL) {
+//				board -> tokens = new BoardToken (position, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
+				board -> tokens -> position = position;
+				board -> tokens -> token_size = size;
+				board -> tokens -> isSelectable = selectable;
+			} else {
+//				deck -> deckTokens = new BoardToken (position, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), deck -> deckTokens);
+				deck -> deckTokens -> position = position;
+				deck -> deckTokens -> token_size = size;
+				deck -> deckTokens -> isSelectable = selectable;
+			}
+		}
+		return true;
+	}
 	void LoadGrid (char * file_name) {
 		if (board == 0) return;
 		SetupFileReader fr (file_name);
@@ -1809,474 +2367,7 @@ public:
 		if (board -> tokens != 0) delete board -> tokens; board -> dragToken = board -> tokens = 0;
 		board -> modified = false;
 		while (fr . get_id ()) {
-			bool selectable = false;
-			wxPoint position (0, 0);
-			if (fr . id ("background")) {
-				if (! fr . get_int ()) return; int red = fr . int_symbol;
-				if (! fr . get_int ()) return; int green = fr . int_symbol;
-				if (! fr . get_int ()) return; int blue = fr . int_symbol;
-				board -> backgroundColour = wxColour (red, green, blue);
-				fr . skip ();
-			}
-			if (fr . id ("defaults")) {
-				while (fr . get_id ()) {
-					if (fr . id ("dice")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> dicePenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> diceBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("tetrahedron")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> tetrahedronPenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> tetrahedronBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("cube")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> cubePenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> cubeBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("octahedron")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> octahedronPenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> octahedronBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("deltahedron")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> deltahedronPenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> deltahedronBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("deltahedron10")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> deltahedron10PenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> deltahedron10BrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("dodecahedron")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> dodecahedronPenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> dodecahedronBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("icosahedron")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> icosahedronPenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> icosahedronBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("text")) {
-						while (fr . get_id ()) {
-							if (fr . id ("size")) {
-								if (! fr . get_int ()) return;
-								board -> textSize = fr . int_symbol;
-							}
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> textColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("figure")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> figurePenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> figureBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("deck")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> deckPenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> deckBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-					if (fr . id ("reverse")) {
-						while (fr . get_id ()) {
-							if (fr . id ("colour")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> reversePenColour = wxColour (red, green, blue);
-							}
-							if (fr . id ("background")) {
-								if (! fr . get_int ()) return; int red = fr . int_symbol;
-								if (! fr . get_int ()) return; int green = fr . int_symbol;
-								if (! fr . get_int ()) return; int blue = fr . int_symbol;
-								board -> reverseBrushColour = wxColour (red, green, blue);
-							}
-							fr . skip ();
-						}
-					}
-				}
-			}
-			if (fr . id ("grid")) {
-				int type = 0;
-				int side = 60;
-				wxSize size (4, 4);
-				wxPoint index (0, 0);
-				bool indexed = false;
-				int red = 255, green = 255, blue = 255;
-				while (fr . get_id ()) {
-					if (fr . id ("type")) {if (! fr . get_int ()) return; type = fr . int_symbol;}
-					if (fr . id ("side")) {if (! fr . get_int ()) return; side = fr . int_symbol;}
-					if (fr . id ("size")) {
-						if (! fr . get_int ()) return; size . x = fr . int_symbol;
-						if (! fr . get_int ()) return; size . y = fr . int_symbol;
-					}
-					if (fr . id ("index")) {
-						if (! fr . get_int ()) return; index . x = fr . int_symbol;
-						if (! fr . get_int ()) return; index . y = fr . int_symbol;
-					}
-					if (fr . id ("colour")) {
-						if (! fr . get_int ()) return; red = fr . int_symbol;
-						if (! fr . get_int ()) return; green = fr . int_symbol;
-						if (! fr . get_int ()) return; blue = fr . int_symbol;
-					}
-					if (fr . id ("indexed")) indexed = true;
-					if (fr . id ("position")) {
-						if (! fr . get_int ()) return; position . x = fr . int_symbol;
-						if (! fr . get_int ()) return; position . y = fr . int_symbol;
-					}
-					if (fr . id ("selectable")) selectable = true;
-					fr . skip ();
-				}
-				board -> tokens = new BoardToken (position, type, side, size, index, indexed, selectable, wxColour (red, green, blue), board -> tokens);
-			}
-			if (fr . id ("dice")) {
-				int type = 0;
-				int side = 60;
-				int shift = 1;
-				int multiplier = 1;
-				int value = 1;
-				int fred = 255, fgreen = 255, fblue = 255;
-				int bred = 0, bgreen = 0, bblue = 0;
-				bool indexed = false;
-				while (fr . get_id ()) {
-					if (fr . id ("type")) {if (! fr . get_int ()) return; type = fr . int_symbol;}
-					if (fr . id ("side")) {if (! fr . get_int ()) return; side = fr . int_symbol;}
-					if (fr . id ("shift")) {if (! fr . get_int ()) return; shift = fr . int_symbol;}
-					if (fr . id ("multiplier")) {if (! fr . get_int ()) return; multiplier = fr . int_symbol;}
-					if (fr . id ("value")) {if (! fr . get_int ()) return; value = fr . int_symbol;}
-					if (fr . id ("colour")) {
-						if (! fr . get_int ()) return; fred = fr . int_symbol;
-						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; fblue = fr . int_symbol;
-					}
-					if (fr . id ("background")) {
-						if (! fr . get_int ()) return; bred = fr . int_symbol;
-						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; bblue = fr . int_symbol;
-					}
-					if (fr . id ("indexed")) indexed = true;
-					if (fr . id ("position")) {
-						if (! fr . get_int ()) return; position . x = fr . int_symbol;
-						if (! fr . get_int ()) return; position . y = fr . int_symbol;
-					}
-					if (fr . id ("selectable")) selectable = true;
-					fr . skip ();
-				}
-				board -> tokens = new BoardToken (position, type, side, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), false, selectable, board -> tokens);
-				board -> tokens -> diceShift = shift;
-				board -> tokens -> diceMultiplier = multiplier;
-				board -> tokens -> gridIndexing = indexed;
-				board -> tokens -> diceValue = value;
-			}
-			if (fr . id ("token")) {
-				char command [1024];
-				int rotation = 0;
-				int side = 0;
-				int fred = 255, fgreen = 255, fblue = 255;
-				int bred = 0, bgreen = 0, bblue = 0;
-				while (fr . get_id ()) {
-					if (fr . id ("location")) {
-						if (! fr . get_string ()) return; strcpy (command, fr . symbol);
-					}
-					if (fr . id ("colour")) {
-						if (! fr . get_int ()) return; fred = fr . int_symbol;
-						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; fblue = fr . int_symbol;
-					}
-					if (fr . id ("background")) {
-						if (! fr . get_int ()) return; bred = fr . int_symbol;
-						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; bblue = fr . int_symbol;
-					}
-					if (fr . id ("position")) {
-						if (! fr . get_int ()) return; position . x = fr . int_symbol;
-						if (! fr . get_int ()) return; position . y = fr . int_symbol;
-					}
-					if (fr . id ("rotation")) {
-						if (! fr . get_int ()) return; rotation = fr . int_symbol;
-					}
-					if (fr . id ("side")) {
-						if (! fr . get_int ()) return; side = fr . int_symbol;
-					}
-					if (fr . id ("selectable")) selectable = true;
-					fr . skip ();
-				}
-				board -> tokens = new BoardToken (wxString :: From8BitData (command), wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), position, false, board -> tokens, side, rotation);
-				board -> tokens -> isSelectable = selectable;
-			}
-			if (fr . id ("text")) {
-				char command [1024];
-				int size = 18;
-				int fred = 255, fgreen = 255, fblue = 255;
-				while (fr . get_id ()) {
-					if (fr . id ("text")) {
-						if (! fr . get_string ()) return; strcpy (command, fr . symbol);
-					}
-					if (fr . id ("size")) {
-						if (! fr . get_int ()) return; size = fr . int_symbol;
-					}
-					if (fr . id ("colour")) {
-						if (! fr . get_int ()) return; fred = fr . int_symbol;
-						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; fblue = fr . int_symbol;
-					}
-					if (fr . id ("position")) {
-						if (! fr . get_int ()) return; position . x = fr . int_symbol;
-						if (! fr . get_int ()) return; position . y = fr . int_symbol;
-					}
-					if (fr . id ("selectable")) selectable = true;
-					fr . skip ();
-				}
-				board -> tokens = new BoardToken (position, wxString :: From8BitData (command), size, wxColour (fred, fgreen, fblue), board -> tokens);
-				board -> tokens -> isSelectable = selectable;
-			}
-			if (fr . id ("rectangle")) {
-				int fred = 255, fgreen = 255, fblue = 255;
-				int bred = 0, bgreen = 0, bblue = 0;
-				wxSize size (10, 10);
-				while (fr . get_id ()) {
-					if (fr . id ("size")) {
-						if (! fr . get_int ()) return; int x = fr . int_symbol;
-						if (! fr . get_int ()) return; int y = fr . int_symbol;
-						size = wxSize (x, y);
-					}
-					if (fr . id ("colour")) {
-						if (! fr . get_int ()) return; fred = fr . int_symbol;
-						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; fblue = fr . int_symbol;
-					}
-					if (fr . id ("background")) {
-						if (! fr . get_int ()) return; bred = fr . int_symbol;
-						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; bblue = fr . int_symbol;
-					}
-					if (fr . id ("position")) {
-						if (! fr . get_int ()) return; position . x = fr . int_symbol;
-						if (! fr . get_int ()) return; position . y = fr . int_symbol;
-					}
-					if (fr . id ("selectable")) selectable = true;
-					fr . skip ();
-				}
-				board -> tokens = new BoardToken (position, size, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
-				board -> tokens -> isSelectable = selectable;
-			}
-			if (fr . id ("circle")) {
-				int fred = 255, fgreen = 255, fblue = 255;
-				int bred = 0, bgreen = 0, bblue = 0;
-				int radius = 10;
-				while (fr . get_id ()) {
-					if (fr . id ("radius")) {
-						if (! fr . get_int ()) return; radius = fr . int_symbol;
-					}
-					if (fr . id ("colour")) {
-						if (! fr . get_int ()) return; fred = fr . int_symbol;
-						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; fblue = fr . int_symbol;
-					}
-					if (fr . id ("background")) {
-						if (! fr . get_int ()) return; bred = fr . int_symbol;
-						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; bblue = fr . int_symbol;
-					}
-					if (fr . id ("position")) {
-						if (! fr . get_int ()) return; position . x = fr . int_symbol;
-						if (! fr . get_int ()) return; position . y = fr . int_symbol;
-					}
-					if (fr . id ("selectable")) selectable = true;
-					fr . skip ();
-				}
-				board -> tokens = new BoardToken (position, radius, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
-				board -> tokens -> isSelectable = selectable;
-			}
-			if (fr . id ("ellipse")) {
-				int fred = 255, fgreen = 255, fblue = 255;
-				int bred = 0, bgreen = 0, bblue = 0;
-				wxSize size (10, 10);
-				while (fr . get_id ()) {
-					if (fr . id ("size")) {
-						if (! fr . get_int ()) return; int x = fr . int_symbol;
-						if (! fr . get_int ()) return; int y = fr . int_symbol;
-						size = wxSize (x, y);
-					}
-					if (fr . id ("colour")) {
-						if (! fr . get_int ()) return; fred = fr . int_symbol;
-						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; fblue = fr . int_symbol;
-					}
-					if (fr . id ("background")) {
-						if (! fr . get_int ()) return; bred = fr . int_symbol;
-						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; bblue = fr . int_symbol;
-					}
-					if (fr . id ("position")) {
-						if (! fr . get_int ()) return; position . x = fr . int_symbol;
-						if (! fr . get_int ()) return; position . y = fr . int_symbol;
-					}
-					if (fr . id ("selectable")) selectable = true;
-					fr . skip ();
-				}
-				board -> tokens = new BoardToken (position, size . x, size . y, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
-				board -> tokens -> isSelectable = selectable;
-			}
-			if (fr . id ("deck")) {
-				int fred = 255, fgreen = 255, fblue = 255;
-				int bred = 0, bgreen = 0, bblue = 0;
-				wxSize size (100, 100);
-				while (fr . get_id ()) {
-					if (fr . id ("size")) {
-						if (! fr . get_int ()) return; int x = fr . int_symbol;
-						if (! fr . get_int ()) return; int y = fr . int_symbol;
-						size = wxSize (x, y);
-					}
-					if (fr . id ("colour")) {
-						if (! fr . get_int ()) return; fred = fr . int_symbol;
-						if (! fr . get_int ()) return; fgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; fblue = fr . int_symbol;
-					}
-					if (fr . id ("background")) {
-						if (! fr . get_int ()) return; bred = fr . int_symbol;
-						if (! fr . get_int ()) return; bgreen = fr . int_symbol;
-						if (! fr . get_int ()) return; bblue = fr . int_symbol;
-					}
-					if (fr . id ("position")) {
-						if (! fr . get_int ()) return; position . x = fr . int_symbol;
-						if (! fr . get_int ()) return; position . y = fr . int_symbol;
-					}
-					if (fr . id ("selectable")) selectable = true;
-					fr . skip ();
-				}
-				board -> tokens = new BoardToken (position, wxColour (fred, fgreen, fblue), wxColour (bred, bgreen, bblue), board -> tokens);
-				board -> tokens -> token_size = size;
-				board -> tokens -> isSelectable = selectable;
-			}
+			if (! LoadToken (fr, NULL)) return;
 		}
 		this -> file_name = wxString :: From8BitData (file_name);
 		wxMenuBar * bar = GetMenuBar ();
