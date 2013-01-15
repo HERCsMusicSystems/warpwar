@@ -346,22 +346,22 @@ public:
 		if (isSelectable) fprintf (fw, "		selectable []\n");
 		fprintf (fw, "	]\n");
 	}
-	void drawRectangle (wxDC & dc) {
+	void drawRectangle (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		dc . DrawRectangle (position, token_size);
 	}
-	void drawCircle (wxDC & dc) {
+	void drawCircle (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		dc . DrawCircle (position + wxPoint (gridSide, gridSide), gridSide);
 	}
-	void drawEllipse (wxDC & dc) {
+	void drawEllipse (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		dc . DrawEllipse (position, token_size);
 	}
-	void drawDeck (wxDC & dc) {
+	void drawDeck (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		dc . DrawRectangle (position, token_size);
@@ -373,7 +373,7 @@ public:
 		dc . SetTextBackground (backgroundColour);
 		dc . DrawText (wxString :: Format (_T ("DECK [%i]"), deckTokenCount ()), position);
 	}
-	void drawText (wxDC & dc) {
+	void drawText (wxDC & dc, wxPoint position) {
 		wxFont f = dc . GetFont ();
 		f . SetFaceName (_T ("arial"));
 		f . SetPointSize (gridSide);
@@ -481,7 +481,7 @@ public:
 			horizontal_shift = horizontal_shift == location . x ? location . x + H : location . x;
 		}
 	}
-	void drawRegularDice (wxDC & dc) {
+	void drawRegularDice (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		int shift = gridSide * 2; shift /= 30;
@@ -525,7 +525,7 @@ public:
 		default: break;
 		}
 	}
-	void drawOtherDice (wxDC & dc) {
+	void drawOtherDice (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		int shift = gridSide * 2; shift /= 30;
@@ -539,7 +539,7 @@ public:
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + gridSide / 2 - extent . x / 2, position . y + gridSide / 2 - extent . y / 2);
 	}
-	void drawTetrahedron (wxDC & dc) {
+	void drawTetrahedron (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		double half = (double) gridSide * 0.5;
@@ -579,7 +579,7 @@ public:
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
-	void drawOctahedron (wxDC & dc) {
+	void drawOctahedron (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		double half = (double) gridSide * 0.5;
@@ -620,7 +620,7 @@ public:
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
-	void drawDeltahedron (wxDC & dc) {
+	void drawDeltahedron (wxDC & dc, wxPoint position) {
 		// side = 1.0
 		// big delta = V 2 = 1.414213562
 		// delta = 1.414213562 / 1.6180339887498948482045868343656 = 0.874032049
@@ -679,7 +679,7 @@ public:
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
-	void drawDodecahedron (wxDC & dc) {
+	void drawDodecahedron (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		double half = (double) gridSide * 0.5;
@@ -710,7 +710,7 @@ public:
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
-	void drawIcosahedron (wxDC & dc) {
+	void drawIcosahedron (wxDC & dc, wxPoint position) {
 		dc . SetPen (wxPen (gridColour));
 		dc . SetBrush (wxBrush (backgroundColour));
 		double half = (double) gridSide * 0.5;
@@ -750,15 +750,15 @@ public:
 		wxSize extent = dc . GetTextExtent (text);
 		dc . DrawText (text, position . x + half - extent . x / 2, position . y + half - extent . y / 2);
 	}
-	void drawDice (wxDC & dc) {
+	void drawDice (wxDC & dc, wxPoint position) {
 		switch (choosenRotation) {
-		case 4: drawTetrahedron (dc); break;
-		case 6: if (gridIndexing) drawOtherDice (dc); else drawRegularDice (dc); break;
-		case 8: drawOctahedron (dc); break;
-		case 10: drawDeltahedron (dc); break;
-		case 12: drawDodecahedron (dc); break;
-		case 20: drawIcosahedron (dc); break;
-		default: drawOtherDice (dc); break;
+		case 4: drawTetrahedron (dc, position); break;
+		case 6: if (gridIndexing) drawOtherDice (dc, position); else drawRegularDice (dc, position); break;
+		case 8: drawOctahedron (dc, position); break;
+		case 10: drawDeltahedron (dc, position); break;
+		case 12: drawDodecahedron (dc, position); break;
+		case 20: drawIcosahedron (dc, position); break;
+		default: drawOtherDice (dc, position); break;
 		}
 	}
 	void rotate (int angle) {
@@ -872,31 +872,31 @@ public:
 		position += delta;
 		if (next != 0) next -> moveAll (delta);
 	}
-	void draw (wxDC & dc) {
-		if (next != 0) next -> draw (dc);
+	void draw (wxDC & dc, wxPoint windowPosition) {
+		if (next != 0) next -> draw (dc, windowPosition);
 		switch (tokenType) {
 		case GridToken:
 			switch (choosenRotation) {
-			case 0: drawSquareGrid (dc, position); break;
-			case 1: drawVerticalHexGrid (dc, position, false); break;
-			case 2: drawVerticalHexGrid (dc, position, true); break;
-			case 3: drawHorizontalHexGrid (dc, position, false); break;
-			case 4: drawHorizontalHexGrid (dc, position, true); break;
-			default: drawSquareGrid (dc, position); break;
+			case 0: drawSquareGrid (dc, position - windowPosition); break;
+			case 1: drawVerticalHexGrid (dc, position - windowPosition, false); break;
+			case 2: drawVerticalHexGrid (dc, position - windowPosition, true); break;
+			case 3: drawHorizontalHexGrid (dc, position - windowPosition, false); break;
+			case 4: drawHorizontalHexGrid (dc, position - windowPosition, true); break;
+			default: drawSquareGrid (dc, position - windowPosition); break;
 			}
 			break;
-		case PictureToken: dc . DrawBitmap (rotatedToken, position + positionShift, true); break;
-		case DiceToken: drawDice (dc); break;
-		case TextToken: drawText (dc); break;
-		case RectangleToken: drawRectangle (dc); break;
-		case CircleToken: drawCircle (dc); break;
-		case EllipseToken: drawEllipse (dc); break;
-		case DeckToken: drawDeck (dc); break;
+		case PictureToken: dc . DrawBitmap (rotatedToken, position + positionShift - windowPosition, true); break;
+		case DiceToken: drawDice (dc, position - windowPosition); break;
+		case TextToken: drawText (dc, position - windowPosition); break;
+		case RectangleToken: drawRectangle (dc, position - windowPosition); break;
+		case CircleToken: drawCircle (dc, position - windowPosition); break;
+		case EllipseToken: drawEllipse (dc, position - windowPosition); break;
+		case DeckToken: drawDeck (dc, position - windowPosition); break;
 		default: break;
 		}
 	}
-	BoardToken * drawBorder (wxDC & dc) {
-		dc . DrawRectangle (position + positionShift - wxPoint (2, 2), token_size + wxSize (4, 4));
+	BoardToken * drawBorder (wxDC & dc, wxPoint windowPosition) {
+		dc . DrawRectangle (position - windowPosition + positionShift - wxPoint (2, 2), token_size + wxSize (4, 4));
 		return next;
 	}
 	BoardToken * hitFind (wxPoint position, bool selectableOverride) {
@@ -1157,13 +1157,6 @@ public:
 
 class BoardFrame;
 
-class FileReceiver : public wxFileDropTarget {
-public:
-	BoardFrame * frame;
-	FileReceiver (BoardFrame * frame);
-	virtual bool OnDropFiles (wxCoord x, wxCoord y, const wxArrayString & files);
-};
-
 class BoardWindow : public wxWindow {
 public:
 	wxColour backgroundColour;
@@ -1172,6 +1165,7 @@ public:
 	BoardToken * dragToken;
 	wxPoint capturedPosition;
 	wxPoint startingPosition;
+	wxPoint windowPosition;
 	bool moveGrid;
 	bool moveBoard;
 	bool moveTokens;
@@ -1208,6 +1202,7 @@ public:
 		tokens = 0;
 		dragToken = 0;
 		lastRightClickPosition = startingPosition = capturedPosition = wxPoint (10, 10);
+		windowPosition = wxPoint (0, 0);
 		dicePenColour = * wxBLACK; diceBrushColour = * wxWHITE;
 		tetrahedronPenColour = * wxWHITE; tetrahedronBrushColour = * wxRED;
 		cubePenColour = * wxWHITE; cubeBrushColour = * wxBLUE;
@@ -1233,11 +1228,11 @@ public:
 		wxBufferedPaintDC dc (this);
 		dc . SetBackground (wxBrush (backgroundColour));
 		dc . Clear ();
-		if (tokens != 0) tokens -> draw (dc);
+		if (tokens != 0) tokens -> draw (dc, windowPosition);
 		if (dragToken != 0) {
 			dc . SetPen (wxPen (wxColour (255, 255, 255), 1, wxDOT));
 			dc . SetBrush (* wxTRANSPARENT_BRUSH);
-			dragToken -> drawBorder (dc);
+			dragToken -> drawBorder (dc, windowPosition);
 		}
 		if (creationSize . x != 0 && creationSize . y != 0) {
 			dc . SetPen (wxPen (figurePenColour));
@@ -1287,20 +1282,20 @@ public:
 		possibleTokenCirculation = false;
 		if (tokens == 0) {dragToken = 0; return;}
 		if (dragToken != 0) {
-			BoardToken * bp = dragToken -> hitFind (capturedPosition, unlocked);
+			BoardToken * bp = dragToken -> hitFind (capturedPosition + windowPosition, unlocked);
 			if (bp == dragToken) possibleTokenCirculation = true;
 			else dragToken = 0;
 		}
-		if (dragToken == 0) dragToken = tokens -> hitFind (capturedPosition, unlocked);
+		if (dragToken == 0) dragToken = tokens -> hitFind (capturedPosition + windowPosition, unlocked);
 		Refresh ();
 	}
 	void OnLeftUp (wxMouseEvent & event) {
 		ReleaseMouse ();
 		wxPoint p = event . GetPosition ();
 		BoardToken * deck_token = tokens;
-		if (deck_token != NULL) deck_token = deck_token -> hitFindDeck (p, dragToken);
+		if (deck_token != NULL) deck_token = deck_token -> hitFindDeck (p + windowPosition, dragToken);
 		if (deck_token != NULL && deck_token -> tokenType == BoardToken :: DeckToken) {
-			BoardToken * starting_deck = tokens -> hitFindDeck (startingPosition, NULL);
+			BoardToken * starting_deck = tokens -> hitFindDeck (startingPosition + windowPosition, NULL);
 			if (starting_deck != NULL) {Refresh (); return;}
 			if (tokens == dragToken) tokens = dragToken -> next;
 			else {
@@ -1316,12 +1311,12 @@ public:
 		}
 		if (creatingRectangle || creatingCircle || creatingEllipse) {
 			if (creationSize . x != 0 && creationSize . y != 0) {
-				if (creatingRectangle) dragToken = tokens = new BoardToken (capturedPosition, creationSize, figurePenColour, figureBrushColour, tokens);
+				if (creatingRectangle) dragToken = tokens = new BoardToken (capturedPosition + windowPosition, creationSize, figurePenColour, figureBrushColour, tokens);
 				if (creatingCircle) {
 					int radius = (int) sqrt ((double) (creationSize . x * creationSize . x + creationSize . y * creationSize . y));
-					dragToken = tokens = new BoardToken (capturedPosition - wxPoint (radius, radius), radius, figurePenColour, figureBrushColour, tokens);
+					dragToken = tokens = new BoardToken (capturedPosition - wxPoint (radius, radius) + windowPosition, radius, figurePenColour, figureBrushColour, tokens);
 				}
-				if (creatingEllipse) dragToken = tokens = new BoardToken (capturedPosition, creationSize . x, creationSize . y, figurePenColour, figureBrushColour, tokens);
+				if (creatingEllipse) dragToken = tokens = new BoardToken (capturedPosition + windowPosition, creationSize . x, creationSize . y, figurePenColour, figureBrushColour, tokens);
 			}
 			creatingRectangle = creatingCircle = creatingEllipse = false;
 			modified = true;
@@ -1333,9 +1328,9 @@ public:
 			if (tokens != 0) {
 				if (dragToken != 0) {
 					if (dragToken -> next == 0) dragToken = 0;
-					else dragToken = dragToken -> next -> hitFind (capturedPosition, unlocked);
+					else dragToken = dragToken -> next -> hitFind (capturedPosition + windowPosition, unlocked);
 				}
-				if (dragToken == 0) dragToken = tokens -> hitFind (capturedPosition, unlocked);
+				if (dragToken == 0) dragToken = tokens -> hitFind (capturedPosition + windowPosition, unlocked);
 				Refresh ();
 			}
 		}
@@ -1352,7 +1347,7 @@ public:
 		notMoved = false;
 		wxPoint delta = p - capturedPosition;
 		if (dragToken == 0) {
-			if (moveTokens && tokens != 0) tokens -> moveAll (delta);
+			if (moveTokens && tokens != 0) windowPosition -= delta; //tokens -> moveAll (delta);
 		} else dragToken -> move (delta);
 		capturedPosition = p;
 		modified = true;
@@ -1360,7 +1355,7 @@ public:
 	}
 	void OnRightDown (wxMouseEvent & event) {
 		lastRightClickPosition = event . GetPosition ();
-		bool onToken = dragToken == 0 ? false : dragToken == dragToken -> hitFind (lastRightClickPosition, unlocked);
+		bool onToken = dragToken == 0 ? false : dragToken == dragToken -> hitFind (lastRightClickPosition + windowPosition, unlocked);
 		wxMenu menu;
 		if (! onToken) {
 			menu . Append (4001, _T ("New token"));
@@ -1406,7 +1401,7 @@ public:
 		if (picker . ShowModal () == wxID_OK) {
 			wxString file_name = picker . GetDirectory () + _T ("/") + picker . GetFilename ();
 			file_name . Replace (_T ("\\"), _T ("/"));
-			dragToken = tokens = new BoardToken (file_name, reversePenColour, reverseBrushColour, lastRightClickPosition, true, tokens);
+			dragToken = tokens = new BoardToken (file_name, reversePenColour, reverseBrushColour, lastRightClickPosition + windowPosition, true, tokens);
 			modified = true;
 			Refresh ();
 		}
@@ -1421,46 +1416,46 @@ public:
 	void OnNewText (wxCommandEvent & event) {
 		wxTextEntryDialog te (this, _T ("ENTER TEXT"));
 		if (te . ShowModal () == wxID_OK) {
-			dragToken = tokens = new BoardToken (lastRightClickPosition, te . GetValue (), textSize, textColour, tokens);
+			dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, te . GetValue (), textSize, textColour, tokens);
 			modified = true;
 			Refresh ();
 		}
 	}
 	void OnNewGrid (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, tokens);
 		modified = true;
 		Refresh ();
 	}
 	void OnNewDice (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, dicePenColour, diceBrushColour, true, true, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, 6, 60, dicePenColour, diceBrushColour, true, true, tokens);
 		dragToken -> gridIndexing = false;
 		modified = true;
 		Refresh ();
 	}
 	void OnNewTetrahedron (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, 4, 60, tetrahedronPenColour, tetrahedronBrushColour, true, true, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, 4, 60, tetrahedronPenColour, tetrahedronBrushColour, true, true, tokens);
 		modified = true;
 		Refresh ();
 	}
 	void OnNewCube (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, 6, 60, cubePenColour, cubeBrushColour, true, true, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, 6, 60, cubePenColour, cubeBrushColour, true, true, tokens);
 		modified = true;
 		Refresh ();
 	}
 	void OnNewOctahedron (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, 8, 60, octahedronPenColour, octahedronBrushColour, true, true, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, 8, 60, octahedronPenColour, octahedronBrushColour, true, true, tokens);
 		modified = true;
 		Refresh ();
 	}
 	void OnNewDeltahedron (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, 10, 60, deltahedronPenColour, deltahedronBrushColour, true, true, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, 10, 60, deltahedronPenColour, deltahedronBrushColour, true, true, tokens);
 		dragToken -> diceShift = 0;
 		dragToken -> roll ();
 		modified = true;
 		Refresh ();
 	}
 	void OnNewDeltahedron10 (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, 10, 60, deltahedron10PenColour, deltahedron10BrushColour, true, true, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, 10, 60, deltahedron10PenColour, deltahedron10BrushColour, true, true, tokens);
 		dragToken -> diceShift = 0;
 		dragToken -> diceMultiplier = 10;
 		dragToken -> roll ();
@@ -1468,17 +1463,17 @@ public:
 		Refresh ();
 	}
 	void OnNewDodecahedron (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, 12, 60, dodecahedronPenColour, dodecahedronBrushColour, true, true, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, 12, 60, dodecahedronPenColour, dodecahedronBrushColour, true, true, tokens);
 		modified = true;
 		Refresh ();
 	}
 	void OnNewIcosahedron (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, 20, 60, icosahedronPenColour, icosahedronBrushColour, true, true, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, 20, 60, icosahedronPenColour, icosahedronBrushColour, true, true, tokens);
 		modified = true;
 		Refresh ();
 	}
 	void OnNewDeck (wxCommandEvent & event) {
-		dragToken = tokens = new BoardToken (lastRightClickPosition, deckPenColour, deckBrushColour, tokens);
+		dragToken = tokens = new BoardToken (lastRightClickPosition + windowPosition, deckPenColour, deckBrushColour, tokens);
 		modified = true;
 		Refresh ();
 	}
@@ -1693,6 +1688,14 @@ EVT_MENU(4301, BoardWindow :: OnNewDeck)
 EVT_IDLE(BoardWindow :: OnIdle)
 END_EVENT_TABLE()
 
+class FileReceiver : public wxFileDropTarget {
+public:
+	BoardFrame * frame;
+	BoardWindow * board;
+	FileReceiver (BoardFrame * frame, BoardWindow * board);
+	virtual bool OnDropFiles (wxCoord x, wxCoord y, const wxArrayString & files);
+};
+
 class BoardFrame : public wxFrame {
 public:
 	int gridControlType;
@@ -1702,7 +1705,7 @@ public:
 		file_name = _T ("");
 		gridControlType = 5;
 		board = new BoardWindow (this, -1);
-		board -> SetDropTarget (new FileReceiver (this));
+		board -> SetDropTarget (new FileReceiver (this, board));
 		board -> SetFocus ();
 
 		wxMenuBar * bar = new wxMenuBar ();
@@ -1765,7 +1768,7 @@ public:
 
 		bar -> Enable (6103, false);
 		bar -> Enable (6105, false);
-		bar -> Check (6005, true);
+		//bar -> Check (6005, true);
 		bar -> Check (6701, board -> unlocked);
 		
 	}
@@ -2641,7 +2644,7 @@ END_EVENT_TABLE()
 
 BoardFrame * boardFrame = 0;
 
-FileReceiver :: FileReceiver (BoardFrame * frame) {this -> frame = frame;}
+FileReceiver :: FileReceiver (BoardFrame * frame, BoardWindow * board) {this -> frame = frame; this -> board = board;}
 
 bool FileReceiver :: OnDropFiles (wxCoord x, wxCoord y, const wxArrayString & files) {
 	if (frame == NULL) return true;
@@ -2665,13 +2668,13 @@ public:
 		previous_key_down = -1;
 		wxInitAllImageHandlers ();
 		(boardFrame = new BoardFrame (0)) -> Show ();
-		if (argc > 1) {
-			char command [1024];
-			wxChar * cp = argv [1];
-			int ind = 0;
-			while (* cp != '\0') {command [ind++] = (char) * cp++;} command [ind++] = '\0';
-			boardFrame -> LoadGrid (command);
-		}
+		//if (argc > 1) {
+		//	char command [1024];
+		//	wxChar * cp = argv [1];
+		//	int ind = 0;
+		//	while (* cp != '\0') {command [ind++] = (char) * cp++;} command [ind++] = '\0';
+		//	boardFrame -> LoadGrid (command);
+		//}
 		return true;
 	}
 	int OnExit (void) {
