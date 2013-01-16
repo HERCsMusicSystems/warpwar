@@ -2,9 +2,10 @@
 import studio
 
 program boarder #machine := "boarder" [
-					viewport background_colour repaint
+					viewport background_colour foreground_colour repaint
 					create_rectangle
-					mariner viking voyager
+					location size position
+					mariner viking voyager mix
 					diagnostics test
                 ]
 
@@ -21,10 +22,12 @@ program boarder #machine := "boarder" [
 	[viewport "SONDA" mariner]
 	[viewport "SONDA" viking]
 	[viewport "SONDA" voyager]
+	[create_rectangle mix]
 	[diagnostics]
 ]
 
 end := [
 			[auto_atoms]
+			[test]
 			[command]
 		] .
