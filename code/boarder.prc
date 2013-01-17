@@ -1,10 +1,11 @@
 
 import studio
+import f1
 
 program boarder #machine := "boarder" [
 					viewport background_colour foreground_colour repaint
 					create_rectangle
-					location size position
+					location size position scaling
 					mariner viking voyager mix
 					diagnostics test
                 ]
@@ -27,6 +28,7 @@ program boarder #machine := "boarder" [
 ]
 
 end := [
+			[preprocessor f1]
 			[auto_atoms]
 			[test]
 			[command]

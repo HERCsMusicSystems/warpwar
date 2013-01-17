@@ -15,6 +15,7 @@ public:
 	PrologAtom * location_atom;
 	PrologAtom * size_atom;
 	PrologAtom * position_atom;
+	PrologAtom * scaling_atom;
 	boarder_viewport * viewport;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -71,16 +72,25 @@ public:
 			viewport -> setWindowSize (point (width -> getInteger (), height -> getInteger ()));
 			return true;
 		}
+		if (atom -> getAtom () == scaling_atom) {
+			if (parameters -> isVar ()) {parameters -> setPair (); parameters -> getLeft () -> setDouble (viewport -> scaling); return true;}
+			if (! parameters -> isPair ()) return false;
+			PrologElement * scaling = parameters -> getLeft ();
+			if (scaling -> isDouble ()) {viewport -> scaling = scaling -> getDouble (); return true;}
+			if (scaling -> isInteger ()) {viewport -> scaling = (int) scaling -> getInteger (); return true;}
+			return false;
+		}
 		return false;
 	}
 	viewport_action (PrologDirectory * directory) {
 		this -> directory = directory;
-		location_atom = size_atom = position_atom = 0;
+		location_atom = size_atom = position_atom = scaling_atom = 0;
 		this -> viewport = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
 			size_atom = directory -> searchAtom (SIZE);
 			position_atom = directory -> searchAtom (POSITION);
+			scaling_atom = directory -> searchAtom (SCALING);
 		}
 	}
 };
@@ -156,6 +166,7 @@ public:
 	PrologAtom * location_atom;
 	PrologAtom * size_atom;
 	PrologAtom * position_atom;
+	PrologAtom * scaling_atom;
 	PrologAtom * background_colour_atom;
 	PrologAtom * foreground_colour_atom;
 	boarder_token * token;
@@ -247,16 +258,25 @@ public:
 			} else token -> foreground_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger ());
 			return true;
 		}
+		if (atom -> getAtom () == scaling_atom) {
+			if (parameters -> isVar ()) {parameters -> setPair (); parameters -> getLeft () -> setDouble (token -> scaling); return true;}
+			if (! parameters -> isPair ()) return false;
+			PrologElement * scaling = parameters -> getLeft ();
+			if (scaling -> isDouble ()) {token -> scaling = scaling -> getDouble (); return true;}
+			if (scaling -> isInteger ()) {token -> scaling = (int) scaling -> getInteger (); return true;}
+			return false;
+		}
 		return false;
 	}
 	token_actions (PrologDirectory * directory) {
 		this -> directory = directory;
-		location_atom = size_atom = position_atom = background_colour_atom = foreground_colour_atom = 0;
+		location_atom = size_atom = position_atom = scaling_atom = background_colour_atom = foreground_colour_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
 			size_atom = directory -> searchAtom (SIZE);
 			position_atom = directory -> searchAtom (POSITION);
+			scaling_atom = directory -> searchAtom (SCALING);
 			background_colour_atom = directory -> searchAtom (BACKGROUND_COLOUR);
 			foreground_colour_atom = directory -> searchAtom (FOREGROUND_COLOUR);
 		}

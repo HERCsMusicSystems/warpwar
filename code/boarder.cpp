@@ -9,8 +9,9 @@ point :: point (void) {x = y = 0.0;}
 point :: point (double x, double y) {this -> x = x; this -> y = y;}
 point :: point (double locations [2]) {this -> x = locations [0]; this -> y = locations [1];}
 
-point point :: operator + (const point & p) const {return point (this -> x + p . x, this -> y + p . y);}
-point point :: operator - (const point & p) const {return point (this -> x - p . x, this -> y - p . y);}
+point point :: operator + (const point & p) const {return point (x + p . x, y + p . y);}
+point point :: operator - (const point & p) const {return point (x - p . x, y - p . y);}
+point point :: operator * (const double & scale) const {return point (x * scale, y * scale);}
 
 rect :: rect (void) {position = size = point (0.0, 0.0);}
 rect :: rect (point position, point size) {this -> position = position; this -> size = size;}
@@ -113,6 +114,7 @@ boarder_viewport :: boarder_viewport (boarder * board, PrologAtom * atom, char *
 	this -> location = location;
 	this -> next = next;
 	board_position = point (0, 0);
+	scaling = 1.0;
 }
 
 boarder_viewport :: ~ boarder_viewport (void) {
@@ -141,8 +143,10 @@ void boarder_viewport :: setBoardPosition (point position) {this -> board_positi
 boarder_token :: boarder_token (PrologAtom * atom) {
 	location = rect (point (10, 10), point (200, 100));
 	selected = false;
+	locked = false;
 	foreground_colour = colour (255, 255, 0);
 	background_colour = colour (0, 0, 255);
+	scaling = 1.0;
 	this -> atom = atom;
 	atom -> inc ();
 	next = 0;
@@ -163,7 +167,7 @@ rectangle_token :: ~ rectangle_token (void) {
 void rectangle_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
 	//cairo_set_line_width (cr, 1.0);
-	rect r (location . position - viewport -> board_position, location . size);
+	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
 	cairo_rectangle (cr, RECT (r));
 	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
 	cairo_fill_preserve (cr);

@@ -13,6 +13,7 @@
 #define VIEWPORT "viewport"
 #define REPAINT "repaint"
 #define CREATE_RECTANGLE "create_rectangle"
+#define SCALING "scaling"
 
 class point;
 class rect;
@@ -31,6 +32,7 @@ public:
 	point (void);
 	point operator + (const point & p) const;
 	point operator - (const point & p) const;
+	point operator * (const double & scale) const;
 };
 
 #define RECT(r) r . position . x, r . position . y, r . size . x, r . size . y
@@ -79,6 +81,7 @@ public:
 	rect location;
 	boarder_viewport * next;
 	point board_position;
+	double scaling;
 	void setWindowLocation (rect location);
 	void setWindowSize (point size);
 	void setBoardPosition (point position);
@@ -90,8 +93,10 @@ class boarder_token {
 public:
 	rect location;
 	bool selected;
+	bool locked;
 	colour foreground_colour;
 	colour background_colour;
+	double scaling;
 	PrologAtom * atom;
 	boarder_token * next;
 	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
