@@ -301,6 +301,46 @@ public:
 	create_rectangle (PrologDirectory * directory) {this -> directory = directory;}
 };
 
+class create_circle : public PrologNativeCode {
+public:
+	PrologDirectory * directory;
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * atom = parameters -> getLeft ();
+		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
+		if (! atom -> isAtom ()) return false;
+		token_actions * machine = new token_actions (directory);
+		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
+		machine -> token = new circle_token (atom -> getAtom ());
+		board -> insert_token (machine -> token);
+		return true;
+	}
+	create_circle (PrologDirectory * directory) {this -> directory = directory;}
+};
+
+class create_picture : public PrologNativeCode {
+public:
+	PrologDirectory * directory;
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * atom = parameters -> getLeft ();
+		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
+		if (! atom -> isAtom ()) return false;
+		parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * picture_location = parameters -> getLeft ();
+		if (! picture_location -> isText ()) return false;
+		token_actions * machine = new token_actions (directory);
+		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
+		machine -> token = new picture_token (atom -> getAtom (), picture_location -> getText ());
+		board -> insert_token (machine -> token);
+		return true;
+	}
+	create_picture (PrologDirectory * directory) {this -> directory = directory;}
+};
+
 class background_colour : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -359,6 +399,8 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, BACKGROUND_COLOUR) == 0) return new background_colour ();
 	if (strcmp (name, REPAINT) == 0) return new repaint ();
 	if (strcmp (name, CREATE_RECTANGLE) == 0) return new create_rectangle (dir);
+	if (strcmp (name, CREATE_CIRCLE) == 0) return new create_circle (dir);
+	if (strcmp (name, CREATE_PICTURE) == 0) return new create_picture (dir);
 	if (strcmp (name, "diagnostics") == 0) return new diagnostics ();
 	return NULL;
 }

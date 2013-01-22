@@ -4,7 +4,7 @@ import f1
 
 program boarder #machine := "boarder" [
 					viewport background_colour foreground_colour repaint
-					create_rectangle
+					create_rectangle create_circle create_picture
 					location size position scaling
 					mariner viking voyager mix
 					diagnostics test
@@ -16,6 +16,8 @@ program boarder #machine := "boarder" [
 #machine repaint := "repaint"
 
 #machine create_rectangle := "create_rectangle"
+#machine create_circle := "create_circle"
+#machine create_picture := "create_picture"
 
 #machine diagnostics := "diagnostics"
 

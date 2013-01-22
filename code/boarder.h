@@ -8,12 +8,14 @@
 #define LOCATION "location"
 #define SIZE "size"
 #define POSITION "position"
+#define SCALING "scaling"
 #define BACKGROUND_COLOUR "background_colour"
 #define FOREGROUND_COLOUR "foreground_colour"
 #define VIEWPORT "viewport"
 #define REPAINT "repaint"
 #define CREATE_RECTANGLE "create_rectangle"
-#define SCALING "scaling"
+#define CREATE_CIRCLE "create_circle"
+#define CREATE_PICTURE "create_picture"
 
 class point;
 class rect;
@@ -119,6 +121,15 @@ public:
 	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
 	circle_token (PrologAtom * atom);
 	virtual ~ circle_token (void);
+};
+
+class picture_token : public boarder_token {
+public:
+	cairo_surface_t * surface;
+	char * picture_location;
+	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
+	picture_token (PrologAtom * atom, char * picture_location);
+	virtual ~ picture_token (void);
 };
 
 #endif

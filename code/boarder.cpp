@@ -186,6 +186,29 @@ void circle_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_stroke (cr);
 }
 
+picture_token :: picture_token (PrologAtom * atom, char * picture_location) : boarder_token (atom) {
+	this -> picture_location = create_text (picture_location);
+	surface = cairo_image_surface_create_from_png (picture_location);
+}
+picture_token :: ~ picture_token (void) {
+	printf ("	DELETING PICTURE\n");
+	delete_text (picture_location);
+	cairo_surface_destroy (surface);
+}
+
+void picture_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
+	cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
+	//cairo_set_line_width (cr, 1.0);
+	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
+	cairo_rectangle (cr, RECT (r));
+	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	cairo_fill_preserve (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_stroke (cr);
+	cairo_set_source_surface (cr, surface, location . position . x, location . position . y);
+	cairo_paint (cr);
+}
+
 
 
 
