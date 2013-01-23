@@ -3,29 +3,35 @@ import studio
 import f1
 
 program boarder #machine := "boarder" [
-					viewport background_colour foreground_colour repaint
-					create_rectangle create_circle create_picture
-					location size position scaling
+					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase
+					CreateRectangle CreateCircle CreatePicture
+					Location Size Position Scaling
+					Lock Unlock Locked? Select Deselect Selected?
 					mariner viking voyager mix
 					diagnostics test
                 ]
 
 
-#machine viewport := "viewport"
-#machine background_colour := "background_colour"
-#machine repaint := "repaint"
+#machine Viewport := "Viewport"
+#machine BackgroundColour := "BackgroundColour"
+#machine Repaint := "Repaint"
+#machine SaveBoard := "SaveBoard"
+#machine Clean := "Clean"
+#machine Clean? := "Clean?"
+#machine Erase := "Erase"
 
-#machine create_rectangle := "create_rectangle"
-#machine create_circle := "create_circle"
-#machine create_picture := "create_picture"
+
+#machine CreateRectangle := "CreateRectangle"
+#machine CreateCircle := "CreateCircle"
+#machine CreatePicture := "CreatePicture"
 
 #machine diagnostics := "diagnostics"
 
 [[test]
-	[viewport "SONDA" mariner]
-	[viewport "SONDA" viking]
-	[viewport "SONDA" voyager]
-	[create_rectangle mix]
+	[CreateRectangle mix]
+;	[Viewport "SONDA" mariner]
+	[Viewport "SONDA" viking]
+;	[Viewport "SONDA" voyager]
 	[diagnostics]
 ]
 
@@ -35,3 +41,4 @@ end := [
 			[test]
 			[command]
 		] .
+

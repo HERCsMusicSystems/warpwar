@@ -5,17 +5,27 @@
 #include "prolog.h"
 #include <gtk/gtk.h>
 
-#define LOCATION "location"
-#define SIZE "size"
-#define POSITION "position"
-#define SCALING "scaling"
-#define BACKGROUND_COLOUR "background_colour"
-#define FOREGROUND_COLOUR "foreground_colour"
-#define VIEWPORT "viewport"
-#define REPAINT "repaint"
-#define CREATE_RECTANGLE "create_rectangle"
-#define CREATE_CIRCLE "create_circle"
-#define CREATE_PICTURE "create_picture"
+#define LOCATION "Location"
+#define SIZE "Size"
+#define POSITION "Position"
+#define SCALING "Scaling"
+#define BACKGROUND_COLOUR "BackgroundColour"
+#define FOREGROUND_COLOUR "ForegroundColour"
+#define LOCK "Lock"
+#define UNLOCK "Unlock"
+#define IS_LOCKED "Locked?"
+#define SELECT "Select"
+#define DESELECT "Deselect"
+#define IS_SELECTED "Selected?"
+#define VIEWPORT "Viewport"
+#define REPAINT "Repaint"
+#define SAVE_BOARD "SaveBoard"
+#define CLEAN "Clean"
+#define IS_CLEAN "Clean?"
+#define ERASE "Erase"
+#define CREATE_RECTANGLE "CreateRectangle"
+#define CREATE_CIRCLE "CreateCircle"
+#define CREATE_PICTURE "CreatePicture"
 
 class point;
 class rect;
@@ -50,6 +60,8 @@ public:
 
 #define COLOUR(c) c . red, c . green, c . blue
 #define ACOLOUR(c) c . red, c . green, c . blue, c . alpha
+#define INTCOLOUR(c) colour_to_int (c . red), colour_to_int (c . green), colour_to_int (c . blue)
+#define AINTCOLOUR(c) colour_to_int (c . red), colour_to_int (c . green), colour_to_int (c . blue), colour_to_int (c . alpha)
 
 double int_to_colour (int c);
 int colour_to_int (double c);
@@ -69,6 +81,8 @@ public:
 	void remove_viewport (boarder_viewport * viewport);
 	boarder_token * insert_token (boarder_token * token);
 	void remove_token (boarder_token * token);
+	void erase (void);
+	bool save (char * location);
 	void draw (cairo_t * cr, boarder_viewport * viewport);
 	boarder (void);
 	~ boarder (void);
@@ -81,9 +95,9 @@ public:
 	PrologAtom * atom;
 	PROLOG_STRING name;
 	rect location;
-	boarder_viewport * next;
 	point board_position;
 	double scaling;
+	boarder_viewport * next;
 	void setWindowLocation (rect location);
 	void setWindowSize (point size);
 	void setBoardPosition (point position);
@@ -94,24 +108,28 @@ public:
 class boarder_token {
 public:
 	rect location;
-	bool selected;
-	bool locked;
 	colour foreground_colour;
 	colour background_colour;
 	double scaling;
+	bool locked;
+	bool selected;
 	PrologAtom * atom;
 	boarder_token * next;
-	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
+	virtual void draw (cairo_t * cr, boarder_viewport * viewport) = 0;
+	virtual char * creation_call (FILE * tc) = 0;
 	boarder_token (PrologAtom * atom);
 	virtual ~ boarder_token (void);
 };
 
 class text_token : public boarder_token {
+public:
+//	virtual char * creation_atom (void);
 };
 
 class rectangle_token : public boarder_token {
 public:
 	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
+	virtual char * creation_call (FILE * tc);
 	rectangle_token (PrologAtom * atom);
 	virtual ~ rectangle_token (void);
 };
@@ -119,6 +137,7 @@ public:
 class circle_token : public boarder_token {
 public:
 	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
+	virtual char * creation_call (FILE * tc);
 	circle_token (PrologAtom * atom);
 	virtual ~ circle_token (void);
 };
@@ -128,6 +147,7 @@ public:
 	cairo_surface_t * surface;
 	char * picture_location;
 	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
+	virtual char * creation_call (FILE * tc);
 	picture_token (PrologAtom * atom, char * picture_location);
 	virtual ~ picture_token (void);
 };

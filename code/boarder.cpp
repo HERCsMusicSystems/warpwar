@@ -36,12 +36,49 @@ boarder :: boarder (void) {
 
 boarder :: ~ boarder (void) {
 	if (viewports != 0) delete viewports; viewports = 0;
-	if (tokens != 0) delete tokens; tokens = 0;
+	erase ();
+}
+
+void boarder :: erase (void) {if (tokens != 0) delete tokens; tokens = 0;}
+
+bool boarder :: save (char * location) {
+	FILE * tc = fopen (location, "wb");
+	if (tc == 0) return false;
+	fprintf (tc, "[auto_atoms]\n\n");
+	fprintf (tc, "[%s]\n\n", ERASE);
+	boarder_token * token = tokens;
+	while (token != 0) {
+		token -> creation_call (tc);
+		fprintf (tc, "[%s %s %i %i %i %i]\n", token -> atom -> name (), LOCATION, (int) token -> location . position . x, (int) token -> location . position . y, (int) token -> location . size . x, (int) token -> location . size . y);
+		if (token -> background_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", token -> atom -> name (), BACKGROUND_COLOUR, INTCOLOUR (token -> background_colour));
+		else fprintf (tc, "[%s %s %i %i %i %i]\n", token -> atom -> name (), BACKGROUND_COLOUR, AINTCOLOUR (token -> background_colour));
+		if (token -> foreground_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", token -> atom -> name (), FOREGROUND_COLOUR, INTCOLOUR (token -> foreground_colour));
+		else fprintf (tc, "[%s %s %i %i %i %i]\n", token -> atom -> name (), FOREGROUND_COLOUR, AINTCOLOUR (token -> foreground_colour));
+		if (token -> scaling != 1.0) fprintf (tc, "[%s %s %g]\n", token -> atom -> name (), SCALING, token -> scaling);
+		if (token -> locked) fprintf (tc, "[%s %s]\n", token -> atom -> name (), LOCK);
+		fprintf (tc, "\n");
+		token = token -> next;
+	}
+	boarder_viewport * viewport = viewports;
+	while (viewport != 0) {
+		fprintf (tc, "[%s %s \"%s\" %i %i %i %i]\n", VIEWPORT, viewport -> atom -> name (), viewport -> name, (int) viewport -> location . position . x, (int) viewport -> location . position . y, (int) viewport -> location . size . x, (int) viewport -> location . size . y);
+		fprintf (tc, "[%s %s %i %i]\n", viewport -> atom -> name (), POSITION, (int) viewport -> board_position . x, (int) viewport -> board_position . y);
+		if (viewport -> scaling != 1.0) fprintf (tc, "[%s %s %g]\n", viewport -> atom -> name (), SCALING, viewport -> scaling);
+		fprintf (tc, "\n");
+		viewport = viewport -> next;
+	}
+	fprintf (tc, "[%s]\n\n", CLEAN);
+	fprintf (tc, "[exit]\n\n");
+	fclose (tc);
+	return true;
 }
 
 boarder_viewport * boarder :: insert_viewport (PrologAtom * atom, char * name, rect location) {
-	viewports = new boarder_viewport (this, atom, name, location, viewports);
-	return viewports;
+	boarder_viewport * viewport = new boarder_viewport (this, atom, name, location, viewports);
+	if (viewports == 0) return viewports = viewport;
+	boarder_viewport * vp = viewports;
+	while (vp -> next != 0) vp = vp -> next;
+	return vp -> next = viewport;
 }
 
 void boarder :: remove_viewport (boarder_viewport * viewport) {
@@ -65,9 +102,10 @@ void boarder :: remove_viewport (boarder_viewport * viewport) {
 }
 
 boarder_token * boarder :: insert_token (boarder_token * token) {
-	token -> next = tokens;
-	tokens = token;
-	return token;
+	if (tokens == 0) return tokens = token;
+	boarder_token * bp = tokens;
+	while (bp -> next != 0) bp = bp -> next;
+	return bp -> next = token;
 }
 
 void boarder :: remove_token (boarder_token * token) {
@@ -119,7 +157,7 @@ boarder_viewport :: boarder_viewport (boarder * board, PrologAtom * atom, char *
 
 boarder_viewport :: ~ boarder_viewport (void) {
 	if (atom) atom -> removeAtom ();
-	printf ("DELETING VIEWPORT [%s] <%i %i>\n", name, board_position . x, board_position . y);
+	printf ("DELETING VIEWPORT [%s] <%i %i>\n", name, (int) board_position . x, (int) board_position . y);
 	if (next) delete next; next = 0;
 }
 
@@ -157,8 +195,6 @@ boarder_token :: ~ boarder_token (void) {
 	if (next) delete next; next = 0;
 }
 
-void boarder_token :: draw (cairo_t * cr, boarder_viewport * viewport) {}
-
 rectangle_token :: rectangle_token (PrologAtom * atom) : boarder_token (atom) {}
 rectangle_token :: ~ rectangle_token (void) {
 	printf ("	DELEING RECTANGLE\n");
@@ -175,6 +211,8 @@ void rectangle_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_stroke (cr);
 }
 
+char * rectangle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_RECTANGLE, atom -> name ());}
+
 circle_token :: circle_token (PrologAtom * atom) : boarder_token (atom) {}
 circle_token :: ~ circle_token (void) {
 	printf ("	DELETING CIRCLE\n");
@@ -185,6 +223,8 @@ void circle_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
 	rect r (location . position - viewport -> board_position, location . size);
 	cairo_stroke (cr);
 }
+
+char * circle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_CIRCLE, atom -> name ());}
 
 picture_token :: picture_token (PrologAtom * atom, char * picture_location) : boarder_token (atom) {
 	this -> picture_location = create_text (picture_location);
@@ -209,6 +249,7 @@ void picture_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_paint (cr);
 }
 
+char * picture_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_PICTURE, atom -> name (), picture_location);}
 
 
 

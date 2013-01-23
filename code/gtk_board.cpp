@@ -1,3 +1,4 @@
+#include "operating_system.h"
 #include <gtk/gtk.h>
 
 #include "prolog.h"

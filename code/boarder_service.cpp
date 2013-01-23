@@ -7,7 +7,8 @@
 
 #include "prolog_linux_console.h"
 
-boarder * board = 0;
+static boarder * board = 0;
+static bool boarder_clean = true;
 
 class viewport_action : public PrologNativeCode {
 public:
@@ -27,6 +28,7 @@ public:
 			gtk_widget_destroy (viewport -> window);
 			board -> remove_viewport (viewport);
 			delete this;
+			boarder_clean = false;
 			return true;
 		}
 		if (! parameters -> isPair ()) return false;
@@ -46,6 +48,7 @@ public:
 			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
 			viewport -> setWindowLocation (rect (x -> getInteger (), y -> getInteger (), width -> getInteger (), height -> getInteger ()));
+			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == position_atom) {
@@ -58,6 +61,7 @@ public:
 			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
 			viewport -> setBoardPosition (point (x -> getInteger (), y -> getInteger ()));
+			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == size_atom) {
@@ -70,14 +74,15 @@ public:
 			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
 			viewport -> setWindowSize (point (width -> getInteger (), height -> getInteger ()));
+			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == scaling_atom) {
 			if (parameters -> isVar ()) {parameters -> setPair (); parameters -> getLeft () -> setDouble (viewport -> scaling); return true;}
 			if (! parameters -> isPair ()) return false;
 			PrologElement * scaling = parameters -> getLeft ();
-			if (scaling -> isDouble ()) {viewport -> scaling = scaling -> getDouble (); return true;}
-			if (scaling -> isInteger ()) {viewport -> scaling = (int) scaling -> getInteger (); return true;}
+			if (scaling -> isDouble ()) {viewport -> scaling = scaling -> getDouble (); boarder_clean = false; return true;}
+			if (scaling -> isInteger ()) {viewport -> scaling = (int) scaling -> getInteger (); boarder_clean = false; return true;}
 			return false;
 		}
 		return false;
@@ -155,6 +160,7 @@ public:
 		gtk_widget_show_all (window);
 
 		machine -> viewport -> window = window;
+		boarder_clean = false;
 		return true;
 	}
 	viewport (PrologDirectory * directory) {this -> directory = directory;}
@@ -169,6 +175,8 @@ public:
 	PrologAtom * scaling_atom;
 	PrologAtom * background_colour_atom;
 	PrologAtom * foreground_colour_atom;
+	PrologAtom * lock_atom, * unlock_atom, * is_locked_atom;
+	PrologAtom * select_atom, * deselect_atom, * is_selected_atom;
 	boarder_token * token;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -179,6 +187,7 @@ public:
 			token -> atom -> unProtect ();
 			board -> remove_token (token);
 			delete this;
+			boarder_clean = false;
 			return true;
 		}
 		if (! parameters -> isPair ()) return false;
@@ -198,6 +207,7 @@ public:
 			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
 			token -> location = rect (x -> getInteger (), y -> getInteger (), width -> getInteger (), height -> getInteger ());
+			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == position_atom) {
@@ -210,6 +220,7 @@ public:
 			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
 			token -> location . position = point (x -> getInteger (), y -> getInteger ());
+			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == size_atom) {
@@ -222,6 +233,7 @@ public:
 			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
 			token -> location . size = point (width -> getInteger (), height -> getInteger ());
+			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == background_colour_atom) {
@@ -239,6 +251,7 @@ public:
 				PrologElement * alpha = parameters -> getLeft (); if (! alpha -> isInteger ()) return false;
 				token -> background_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger (), alpha -> getInteger ());
 			} else token -> background_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger ());
+			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == foreground_colour_atom) {
@@ -256,21 +269,29 @@ public:
 				PrologElement * alpha = parameters -> getLeft (); if (! alpha -> isInteger ()) return false;
 				token -> foreground_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger (), alpha -> getInteger ());
 			} else token -> foreground_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger ());
+			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == scaling_atom) {
 			if (parameters -> isVar ()) {parameters -> setPair (); parameters -> getLeft () -> setDouble (token -> scaling); return true;}
 			if (! parameters -> isPair ()) return false;
 			PrologElement * scaling = parameters -> getLeft ();
-			if (scaling -> isDouble ()) {token -> scaling = scaling -> getDouble (); return true;}
-			if (scaling -> isInteger ()) {token -> scaling = (int) scaling -> getInteger (); return true;}
+			if (scaling -> isDouble ()) {token -> scaling = scaling -> getDouble (); boarder_clean = false; return true;}
+			if (scaling -> isInteger ()) {token -> scaling = (int) scaling -> getInteger (); boarder_clean = false; return true;}
 			return false;
 		}
+		if (atom -> getAtom () == lock_atom) {token -> locked = true; boarder_clean = false; return true;}
+		if (atom -> getAtom () == unlock_atom) {token -> locked = false; boarder_clean = false; return true;}
+		if (atom -> getAtom () == is_locked_atom) {return token -> locked;}
+		if (atom -> getAtom () == select_atom) {token -> selected = true; return true;}
+		if (atom -> getAtom () == deselect_atom) {token -> selected = false; return true;}
+		if (atom -> getAtom () == is_selected_atom) {return token -> selected;}
 		return false;
 	}
 	token_actions (PrologDirectory * directory) {
 		this -> directory = directory;
 		location_atom = size_atom = position_atom = scaling_atom = background_colour_atom = foreground_colour_atom = 0;
+		lock_atom = unlock_atom = is_locked_atom = select_atom = deselect_atom = is_selected_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -279,6 +300,12 @@ public:
 			scaling_atom = directory -> searchAtom (SCALING);
 			background_colour_atom = directory -> searchAtom (BACKGROUND_COLOUR);
 			foreground_colour_atom = directory -> searchAtom (FOREGROUND_COLOUR);
+			lock_atom = directory -> searchAtom (LOCK);
+			unlock_atom = directory -> searchAtom (UNLOCK);
+			is_locked_atom = directory -> searchAtom (IS_LOCKED);
+			select_atom = directory -> searchAtom (SELECT);
+			deselect_atom = directory -> searchAtom (DESELECT);
+			is_selected_atom = directory -> searchAtom (IS_SELECTED);
 		}
 	}
 };
@@ -296,6 +323,7 @@ public:
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new rectangle_token (atom -> getAtom ());
 		board -> insert_token (machine -> token);
+		boarder_clean = false;
 		return true;
 	}
 	create_rectangle (PrologDirectory * directory) {this -> directory = directory;}
@@ -314,6 +342,7 @@ public:
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new circle_token (atom -> getAtom ());
 		board -> insert_token (machine -> token);
+		boarder_clean = false;
 		return true;
 	}
 	create_circle (PrologDirectory * directory) {this -> directory = directory;}
@@ -336,6 +365,7 @@ public:
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new picture_token (atom -> getAtom (), picture_location -> getText ());
 		board -> insert_token (machine -> token);
+		boarder_clean = false;
 		return true;
 	}
 	create_picture (PrologDirectory * directory) {this -> directory = directory;}
@@ -357,6 +387,7 @@ public:
 			if (! alpha -> isInteger ()) return false;
 			board -> background_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger (), alpha -> getInteger ());
 		} else board -> background_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger ());
+		boarder_clean = false;
 		return true;
 	}
 };
@@ -374,6 +405,29 @@ public:
 	}
 };
 
+class save_board : public PrologNativeCode {
+public:
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isPair ()) return false;
+		parameters = parameters -> getLeft ();
+		if (! parameters -> isText ()) return false;
+		return boarder_clean = board -> save (parameters -> getText ());
+	}
+};
+
+class clean : public PrologNativeCode {
+public: bool code (PrologElement * parameters, PrologResolution * resolution) {boarder_clean = true; return true;}
+};
+
+class is_clean : public PrologNativeCode {
+public: bool code (PrologElement * parameters, PrologResolution * resolution) {return boarder_clean;}
+};
+
+class erase : public PrologNativeCode {
+public: bool code (PrologElement * parameters, PrologResolution * resolution) {if (board == 0) return false; board -> erase (); boarder_clean = false; return true;}
+};
+
 class diagnostics : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -381,7 +435,7 @@ public:
 		boarder_viewport * viewport = board -> viewports;
 		printf ("DIAGNOSTICS:\n");
 		while (viewport != 0) {
-			printf ("	viewport [%s %s] <%i %i>\n", viewport -> atom -> name (), viewport -> name, viewport -> board_position . x, viewport -> board_position . y);
+			printf ("	viewport [%s %s] <%i %i>\n", viewport -> atom -> name (), viewport -> name, (int) viewport -> board_position . x, (int) viewport -> board_position . y);
 			viewport = viewport -> next;
 		}
 		return true;
@@ -398,6 +452,10 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, VIEWPORT) == 0) return new viewport (dir);
 	if (strcmp (name, BACKGROUND_COLOUR) == 0) return new background_colour ();
 	if (strcmp (name, REPAINT) == 0) return new repaint ();
+	if (strcmp (name, SAVE_BOARD) == 0) return new save_board ();
+	if (strcmp (name, CLEAN) == 0) return new clean ();
+	if (strcmp (name, IS_CLEAN) == 0) return new is_clean ();
+	if (strcmp (name, ERASE) == 0) return new erase ();
 	if (strcmp (name, CREATE_RECTANGLE) == 0) return new create_rectangle (dir);
 	if (strcmp (name, CREATE_CIRCLE) == 0) return new create_circle (dir);
 	if (strcmp (name, CREATE_PICTURE) == 0) return new create_picture (dir);
