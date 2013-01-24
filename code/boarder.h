@@ -2,6 +2,8 @@
 #ifndef _BOARDER_
 #define _BOARDER_
 
+#include <math.h>
+
 #include "prolog.h"
 #include <gtk/gtk.h>
 
@@ -9,6 +11,7 @@
 #define SIZE "Size"
 #define POSITION "Position"
 #define SCALING "Scaling"
+#define ROTATION "Rotation"
 #define BACKGROUND_COLOUR "BackgroundColour"
 #define FOREGROUND_COLOUR "ForegroundColour"
 #define LOCK "Lock"
@@ -36,6 +39,8 @@ class boarder_token;
 class text_token;
 class rectangle_token;
 
+#define POINT(p) p . x, p . y
+
 class point {
 public:
 	double x, y;
@@ -44,7 +49,9 @@ public:
 	point (void);
 	point operator + (const point & p) const;
 	point operator - (const point & p) const;
+	point operator - (void) const;
 	point operator * (const double & scale) const;
+	point half (void);
 };
 
 #define RECT(r) r . position . x, r . position . y, r . size . x, r . size . y
@@ -52,6 +59,8 @@ class rect {
 public:
 	point position;
 	point size;
+	point centre (void);
+	point centre (double scaling);
 	rect (point offset, point size);
 	rect (double x, double y, double width, double height);
 	rect (double locations [4]);
@@ -106,17 +115,24 @@ public:
 };
 
 class boarder_token {
-public:
+protected:
 	rect location;
+public:
 	colour foreground_colour;
 	colour background_colour;
 	double scaling;
+	double rotation;
 	bool locked;
 	bool selected;
 	PrologAtom * atom;
 	boarder_token * next;
 	virtual void draw (cairo_t * cr, boarder_viewport * viewport) = 0;
 	virtual char * creation_call (FILE * tc) = 0;
+	virtual void set_position (point position);
+	virtual void set_size (point size);
+	virtual void set_location (rect location);
+	virtual rect get_location (void);
+	virtual rect get_bounding_box (void);
 	boarder_token (PrologAtom * atom);
 	virtual ~ boarder_token (void);
 };
@@ -148,6 +164,8 @@ public:
 	char * picture_location;
 	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
 	virtual char * creation_call (FILE * tc);
+	virtual void set_size (point size);
+	virtual void set_location (rect size);
 	picture_token (PrologAtom * atom, char * picture_location);
 	virtual ~ picture_token (void);
 };

@@ -5,7 +5,7 @@ import f1
 program boarder #machine := "boarder" [
 					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase
 					CreateRectangle CreateCircle CreatePicture
-					Location Size Position Scaling
+					Location Size Position Scaling Rotation
 					Lock Unlock Locked? Select Deselect Selected?
 					mariner viking voyager mix
 					diagnostics test
@@ -29,16 +29,20 @@ program boarder #machine := "boarder" [
 
 [[test]
 	[CreateRectangle mix]
-;	[Viewport "SONDA" mariner]
+	[Viewport "SONDA" mariner]
 	[Viewport "SONDA" viking]
-;	[Viewport "SONDA" voyager]
+	[Viewport "SONDA" voyager]
 	[diagnostics]
 ]
 
 end := [
 			[preprocessor f1]
 			[auto_atoms]
-			[test]
+			[TRY [batch "sonda.txt"]]
 			[command]
+			[SELECT
+				[[Clean?] [show "Nothing to save."]]
+				[[SaveBoard "sonda.txt"] [show "Board saved."]]
+			]
 		] .
 

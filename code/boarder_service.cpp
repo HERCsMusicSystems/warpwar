@@ -17,6 +17,7 @@ public:
 	PrologAtom * size_atom;
 	PrologAtom * position_atom;
 	PrologAtom * scaling_atom;
+	PrologAtom * repaint_atom;
 	boarder_viewport * viewport;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -85,17 +86,19 @@ public:
 			if (scaling -> isInteger ()) {viewport -> scaling = (int) scaling -> getInteger (); boarder_clean = false; return true;}
 			return false;
 		}
+		if (atom -> getAtom () == repaint_atom) {gtk_widget_queue_draw (viewport -> window); return true;}
 		return false;
 	}
 	viewport_action (PrologDirectory * directory) {
 		this -> directory = directory;
-		location_atom = size_atom = position_atom = scaling_atom = 0;
+		location_atom = size_atom = position_atom = scaling_atom = repaint_atom = 0;
 		this -> viewport = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
 			size_atom = directory -> searchAtom (SIZE);
 			position_atom = directory -> searchAtom (POSITION);
 			scaling_atom = directory -> searchAtom (SCALING);
+			repaint_atom = directory -> searchAtom (REPAINT);
 		}
 	}
 };
@@ -115,8 +118,12 @@ static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, board
 	cairo_destroy (cr);
 	return FALSE;
 }
-static gboolean viewport_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . size = point (widget -> allocation . width, widget -> allocation . height); return FALSE;}
-static gboolean window_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . position = point (event -> configure . x, event -> configure . y); return FALSE;}
+static gboolean viewport_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . size = point (widget -> allocation . width, widget -> allocation . height); boarder_clean = false; return FALSE;}
+static gboolean window_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . position = point (event -> configure . x, event -> configure . y); boarder_clean = false; return FALSE;}
+
+static gint window_button_down_event (GtkWidget * window, GdkEventButton * event, boarder_viewport * viewport) {
+	printf ("CLICKED [%i %g %g]\n", event -> button, event -> x / viewport -> scaling, event -> y / viewport -> scaling);
+}
 
 class viewport : public PrologNativeCode {
 public:
@@ -155,6 +162,8 @@ public:
 		g_signal_connect (G_OBJECT (drawing_area), "expose-event", G_CALLBACK (viewport_draw_event), machine -> viewport);
 		g_signal_connect (G_OBJECT (drawing_area), "configure-event", G_CALLBACK (viewport_configure_event), machine -> viewport);
 		g_signal_connect (G_OBJECT (window), "configure-event", G_CALLBACK (window_configure_event), machine -> viewport);
+		gtk_widget_add_events (window, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK);
+		g_signal_connect (G_OBJECT (window), "button_press_event", G_CALLBACK (window_button_down_event), machine -> viewport);
 		gtk_window_move (GTK_WINDOW (window), machine -> viewport -> location . position . x, machine -> viewport -> location . position . y);
 		gtk_window_resize (GTK_WINDOW (window), machine -> viewport -> location . size . x, machine -> viewport -> location . size . y);
 		gtk_widget_show_all (window);
@@ -177,6 +186,7 @@ public:
 	PrologAtom * foreground_colour_atom;
 	PrologAtom * lock_atom, * unlock_atom, * is_locked_atom;
 	PrologAtom * select_atom, * deselect_atom, * is_selected_atom;
+	PrologAtom * rotation_atom;
 	boarder_token * token;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -196,43 +206,46 @@ public:
 		if (atom -> getAtom () == location_atom) {
 			if (parameters -> isVar ()) {
 				parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) token -> location . position . x); parameters = parameters -> getRight (); parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) token -> location . position . y); parameters = parameters -> getRight (); parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) token -> location . size . x); parameters = parameters -> getRight (); parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) token -> location . size . y);
+				rect token_location = token -> get_location ();
+				parameters -> getLeft () -> setInteger ((int) token_location . position . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token_location . position . y); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token_location . size . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token_location . size . y);
 				return true;
 			}
 			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
-			token -> location = rect (x -> getInteger (), y -> getInteger (), width -> getInteger (), height -> getInteger ());
+			token -> set_location (rect (x -> getInteger (), y -> getInteger (), width -> getInteger (), height -> getInteger ()));
 			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == position_atom) {
 			if (parameters -> isVar ()) {
 				parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) token -> location . position . x); parameters = parameters -> getRight (); parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) token -> location . position . y);
+				rect token_location = token -> get_location ();
+				parameters -> getLeft () -> setInteger ((int) token_location . position . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token_location . position . y);
 				return true;
 			}
 			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
-			token -> location . position = point (x -> getInteger (), y -> getInteger ());
+			token -> set_position (point (x -> getInteger (), y -> getInteger ()));
 			boarder_clean = false;
 			return true;
 		}
 		if (atom -> getAtom () == size_atom) {
 			if (parameters -> isVar ()) {
 				parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) token -> location . size . x); parameters = parameters -> getRight (); parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) token -> location . size . y);
+				rect token_location = token -> get_location ();
+				parameters -> getLeft () -> setInteger ((int) token_location . size . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token_location . size . y);
 				return true;
 			}
 			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
-			token -> location . size = point (width -> getInteger (), height -> getInteger ());
+			token -> set_size (point (width -> getInteger (), height -> getInteger ()));
 			boarder_clean = false;
 			return true;
 		}
@@ -277,7 +290,15 @@ public:
 			if (! parameters -> isPair ()) return false;
 			PrologElement * scaling = parameters -> getLeft ();
 			if (scaling -> isDouble ()) {token -> scaling = scaling -> getDouble (); boarder_clean = false; return true;}
-			if (scaling -> isInteger ()) {token -> scaling = (int) scaling -> getInteger (); boarder_clean = false; return true;}
+			if (scaling -> isInteger ()) {token -> scaling = (double) scaling -> getInteger (); boarder_clean = false; return true;}
+			return false;
+		}
+		if (atom -> getAtom () == rotation_atom) {
+			if (parameters -> isVar ()) {parameters -> setPair (); parameters -> getLeft () -> setDouble (token -> rotation); return true;}
+			if (! parameters -> isPair ()) return false;
+			PrologElement * rotation = parameters -> getLeft ();
+			if (rotation -> isDouble ()) {token -> rotation = rotation -> getDouble (); boarder_clean = false; return true;}
+			if (rotation -> isInteger ()) {token -> rotation = (double) rotation -> getInteger (); boarder_clean = false; return true;}
 			return false;
 		}
 		if (atom -> getAtom () == lock_atom) {token -> locked = true; boarder_clean = false; return true;}
@@ -292,6 +313,7 @@ public:
 		this -> directory = directory;
 		location_atom = size_atom = position_atom = scaling_atom = background_colour_atom = foreground_colour_atom = 0;
 		lock_atom = unlock_atom = is_locked_atom = select_atom = deselect_atom = is_selected_atom = 0;
+		rotation_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -306,6 +328,7 @@ public:
 			select_atom = directory -> searchAtom (SELECT);
 			deselect_atom = directory -> searchAtom (DESELECT);
 			is_selected_atom = directory -> searchAtom (IS_SELECTED);
+			rotation_atom = directory -> searchAtom (ROTATION);
 		}
 	}
 };
