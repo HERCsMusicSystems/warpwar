@@ -199,6 +199,29 @@ static gint window_button_motion_event (GtkWidget * window, GdkEventButton * eve
 	return TRUE;
 }
 
+void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
+				 GtkSelectionData *data, guint ttype, guint time, gpointer *NA) {
+	printf ("RECEIVE\n");
+}
+
+
+gboolean DnDdrop (GtkWidget *widget, GdkDragContext *context, gint x, gint y, guint time, gpointer *NA) {
+	printf ("DROP\n");
+	return TRUE;
+}
+
+
+void DnDleave (GtkWidget *widget, GdkDragContext *context, guint time, gpointer *NA) {
+	printf ("LEAVE\n");
+}
+
+
+gboolean DnDmotion (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
+					GtkSelectionData *seld, guint ttype, guint time, gpointer *NA) {
+	printf ("MOTION\n");
+	return TRUE;
+}
+
 class viewport : public PrologNativeCode {
 public:
 	PrologDirectory * directory;
@@ -242,6 +265,21 @@ public:
 		g_signal_connect (G_OBJECT (window), "motion_notify_event", G_CALLBACK (window_button_motion_event), machine -> viewport);
 		gtk_window_move (GTK_WINDOW (window), (int) machine -> viewport -> location . position . x, (int) machine -> viewport -> location . position . y);
 		gtk_window_resize (GTK_WINDOW (window), (int) machine -> viewport -> location . size . x, (int) machine -> viewport -> location . size . y);
+		
+		//const GtkTargetEntry targets[2] = { {"text/plain",0,0}, { "application/x-rootwindow-drop",0,0 } };
+		//gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,targets,2,GDK_ACTION_COPY);
+		//g_signal_connect(drawing_area,"drag-drop",G_CALLBACK(DnDdrop),NULL);
+		//g_signal_connect(drawing_area,"drag-motion",G_CALLBACK(DnDmotion),NULL);
+		//g_signal_connect(drawing_area,"drag-data-received",G_CALLBACK(DnDreceive),NULL);
+        //g_signal_connect (drawing_area, "drag-leave",G_CALLBACK(DnDleave),NULL);
+
+		gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,NULL,0,GDK_ACTION_COPY);
+		gtk_drag_dest_add_text_targets(drawing_area);
+		gtk_drag_dest_add_uri_targets(drawing_area);
+		
+		//gtk_window_move (GTK_WINDOW (window), machine -> viewport -> location . position . x, machine -> viewport -> location . position . y);
+		//gtk_window_resize (GTK_WINDOW (window), machine -> viewport -> location . size . x, machine -> viewport -> location . size . y);
+
 		gtk_widget_show_all (window);
 
 		machine -> viewport -> window = window;
