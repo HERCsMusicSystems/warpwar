@@ -266,16 +266,16 @@ public:
 		gtk_window_move (GTK_WINDOW (window), (int) machine -> viewport -> location . position . x, (int) machine -> viewport -> location . position . y);
 		gtk_window_resize (GTK_WINDOW (window), (int) machine -> viewport -> location . size . x, (int) machine -> viewport -> location . size . y);
 		
-		//const GtkTargetEntry targets[2] = { {"text/plain",0,0}, { "application/x-rootwindow-drop",0,0 } };
-		//gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,targets,2,GDK_ACTION_COPY);
-		//g_signal_connect(drawing_area,"drag-drop",G_CALLBACK(DnDdrop),NULL);
-		//g_signal_connect(drawing_area,"drag-motion",G_CALLBACK(DnDmotion),NULL);
-		//g_signal_connect(drawing_area,"drag-data-received",G_CALLBACK(DnDreceive),NULL);
-        //g_signal_connect (drawing_area, "drag-leave",G_CALLBACK(DnDleave),NULL);
+		//gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,NULL,0,GDK_ACTION_COPY);
+		//gtk_drag_dest_add_text_targets(drawing_area);
+		//gtk_drag_dest_add_uri_targets(drawing_area);
+		const GtkTargetEntry targets[2] = { {"text/plain",0,0}, { "application/x-rootwindow-drop",0,0 } };
+		gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,targets,2,GDK_ACTION_COPY);
+		g_signal_connect(drawing_area,"drag-drop",G_CALLBACK(DnDdrop),NULL);
+		g_signal_connect(drawing_area,"drag-motion",G_CALLBACK(DnDmotion),NULL);
+		g_signal_connect(drawing_area,"drag-data-received",G_CALLBACK(DnDreceive),NULL);
+        g_signal_connect (drawing_area, "drag-leave",G_CALLBACK(DnDleave),NULL);
 
-		gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,NULL,0,GDK_ACTION_COPY);
-		gtk_drag_dest_add_text_targets(drawing_area);
-		gtk_drag_dest_add_uri_targets(drawing_area);
 		
 		//gtk_window_move (GTK_WINDOW (window), machine -> viewport -> location . position . x, machine -> viewport -> location . position . y);
 		//gtk_window_resize (GTK_WINDOW (window), machine -> viewport -> location . size . x, machine -> viewport -> location . size . y);
@@ -872,28 +872,120 @@ boarder_service_class :: ~ boarder_service_class (void) {
 	if (board != 0) delete board; board = 0;
 }
 
+/*
+#include <gtk/gtk.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+
+/* four signal handler callbacks *
+void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y, GtkSelectionData *data, guint ttype, guint time, gpointer *NA); 
+gboolean DnDdrop (GtkWidget *widget, GdkDragContext *context, gint x, gint y, guint time, gpointer *NA); 
+void DnDleave (GtkWidget *widget, GdkDragContext *context, guint time, gpointer *NA);
+gboolean DnDmotion (GtkWidget *widget, GdkDragContext *context, gint x, gint y, GtkSelectionData *seld, guint ttype, guint time, gpointer *NA); 
+
+gboolean DND=FALSE; /* "in play" flag *
+
+int main (int argc, char *argv[]) {
+	GtkWidget *window, *textarea;
+	/* this may not matter too much, they are MIME types; I found these in the gedit source (C) Maggi, Borelli, et. al. *
+	/* (amongst other places) *
+	const GtkTargetEntry targets[2] = { {"text/plain",0,0}, { "application/x-rootwindow-drop",0,0 } };
+    
+	gtk_init (&argc, &argv);
+    
+	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+	gtk_window_set_title(GTK_WINDOW (window), "Drag N' Drop");
+	g_signal_connect (G_OBJECT (window), "delete_event", G_CALLBACK (gtk_main_quit), NULL);
+	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
+	
+	textarea = gtk_text_view_new();       /* read-only text view *
+	gtk_widget_set_size_request(GTK_WIDGET (textarea), 300, 500);
+	gtk_text_view_set_editable(GTK_TEXT_VIEW(textarea),FALSE);
+	gtk_container_add (GTK_CONTAINER (window), textarea);
+	gtk_drag_dest_set(textarea,GTK_DEST_DEFAULT_ALL,targets,2,GDK_ACTION_COPY);
+	g_signal_connect(textarea,"drag-drop",G_CALLBACK(DnDdrop),NULL);
+	g_signal_connect(textarea,"drag-motion",G_CALLBACK(DnDmotion),NULL);
+	g_signal_connect(textarea,"drag-data-received",G_CALLBACK(DnDreceive),NULL);
+	g_signal_connect (textarea, "drag-leave",G_CALLBACK(DnDleave),NULL);
+	
+	gtk_widget_show_all(window);
+	gtk_main ();
+	return 0;
+}
 
 
+void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
+				 GtkSelectionData *data, guint ttype, guint time, gpointer *NA) {
+	GtkTextBuffer *text = gtk_text_view_get_buffer(GTK_TEXT_VIEW (widget));
+	struct stat info;
+	FILE *fh;   /* we have to read the file ourself *
+	int len;
+	gboolean got=TRUE;   /* to bounce inappropriate data *
+	gchar *ptr=(char*)data->data, *buffer;
+	/* ^ treat everything as char, then test... *
+	if ((strncmp(ptr,"file:///",8)!=0) || (strlen(ptr)>4096)) got=FALSE;
+	gtk_drag_finish (context, got, FALSE, time);   /* tell source app not to erase the file *
+	if (!(got)) return;
+	
+	ptr+=(7*sizeof(char));   /* making this an absolute path... *
+	len=strlen(ptr)-1;
+	/* some systems may terminate with network proper \r\n, etc, so defluff *
+	while ((ptr[len]==' ') || (ptr[len]=='\n') || (ptr[len]=='\r')) 
+	{ ptr[len]='\0'; len--; }
+	/* print the file contents into the text area *
+	if (stat(ptr,&info)<0) { perror("stat"); return; }
+	if (!(fh=fopen(ptr,"r"))) { perror("fopen"); return; }   
+	len=(int)info.st_size;
+	buffer=malloc(len);
+	if (fread(buffer,1,len,fh)!=len) perror("fread");         
+	fclose(fh);
+	gtk_text_buffer_set_text(text,buffer,len);    
+	free(buffer);   
+}
 
 
+gboolean DnDdrop (GtkWidget *widget, GdkDragContext *context, gint x, gint y, guint time, gpointer *NA) {
+	GdkAtom target_type;
+	/* adapted from "TestDnD - main.c : Simple tutorial for GTK+ Drag-N-Drop" Copyright (C) 2005 Ryan McDougall *
+	/* http://live.gnome.org/GnomeLove/DragNDropTutorial *
+	/* In this version, we will accept anything the source wants to give us *
+	/* context->targets recieved from source app *
+	if (context-> targets) {
+		target_type = GDK_POINTER_TO_ATOM (g_list_nth_data (context-> targets, 0)); /* Choose the best target type *
+		gtk_drag_get_data (
+						   widget,         /* "widget" should now receive 'drag-data-received' signal *
+						   context,        /* represents the current state of the DnD *
+						   target_type,    /* the target type we want *
+						   time            /* our time stamp *
+						   );
+	}
+	else return FALSE;     /* cancel *
+	return TRUE;
+}
 
 
+void DnDleave (GtkWidget *widget, GdkDragContext *context, guint time, gpointer *NA) {
+	GtkWidget *window=gtk_widget_get_toplevel(widget);
+	gtk_window_set_title(GTK_WINDOW (window), "Drop is Gone...");
+	gtk_text_view_set_editable(GTK_TEXT_VIEW(widget),TRUE);   
+	DND=FALSE;
+}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+gboolean DnDmotion (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
+					GtkSelectionData *seld, guint ttype, guint time, gpointer *NA) {
+	GtkWidget *window;
+	if (DND) return TRUE;   /* if we are already there, that is good enough
+							 You can comment out the last line and uncomment the next one to watch 
+							 the drag coordinates in the console while moving thru the text area *
+	// g_print("DnDmotion() %d %d\n",x,y,); fflush(stdout); } 
+	gtk_text_view_set_editable(GTK_TEXT_VIEW(widget),FALSE);   
+	DND=TRUE;   
+	window=gtk_widget_get_toplevel(widget);
+	gtk_window_set_title(GTK_WINDOW (window), "Entered Drop Zone!");
+	return TRUE;
+}
+*/
