@@ -51,7 +51,11 @@ public:
 	point operator - (const point & p) const;
 	point operator - (void) const;
 	point operator * (const double & scale) const;
+	point operator / (const double & scale) const;
+	bool operator == (const point & p) const;
+	bool operator != (const point & p) const;
 	point half (void);
+	void round (void);
 };
 
 #define RECT(r) r . position . x, r . position . y, r . size . x, r . size . y
@@ -61,6 +65,8 @@ public:
 	point size;
 	point centre (void);
 	point centre (double scaling);
+	bool overlap (rect area);
+	void positivise (void);
 	rect (point offset, point size);
 	rect (double x, double y, double width, double height);
 	rect (double locations [4]);
@@ -93,6 +99,10 @@ public:
 	void erase (void);
 	bool save (char * location);
 	void draw (cairo_t * cr, boarder_viewport * viewport);
+	void clear_selection (bool select = false);
+	boarder_token * hit_test (rect area);
+	void repaint (void);
+	void move_selection (point delta);
 	boarder (void);
 	~ boarder (void);
 };
@@ -133,6 +143,8 @@ public:
 	virtual void set_location (rect location);
 	virtual rect get_location (void);
 	virtual rect get_bounding_box (void);
+	boarder_token * hit_test (rect area);
+	boarder_token * hit_test_next (rect area);
 	boarder_token (PrologAtom * atom);
 	virtual ~ boarder_token (void);
 };

@@ -103,6 +103,11 @@ public:
 	}
 };
 
+static point click_init_point (0, 0);
+static point click_point (0, 0);
+static int click_button = 0;
+static bool has_selection = false;
+
 extern PrologLinuxConsole * console;
 static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
 	char command [256];
@@ -115,14 +120,74 @@ static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, board
 	if (viewport -> board == 0) return FALSE;
 	cairo_t * cr = gdk_cairo_create (gtk_widget_get_window (widget));
 	board -> draw (cr, viewport);
+	if (click_button == 3 && click_init_point != click_point) {
+		rect location (click_init_point * viewport -> scaling, (click_point - click_init_point) * viewport -> scaling);
+		cairo_rectangle (cr, RECT (location));
+		cairo_stroke (cr);
+	}
 	cairo_destroy (cr);
 	return FALSE;
 }
 static gboolean viewport_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . size = point (widget -> allocation . width, widget -> allocation . height); boarder_clean = false; return FALSE;}
 static gboolean window_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . position = point (event -> configure . x, event -> configure . y); boarder_clean = false; return FALSE;}
 
-static gint window_button_down_event (GtkWidget * window, GdkEventButton * event, boarder_viewport * viewport) {
-	printf ("CLICKED [%i %g %g]\n", event -> button, event -> x / viewport -> scaling, event -> y / viewport -> scaling);
+static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	if (board == 0) return TRUE;
+	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
+	rect hit_test_area = area; hit_test_area . position = hit_test_area . position + viewport -> board_position;
+	area . position . round ();
+	//printf ("CLICKED [%i %g %g]\n", event -> button, area . position . x, area . position . y);
+	boarder_token * token = board -> hit_test (hit_test_area);
+	switch (event -> button) {
+	case 1:
+		board -> clear_selection ();
+		has_selection = false;
+		if (token) {token -> selected = true; has_selection = true;}
+		break;
+	case 3:
+		if (token) {token -> selected = true; has_selection = true;}
+		break;
+	default: break;
+	}
+	board -> repaint ();
+	click_init_point = click_point = area . position;
+	click_button = event -> button;
+	return TRUE;
+}
+
+static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	if (board == 0) return TRUE;
+	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
+	area . position . round ();
+	//printf ("RELEASED [%i %g %g]\n", event -> button, area . position . x, area . position . y);
+	if (click_button == 3 && click_init_point != click_point) {
+		rect location (click_init_point + viewport -> board_position, click_point - click_init_point);
+		location . positivise ();
+		boarder_token * token = board -> hit_test (location);
+		while (token != 0) {
+			token -> selected = true;
+			token = token -> hit_test_next (location);
+		}
+	}
+	click_button = 0;
+	board -> repaint ();
+	return TRUE;
+}
+
+static gint window_button_motion_event (GtkWidget * window, GdkEventButton * event, boarder_viewport * viewport) {
+	if (board == 0) return TRUE;
+	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
+	area . position . round ();
+	//printf ("MOVE [%i %g %g]\n", event -> button, area . position . x, area . position . y);
+	if (has_selection && click_button > 0) {
+		board -> move_selection (area . position - click_point);
+	}
+	if (! has_selection && click_button == 1) {
+		viewport -> board_position = viewport -> board_position - area . position + click_point;
+	}
+	click_point = area . position;
+	if (click_button > 0) board -> repaint ();
+	return TRUE;
 }
 
 class viewport : public PrologNativeCode {
@@ -162,8 +227,10 @@ public:
 		g_signal_connect (G_OBJECT (drawing_area), "expose-event", G_CALLBACK (viewport_draw_event), machine -> viewport);
 		g_signal_connect (G_OBJECT (drawing_area), "configure-event", G_CALLBACK (viewport_configure_event), machine -> viewport);
 		g_signal_connect (G_OBJECT (window), "configure-event", G_CALLBACK (window_configure_event), machine -> viewport);
-		gtk_widget_add_events (window, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK);
+		gtk_widget_add_events (window, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_RELEASE_MASK);
 		g_signal_connect (G_OBJECT (window), "button_press_event", G_CALLBACK (window_button_down_event), machine -> viewport);
+		g_signal_connect (G_OBJECT (window), "button_release_event", G_CALLBACK (window_button_up_event), machine -> viewport);
+		g_signal_connect (G_OBJECT (window), "motion_notify_event", G_CALLBACK (window_button_motion_event), machine -> viewport);
 		gtk_window_move (GTK_WINDOW (window), machine -> viewport -> location . position . x, machine -> viewport -> location . position . y);
 		gtk_window_resize (GTK_WINDOW (window), machine -> viewport -> location . size . x, machine -> viewport -> location . size . y);
 		gtk_widget_show_all (window);
@@ -419,11 +486,7 @@ class repaint : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
-		boarder_viewport * viewport = board -> viewports;
-		while (viewport != 0) {
-			gtk_widget_queue_draw (viewport -> window);
-			viewport = viewport -> next;
-		}
+		board -> repaint ();
 		return true;
 	}
 };

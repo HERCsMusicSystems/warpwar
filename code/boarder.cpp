@@ -13,7 +13,11 @@ point point :: operator + (const point & p) const {return point (x + p . x, y + 
 point point :: operator - (const point & p) const {return point (x - p . x, y - p . y);}
 point point :: operator - (void) const {return point (- x, - y);}
 point point :: operator * (const double & scale) const {return point (x * scale, y * scale);}
+point point :: operator / (const double & scale) const {if (scale == 0.0) return * this; return point (x / scale, y / scale);}
+bool point :: operator == (const point & p) const {return x == p . x && y == p . y;}
+bool point :: operator != (const point & p) const {return x != p . x || y != p . y;}
 point point :: half (void) {return * this * 0.5;}
+void point :: round (void) {x = (double) ((int) (x + 0.5)); y = (double) ((int) (y + 0.5));}
 
 rect :: rect (void) {position = size = point (0.0, 0.0);}
 rect :: rect (point position, point size) {this -> position = position; this -> size = size;}
@@ -22,6 +26,14 @@ rect :: rect (double x, double y, double width, double height) {position = point
 
 point rect :: centre (void) {return point (position . x + size . x * 0.5, position . y + size . y * 0.5);}
 point rect :: centre (double scaling) {scaling *= 0.5; return point (position . x + size . x * scaling, position . y + size . y * scaling);}
+
+bool rect :: overlap (rect area) {
+	return position . x <= area . position . x + area . size . x && position . x + size . x >= area . position . x && position . y <= area . position . y + area . size . y && position . y + size . y >= area . position . y;
+}
+void rect :: positivise (void) {
+	if (size . x < 0.0) {size . x = - size . x; position . x -= size . x;}
+	if (size . y < 0.0) {size . y = - size . y; position . y -= size . y;}
+}
 
 double int_to_colour (int c) {return c >= 255 ? 1.0 : (double) c / 256.0;}
 int colour_to_int (double c) {return c >= 1.0 ? 255 : (int) (256.0 * c);}
@@ -161,6 +173,32 @@ void boarder :: draw (cairo_t * cr, boarder_viewport * viewport) {
 	}
 }
 
+void boarder :: clear_selection (bool select) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		token -> selected = select;
+		token = token -> next;
+	}
+}
+
+boarder_token * boarder :: hit_test (rect area) {if (tokens) return tokens -> hit_test (area); return 0;}
+
+void boarder :: repaint (void) {
+	boarder_viewport * viewport = viewports;
+	while (viewport != 0) {
+		gtk_widget_queue_draw (viewport -> window);
+		viewport = viewport -> next;
+	}
+}
+
+void boarder :: move_selection (point delta) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		if (token -> selected) token -> set_position (delta + token -> get_location () . position);
+		token = token -> next;
+	}
+}
+
 //////////////
 // VIEWPORT //
 //////////////
@@ -196,9 +234,9 @@ void boarder_viewport :: setWindowSize (point size) {
 }
 void boarder_viewport :: setBoardPosition (point position) {this -> board_position = position;}
 
-////////////
-// TOKENS //
-////////////
+///////////////////
+// GENERIC TOKEN //
+///////////////////
 
 boarder_token :: boarder_token (PrologAtom * atom) {
 	location = rect (point (10, 10), point (200, 100));
@@ -234,6 +272,19 @@ rect boarder_token :: get_bounding_box (void) {
 	}
 	return ret;
 }
+boarder_token * boarder_token :: hit_test (rect area) {
+	if (get_bounding_box () . overlap (area)) return this;
+	if (next) return next -> hit_test (area);
+	return 0;
+}
+boarder_token * boarder_token :: hit_test_next (rect area) {
+	if (next == 0) return 0;
+	return next -> hit_test (area);
+}
+
+////////////
+// TOKENS //
+////////////
 
 rectangle_token :: rectangle_token (PrologAtom * atom) : boarder_token (atom) {}
 rectangle_token :: ~ rectangle_token (void) {
@@ -288,7 +339,7 @@ void picture_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_stroke (cr);
 
 	point half = - location . size . half ();
-	point centre = location . centre (scaling) * viewport -> scaling;
+	point centre = (location . centre (scaling) - viewport -> board_position) * viewport -> scaling;
 	cairo_translate (cr, POINT (centre));
 	double scale = scaling * viewport -> scaling;
 	if (scale != 1.0) cairo_scale (cr, scale, scale);
