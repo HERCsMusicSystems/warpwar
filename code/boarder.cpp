@@ -40,6 +40,9 @@ int colour_to_int (double c) {return c >= 1.0 ? 255 : (int) (256.0 * c);}
 colour :: colour (int red, int green, int blue, int alpha) {this -> red = int_to_colour (red); this -> green = int_to_colour (green); this -> blue = int_to_colour (blue); this -> alpha = int_to_colour (alpha);}
 colour :: colour (void) {red = green = blue = 0.0; alpha = 1.0;}
 
+bool colour :: operator == (const colour & c) const {return red == c . red && green == c . green && blue == c . blue && alpha == c . alpha;}
+bool colour :: operator != (const colour & c) const {return red != c . red || green != c . green || blue != c . blue || alpha != c . alpha;}
+
 
 ///////////
 // BOARD //
@@ -63,29 +66,8 @@ bool boarder :: save (char * location) {
 	if (tc == 0) return false;
 	fprintf (tc, "[auto_atoms]\n\n");
 	fprintf (tc, "[%s]\n\n", ERASE);
-	boarder_token * token = tokens;
-	while (token != 0) {
-		token -> creation_call (tc);
-		rect token_location = token -> get_location ();
-		fprintf (tc, "[%s %s %i %i %i %i]\n", token -> atom -> name (), LOCATION, (int) token_location . position . x, (int) token_location . position . y, (int) token_location . size . x, (int) token_location . size . y);
-		if (token -> background_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", token -> atom -> name (), BACKGROUND_COLOUR, INTCOLOUR (token -> background_colour));
-		else fprintf (tc, "[%s %s %i %i %i %i]\n", token -> atom -> name (), BACKGROUND_COLOUR, AINTCOLOUR (token -> background_colour));
-		if (token -> foreground_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", token -> atom -> name (), FOREGROUND_COLOUR, INTCOLOUR (token -> foreground_colour));
-		else fprintf (tc, "[%s %s %i %i %i %i]\n", token -> atom -> name (), FOREGROUND_COLOUR, AINTCOLOUR (token -> foreground_colour));
-		if (token -> rotation != 0.0) fprintf (tc, "[%s %s %g]\n", token -> atom -> name (), ROTATION, token -> rotation);
-		if (token -> scaling != 1.0) fprintf (tc, "[%s %s %g]\n", token -> atom -> name (), SCALING, token -> scaling);
-		if (token -> locked) fprintf (tc, "[%s %s]\n", token -> atom -> name (), LOCK);
-		fprintf (tc, "\n");
-		token = token -> next;
-	}
-	boarder_viewport * viewport = viewports;
-	while (viewport != 0) {
-		fprintf (tc, "[%s %s \"%s\" %i %i %i %i]\n", VIEWPORT, viewport -> atom -> name (), viewport -> name, (int) viewport -> location . position . x, (int) viewport -> location . position . y, (int) viewport -> location . size . x, (int) viewport -> location . size . y);
-		fprintf (tc, "[%s %s %i %i]\n", viewport -> atom -> name (), POSITION, (int) viewport -> board_position . x, (int) viewport -> board_position . y);
-		if (viewport -> scaling != 1.0) fprintf (tc, "[%s %s %g]\n", viewport -> atom -> name (), SCALING, viewport -> scaling);
-		fprintf (tc, "\n");
-		viewport = viewport -> next;
-	}
+	if (tokens) tokens -> save (tc);
+	if (viewports) viewports -> save (tc);
 	fprintf (tc, "[wait 100]\n");
 	fprintf (tc, "[%s]\n\n", CLEAN);
 	fprintf (tc, "[exit]\n\n");
@@ -93,13 +75,30 @@ bool boarder :: save (char * location) {
 	return true;
 }
 
-boarder_viewport * boarder :: insert_viewport (PrologAtom * atom, char * name, rect location) {
-	boarder_viewport * viewport = new boarder_viewport (this, atom, name, location, 0);
-	if (viewports == 0) return viewports = viewport;
-	boarder_viewport * vp = viewports;
-	while (vp -> next != 0) vp = vp -> next;
-	return vp -> next = viewport;
+void boarder_token :: save (FILE * tc) {
+	if (next) next -> save (tc);
+	creation_call (tc);
+	rect token_location = get_location ();
+	fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), LOCATION, (int) token_location . position . x, (int) token_location . position . y, (int) token_location . size . x, (int) token_location . size . y);
+	if (background_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, INTCOLOUR (background_colour));
+	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, AINTCOLOUR (background_colour));
+	if (foreground_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, INTCOLOUR (foreground_colour));
+	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, AINTCOLOUR (foreground_colour));
+	if (rotation != 0.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), ROTATION, rotation);
+	if (scaling != 1.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
+	if (locked) fprintf (tc, "[%s %s]\n", atom -> name (), LOCK);
+	fprintf (tc, "\n");
 }
+
+void boarder_viewport :: save (FILE * tc) {
+	if (next) next -> save (tc);
+	fprintf (tc, "[%s %s \"%s\" %i %i %i %i]\n", VIEWPORT, atom -> name (), name, (int) location . position . x, (int) location . position . y, (int) location . size . x, (int) location . size . y);
+	fprintf (tc, "[%s %s %i %i]\n", atom -> name (), POSITION, (int) board_position . x, (int) board_position . y);
+	if (scaling != 1.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
+	fprintf (tc, "\n");
+}
+
+boarder_viewport * boarder :: insert_viewport (PrologAtom * atom, char * name, rect location) {return viewports = new boarder_viewport (this, atom, name, location, viewports);}
 
 void boarder :: remove_viewport (boarder_viewport * viewport) {
 	if (viewport == 0) return;
@@ -122,10 +121,9 @@ void boarder :: remove_viewport (boarder_viewport * viewport) {
 }
 
 boarder_token * boarder :: insert_token (boarder_token * token) {
-	if (tokens == 0) return tokens = token;
-	boarder_token * bp = tokens;
-	while (bp -> next != 0) bp = bp -> next;
-	return bp -> next = token;
+	if (token == 0) return 0;
+	token -> next = tokens;
+	return tokens = token;
 }
 
 void boarder :: remove_token (boarder_token * token) {
@@ -149,28 +147,28 @@ void boarder :: remove_token (boarder_token * token) {
 }
 
 void boarder :: draw (cairo_t * cr, boarder_viewport * viewport) {
+	cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
 	cairo_rectangle (cr, 0.0, 0.0, viewport -> location . size . x, viewport -> location . size . y);
 	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
 	cairo_fill (cr);
-	boarder_token * token = tokens;
-	while (token) {
-		token -> draw (cr, viewport);
-		token = token -> next;
-	}
-	token = tokens;
+	if (tokens == 0) return;
+	tokens -> draw (cr, viewport);
 	double dashes [] = {10.0};
 	cairo_set_dash (cr, dashes, 1, 0.0);
 	cairo_set_source_rgba (cr, 1.0, 0.0, 0.0, 1.0);
-	while (token) {
-		if (token -> selected) {
-			rect location = token -> get_bounding_box ();
-			location = rect (location . position - point (2, 2), location . size + point (4, 4));
-			location = rect ((location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
-			cairo_rectangle (cr, RECT (location));
-			cairo_stroke (cr);
-		}
-		token = token -> next;
-	}
+	tokens -> draw_selection (cr, viewport);
+}
+
+void boarder_token :: draw (cairo_t * cr, boarder_viewport * viewport) {if (next) next -> draw (cr, viewport); internal_draw (cr, viewport);}
+
+void boarder_token :: draw_selection ( cairo_t * cr, boarder_viewport * viewport) {
+	if (next) next -> draw_selection (cr, viewport);
+	if (! selected) return;
+	rect location = get_bounding_box ();
+	location = rect (location . position - point (2, 2), location . size + point (4, 4));
+	location = rect ((location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
+	cairo_rectangle (cr, RECT (location));
+	cairo_stroke (cr);
 }
 
 void boarder :: clear_selection (bool select) {
@@ -291,12 +289,16 @@ rectangle_token :: ~ rectangle_token (void) {
 	printf ("	DELEING RECTANGLE\n");
 }
 
-void rectangle_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
-	cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
-	//cairo_set_line_width (cr, 1.0);
+void rectangle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
-	cairo_rectangle (cr, RECT (r));
+	point centre = r . centre ();
+	cairo_translate (cr, centre . x, centre . y);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	cairo_scale (cr, r . size . x, r . size . y);
+	cairo_rectangle (cr, -0.5, -0.5, 1, 1);
+	cairo_identity_matrix (cr);
 	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	if (background_colour == foreground_colour) {cairo_fill (cr); return;}
 	cairo_fill_preserve (cr);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_stroke (cr);
@@ -309,9 +311,18 @@ circle_token :: ~ circle_token (void) {
 	printf ("	DELETING CIRCLE\n");
 }
 
-void circle_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
-	cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
-	rect r (location . position - viewport -> board_position, location . size);
+void circle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
+	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
+	point centre = r . centre ();
+	cairo_translate (cr, centre . x, centre . y);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	cairo_scale (cr, r . size . x, r . size . y);
+	cairo_arc (cr, 0, 0, 0.5, 0, 2 * M_PI);
+	cairo_identity_matrix (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	if (background_colour == foreground_colour) {cairo_fill (cr); return;}
+	cairo_fill_preserve (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_stroke (cr);
 }
 
@@ -328,22 +339,13 @@ picture_token :: ~ picture_token (void) {
 	cairo_surface_destroy (surface);
 }
 
-void picture_token :: draw (cairo_t * cr, boarder_viewport * viewport) {
-	cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
-	//cairo_set_line_width (cr, 1.0);
-	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
-	cairo_rectangle (cr, RECT (r));
-	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
-	cairo_fill_preserve (cr);
-	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
-	cairo_stroke (cr);
-
+void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	point half = - location . size . half ();
 	point centre = (location . centre (scaling) - viewport -> board_position) * viewport -> scaling;
 	cairo_translate (cr, POINT (centre));
 	double scale = scaling * viewport -> scaling;
 	if (scale != 1.0) cairo_scale (cr, scale, scale);
-	if (rotation != 0.0) cairo_rotate (cr, rotation * 3.1415 / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
 	cairo_set_source_surface (cr, surface, POINT (half));
 	cairo_identity_matrix (cr);
 	cairo_paint (cr);

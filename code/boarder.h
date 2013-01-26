@@ -83,6 +83,8 @@ int colour_to_int (double c);
 class colour {
 public:
 	double red, green, blue, alpha;
+	bool operator == (const colour & c) const;
+	bool operator != (const colour & c) const;
 	colour (int red, int green, int blue, int alpha = 255);
 	colour (void);
 };
@@ -120,6 +122,7 @@ public:
 	void setWindowLocation (rect location);
 	void setWindowSize (point size);
 	void setBoardPosition (point position);
+	void save (FILE * tc);
 	boarder_viewport (boarder * board, PrologAtom * atom, char * name, rect location, boarder_viewport * next);	
 	~ boarder_viewport (void);
 };
@@ -127,6 +130,7 @@ public:
 class boarder_token {
 protected:
 	rect location;
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport) = 0;
 public:
 	colour foreground_colour;
 	colour background_colour;
@@ -136,7 +140,8 @@ public:
 	bool selected;
 	PrologAtom * atom;
 	boarder_token * next;
-	virtual void draw (cairo_t * cr, boarder_viewport * viewport) = 0;
+	void draw (cairo_t * cr, boarder_viewport * viewport);
+	void draw_selection (cairo_t * cr, boarder_viewport * viewport);
 	virtual char * creation_call (FILE * tc) = 0;
 	virtual void set_position (point position);
 	virtual void set_size (point size);
@@ -145,6 +150,7 @@ public:
 	virtual rect get_bounding_box (void);
 	boarder_token * hit_test (rect area);
 	boarder_token * hit_test_next (rect area);
+	void save (FILE * tc);
 	boarder_token (PrologAtom * atom);
 	virtual ~ boarder_token (void);
 };
@@ -155,16 +161,18 @@ public:
 };
 
 class rectangle_token : public boarder_token {
+protected:
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
 	virtual char * creation_call (FILE * tc);
 	rectangle_token (PrologAtom * atom);
 	virtual ~ rectangle_token (void);
 };
 
 class circle_token : public boarder_token {
+protected:
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
 	virtual char * creation_call (FILE * tc);
 	circle_token (PrologAtom * atom);
 	virtual ~ circle_token (void);
@@ -172,9 +180,10 @@ public:
 
 class picture_token : public boarder_token {
 public:
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
+public:
 	cairo_surface_t * surface;
 	char * picture_location;
-	virtual void draw (cairo_t * cr, boarder_viewport * viewport);
 	virtual char * creation_call (FILE * tc);
 	virtual void set_size (point size);
 	virtual void set_location (rect size);
