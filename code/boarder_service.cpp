@@ -461,6 +461,29 @@ public:
 	create_picture (PrologDirectory * directory) {this -> directory = directory;}
 };
 
+class create_text_token : public PrologNativeCode {
+public:
+	PrologDirectory * directory;
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * atom = parameters -> getLeft ();
+		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
+		if (! atom -> isAtom ()) return false;
+		parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * text = parameters -> getLeft ();
+		if (! text -> isText ()) return false;
+		token_actions * machine = new token_actions (directory);
+		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
+		machine -> token = new text_token (atom -> getAtom (), text -> getText ());
+		board -> insert_token (machine -> token);
+		boarder_clean = false;
+		return true;
+	}
+	create_text_token (PrologDirectory * directory) {this -> directory = directory;}
+};
+
 class background_colour : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -545,6 +568,7 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, CREATE_RECTANGLE) == 0) return new create_rectangle (dir);
 	if (strcmp (name, CREATE_CIRCLE) == 0) return new create_circle (dir);
 	if (strcmp (name, CREATE_PICTURE) == 0) return new create_picture (dir);
+	if (strcmp (name, CREATE_TEXT) == 0) return new create_text_token (dir);
 	if (strcmp (name, "diagnostics") == 0) return new diagnostics ();
 	return NULL;
 }

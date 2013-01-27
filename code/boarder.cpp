@@ -5,6 +5,8 @@
 // POINT RECT COLOUR //
 ///////////////////////
 
+double abs (double value) {return value >= 0.0 ? value : - value;}
+
 point :: point (void) {x = y = 0.0;}
 point :: point (double x, double y) {this -> x = x; this -> y = y;}
 point :: point (double locations [2]) {this -> x = locations [0]; this -> y = locations [1];}
@@ -263,8 +265,8 @@ rect boarder_token :: get_bounding_box (void) {
 	rect ret = location;
 	ret . size = ret . size * scaling;
 	if (rotation != 0.0) {
-		double angle = rotation * 3.1415 / 6.0;
-		ret . size = point (ret . size . x * cos (angle) + ret . size . y * sin (angle), ret . size . y * cos (angle) + ret . size . x * sin (angle));
+		double angle = rotation * M_PI / 6.0;
+		ret . size = point (abs (ret . size . x * cos (angle)) + abs (ret . size . y * sin (angle)), abs (ret . size . y * cos (angle)) + abs (ret . size . x * sin (angle)));
 		ret . position . x += location . size . x * 0.5 * scaling - ret . size . x * 0.5;
 		ret . position . y += location . size . y * 0.5 * scaling - ret . size . y * 0.5;
 	}
@@ -283,6 +285,8 @@ boarder_token * boarder_token :: hit_test_next (rect area) {
 ////////////
 // TOKENS //
 ////////////
+
+// RECTANGLE
 
 rectangle_token :: rectangle_token (PrologAtom * atom) : boarder_token (atom) {}
 rectangle_token :: ~ rectangle_token (void) {
@@ -304,7 +308,9 @@ void rectangle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport
 	cairo_stroke (cr);
 }
 
-char * rectangle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_RECTANGLE, atom -> name ());}
+void rectangle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_RECTANGLE, atom -> name ());}
+
+// CIRCLE
 
 circle_token :: circle_token (PrologAtom * atom) : boarder_token (atom) {}
 circle_token :: ~ circle_token (void) {
@@ -326,7 +332,9 @@ void circle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_stroke (cr);
 }
 
-char * circle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_CIRCLE, atom -> name ());}
+void circle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_CIRCLE, atom -> name ());}
+
+// PICTURE
 
 picture_token :: picture_token (PrologAtom * atom, char * picture_location) : boarder_token (atom) {
 	this -> picture_location = create_text (picture_location);
@@ -351,9 +359,49 @@ void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) 
 	cairo_paint (cr);
 }
 
-char * picture_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_PICTURE, atom -> name (), picture_location);}
+void picture_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_PICTURE, atom -> name (), picture_location);}
 void picture_token :: set_size (point size) {}
 void picture_token :: set_location (rect location) {this -> location . position = location . position;}
+
+// TEXT
+
+text_token :: text_token (PrologAtom * atom, char * text) : boarder_token (atom) {
+	this -> text = create_text (text);
+	scaling = 60.0;
+}
+
+text_token :: ~ text_token (void) {
+	printf ("	DELETING TEXT [%s]\n", text);
+	delete_text (text);
+}
+
+void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
+	double angle = rotation * M_PI / 6.0;
+	cairo_text_extents_t extent;
+	cairo_set_font_size (cr, scaling * viewport -> scaling);
+	cairo_text_extents (cr, text, & extent);
+	if (viewport -> scaling != 0.0) location . size = point (extent . width, extent . height) / viewport -> scaling;
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	rect Location (point (location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
+	point centre = Location . centre ();
+	cairo_translate (cr, POINT (centre));
+	if (rotation != 0.0) cairo_rotate (cr, angle);
+	cairo_translate (cr, Location . size . x * -0.5, Location . size . y * 0.5);
+	cairo_show_text (cr, text);
+	cairo_identity_matrix (cr);
+}
+
+void text_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_TEXT, atom -> name (), text);}
+
+rect text_token :: get_bounding_box (void) {
+	if (rotation == 0.0) return location;
+	rect ret = location;
+	double angle = rotation * M_PI / 6.0;
+	ret . size = point (abs (ret . size . x * cos (angle)) + abs (ret . size . y * sin (angle)), abs (ret . size . y * cos (angle)) + abs (ret . size . x * sin (angle)));
+	ret . position . x += location . size . x * 0.5 - ret . size . x * 0.5;
+	ret . position . y += location . size . y * 0.5 - ret . size . y * 0.5;
+	return ret;
+}
 
 
 

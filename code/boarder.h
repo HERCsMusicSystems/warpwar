@@ -29,6 +29,7 @@
 #define CREATE_RECTANGLE "CreateRectangle"
 #define CREATE_CIRCLE "CreateCircle"
 #define CREATE_PICTURE "CreatePicture"
+#define CREATE_TEXT "CreateText"
 
 class point;
 class rect;
@@ -142,7 +143,7 @@ public:
 	boarder_token * next;
 	void draw (cairo_t * cr, boarder_viewport * viewport);
 	void draw_selection (cairo_t * cr, boarder_viewport * viewport);
-	virtual char * creation_call (FILE * tc) = 0;
+	virtual void creation_call (FILE * tc) = 0;
 	virtual void set_position (point position);
 	virtual void set_size (point size);
 	virtual void set_location (rect location);
@@ -156,15 +157,21 @@ public:
 };
 
 class text_token : public boarder_token {
+protected:
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-//	virtual char * creation_atom (void);
+	char * text;
+	virtual void creation_call (FILE * tc);
+	virtual rect get_bounding_box (void);
+	text_token (PrologAtom * atom, char * text);
+	virtual ~ text_token (void);
 };
 
 class rectangle_token : public boarder_token {
 protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-	virtual char * creation_call (FILE * tc);
+	virtual void creation_call (FILE * tc);
 	rectangle_token (PrologAtom * atom);
 	virtual ~ rectangle_token (void);
 };
@@ -173,7 +180,7 @@ class circle_token : public boarder_token {
 protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-	virtual char * creation_call (FILE * tc);
+	virtual void creation_call (FILE * tc);
 	circle_token (PrologAtom * atom);
 	virtual ~ circle_token (void);
 };
@@ -184,7 +191,7 @@ public:
 public:
 	cairo_surface_t * surface;
 	char * picture_location;
-	virtual char * creation_call (FILE * tc);
+	virtual void creation_call (FILE * tc);
 	virtual void set_size (point size);
 	virtual void set_location (rect size);
 	picture_token (PrologAtom * atom, char * picture_location);
