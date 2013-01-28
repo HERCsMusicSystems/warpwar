@@ -144,6 +144,8 @@ public:
 	void draw (cairo_t * cr, boarder_viewport * viewport);
 	void draw_selection (cairo_t * cr, boarder_viewport * viewport);
 	virtual void creation_call (FILE * tc) = 0;
+	virtual bool should_save_size (void);
+	virtual double default_scaling (void);
 	virtual void set_position (point position);
 	virtual void set_size (point size);
 	virtual void set_location (rect location);
@@ -162,6 +164,8 @@ protected:
 public:
 	char * text;
 	virtual void creation_call (FILE * tc);
+	virtual bool should_save_size (void);
+	virtual double default_scaling (void);
 	virtual rect get_bounding_box (void);
 	text_token (PrologAtom * atom, char * text);
 	virtual ~ text_token (void);
@@ -192,6 +196,7 @@ public:
 	cairo_surface_t * surface;
 	char * picture_location;
 	virtual void creation_call (FILE * tc);
+	virtual bool should_save_size (void);
 	virtual void set_size (point size);
 	virtual void set_location (rect size);
 	picture_token (PrologAtom * atom, char * picture_location);

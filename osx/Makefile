@@ -40,7 +40,7 @@ prc_objects = \
 	$(pc)keyboard.prc\
 	$(pc)notes.prc\
 	$(pc)sql.prc\
-	boarder.prc
+	../code/boarder.prc
 
 
 ~/bin/warpwar: warpwar_main.cpp
@@ -73,18 +73,23 @@ prolog_resources.cpp: $(prc_objects) $(piosx)resource_maker.exe
 prolog_resources.o: prolog_resources.cpp
 	g++ prolog_resources.cpp -c -o prolog_resources.o
 
-boarder.o: boarder.h boarder.cpp
-	g++ -Wno-write-strings -I$(piosx) -I$(pc) boarder.cpp -c -o boarder.o `pkg-config --cflags gtk+-2.0`
+boarder.o: ../code/boarder.h ../code/boarder.cpp
+	g++ -Wno-write-strings -I$(piosx) -I$(pc) ../code/boarder.cpp -c -o boarder.o `pkg-config --cflags gtk+-2.0`
 
-boarder_service.o: boarder.h boarder_service.h boarder_service.cpp
-	g++ -I$(pc) -I$(piosx) -Wno-write-strings boarder_service.cpp -c -o boarder_service.o `pkg-config --cflags gtk+-2.0`
+boarder_service.o: ../code/boarder.h ../code/boarder_service.h ../code/boarder_service.cpp
+	g++ -I$(pc) -I$(piosx) -Wno-write-strings ../code/boarder_service.cpp -c -o boarder_service.o `pkg-config --cflags gtk+-2.0`
 
 ../board: gtk_board.o $(objectsosx)
 	g++ -lreadline -framework CoreMidi -framework CoreFoundation $(objectsosx) gtk_board.o -o ../board `pkg-config --libs gtk+-2.0`
 
-gtk_board.o: gtk_board.cpp boarder.h boarder_service.h
-	g++ -Wno-write-strings -I$(pc) -I$(piosx) gtk_board.cpp -c -o gtk_board.o `pkg-config --cflags gtk+-2.0`
+gtk_board.o: ../code/gtk_board.cpp ../code/boarder.h ../code/boarder_service.h
+	g++ -Wno-write-strings -I$(pc) -I$(piosx) ../code/gtk_board.cpp -c -o gtk_board.o `pkg-config --cflags gtk+-2.0`
 
 
 boardmac: ../board
+
+01gurps: ../01gurps.app/Contents/MacOS/01gurps
+
+../01gurps.app/Contents/MacOS/01gurps: gtk_board.o $(objectsosx)
+	g++ -lreadline -framework CoreMidi -framework CoreFoundation $(objectsosx) gtk_board.o -o ../01gurps.app/Contents/MacOS/01gurps `pkg-config --libs gtk+-2.0`
 

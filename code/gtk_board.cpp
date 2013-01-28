@@ -285,6 +285,8 @@ void create_main_windows (void) {
 	gtk_widget_show (window);
 }
 
+extern int token_counter;
+
 int main (int args, char * argv []) {
 	gtk_init (& args, & argv);
 
@@ -356,6 +358,7 @@ int main (int args, char * argv []) {
 #ifdef WINDOWS_OPERATING_SYSTEM
 	FreeConsole ();
 #endif
+	printf (" token_counter [%i]\n", token_counter);
 	return 0;
 }
 

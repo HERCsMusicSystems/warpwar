@@ -45,6 +45,11 @@ colour :: colour (void) {red = green = blue = 0.0; alpha = 1.0;}
 bool colour :: operator == (const colour & c) const {return red == c . red && green == c . green && blue == c . blue && alpha == c . alpha;}
 bool colour :: operator != (const colour & c) const {return red != c . red || green != c . green || blue != c . blue || alpha != c . alpha;}
 
+///////////////////
+// TOKEN COUNTER //
+///////////////////
+
+int token_counter = 0;
 
 ///////////
 // BOARD //
@@ -75,29 +80,6 @@ bool boarder :: save (char * location) {
 	fprintf (tc, "[exit]\n\n");
 	fclose (tc);
 	return true;
-}
-
-void boarder_token :: save (FILE * tc) {
-	if (next) next -> save (tc);
-	creation_call (tc);
-	rect token_location = get_location ();
-	fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), LOCATION, (int) token_location . position . x, (int) token_location . position . y, (int) token_location . size . x, (int) token_location . size . y);
-	if (background_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, INTCOLOUR (background_colour));
-	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, AINTCOLOUR (background_colour));
-	if (foreground_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, INTCOLOUR (foreground_colour));
-	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, AINTCOLOUR (foreground_colour));
-	if (rotation != 0.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), ROTATION, rotation);
-	if (scaling != 1.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
-	if (locked) fprintf (tc, "[%s %s]\n", atom -> name (), LOCK);
-	fprintf (tc, "\n");
-}
-
-void boarder_viewport :: save (FILE * tc) {
-	if (next) next -> save (tc);
-	fprintf (tc, "[%s %s \"%s\" %i %i %i %i]\n", VIEWPORT, atom -> name (), name, (int) location . position . x, (int) location . position . y, (int) location . size . x, (int) location . size . y);
-	fprintf (tc, "[%s %s %i %i]\n", atom -> name (), POSITION, (int) board_position . x, (int) board_position . y);
-	if (scaling != 1.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
-	fprintf (tc, "\n");
 }
 
 boarder_viewport * boarder :: insert_viewport (PrologAtom * atom, char * name, rect location) {return viewports = new boarder_viewport (this, atom, name, location, viewports);}
@@ -161,18 +143,6 @@ void boarder :: draw (cairo_t * cr, boarder_viewport * viewport) {
 	tokens -> draw_selection (cr, viewport);
 }
 
-void boarder_token :: draw (cairo_t * cr, boarder_viewport * viewport) {if (next) next -> draw (cr, viewport); internal_draw (cr, viewport);}
-
-void boarder_token :: draw_selection ( cairo_t * cr, boarder_viewport * viewport) {
-	if (next) next -> draw_selection (cr, viewport);
-	if (! selected) return;
-	rect location = get_bounding_box ();
-	location = rect (location . position - point (2, 2), location . size + point (4, 4));
-	location = rect ((location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
-	cairo_rectangle (cr, RECT (location));
-	cairo_stroke (cr);
-}
-
 void boarder :: clear_selection (bool select) {
 	boarder_token * token = tokens;
 	while (token != 0) {
@@ -213,12 +183,22 @@ boarder_viewport :: boarder_viewport (boarder * board, PrologAtom * atom, char *
 	this -> next = next;
 	board_position = point (0, 0);
 	scaling = 1.0;
+	token_counter++;
 }
 
 boarder_viewport :: ~ boarder_viewport (void) {
 	if (atom) atom -> removeAtom ();
 	printf ("DELETING VIEWPORT [%s] <%i %i>\n", name, (int) board_position . x, (int) board_position . y);
 	if (next) delete next; next = 0;
+	token_counter--;
+}
+
+void boarder_viewport :: save (FILE * tc) {
+	if (next) next -> save (tc);
+	fprintf (tc, "[%s %s \"%s\" %i %i %i %i]\n", VIEWPORT, atom -> name (), name, (int) location . position . x, (int) location . position . y, (int) location . size . x, (int) location . size . y);
+	fprintf (tc, "[%s %s %i %i]\n", atom -> name (), POSITION, (int) board_position . x, (int) board_position . y);
+	if (scaling != 1.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
+	fprintf (tc, "\n");
 }
 
 void boarder_viewport :: setWindowLocation (rect location) {
@@ -244,16 +224,49 @@ boarder_token :: boarder_token (PrologAtom * atom) {
 	locked = false;
 	foreground_colour = colour (255, 255, 0);
 	background_colour = colour (0, 0, 255);
-	scaling = 1.0;
+	scaling = default_scaling ();
 	rotation = 0.0;
 	this -> atom = atom;
 	atom -> inc ();
 	next = 0;
+	token_counter++;
 }
 boarder_token :: ~ boarder_token (void) {
 	if (atom) atom -> removeAtom ();
 	printf ("DELETING TOKEN\n");
 	if (next) delete next; next = 0;
+	token_counter--;
+}
+
+void boarder_token :: save (FILE * tc) {
+	if (next) next -> save (tc);
+	creation_call (tc);
+	rect token_location = get_location ();
+	if (should_save_size ()) fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), LOCATION, (int) token_location . position . x, (int) token_location . position . y, (int) token_location . size . x, (int) token_location . size . y);
+	else fprintf (tc, "[%s %s %i %i]\n", atom -> name (), POSITION, (int) token_location . position . x, (int) token_location . position . y);
+	if (background_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, INTCOLOUR (background_colour));
+	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, AINTCOLOUR (background_colour));
+	if (foreground_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, INTCOLOUR (foreground_colour));
+	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, AINTCOLOUR (foreground_colour));
+	if (rotation != 0.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), ROTATION, rotation);
+	if (scaling != default_scaling ()) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
+	if (locked) fprintf (tc, "[%s %s]\n", atom -> name (), LOCK);
+	fprintf (tc, "\n");
+}
+
+bool boarder_token :: should_save_size (void) {return true;}
+double boarder_token :: default_scaling (void) {return 1.0;}
+
+void boarder_token :: draw (cairo_t * cr, boarder_viewport * viewport) {if (next) next -> draw (cr, viewport); internal_draw (cr, viewport);}
+
+void boarder_token :: draw_selection ( cairo_t * cr, boarder_viewport * viewport) {
+	if (next) next -> draw_selection (cr, viewport);
+	if (! selected) return;
+	rect location = get_bounding_box ();
+	location = rect (location . position - point (2, 2), location . size + point (4, 4));
+	location = rect ((location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
+	cairo_rectangle (cr, RECT (location));
+	cairo_stroke (cr);
 }
 
 void boarder_token :: set_position (point position) {this -> location . position = position;}
@@ -360,6 +373,7 @@ void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) 
 }
 
 void picture_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_PICTURE, atom -> name (), picture_location);}
+bool picture_token :: should_save_size (void) {return false;}
 void picture_token :: set_size (point size) {}
 void picture_token :: set_location (rect location) {this -> location . position = location . position;}
 
@@ -367,7 +381,7 @@ void picture_token :: set_location (rect location) {this -> location . position 
 
 text_token :: text_token (PrologAtom * atom, char * text) : boarder_token (atom) {
 	this -> text = create_text (text);
-	scaling = 60.0;
+	scaling = 24.0;
 }
 
 text_token :: ~ text_token (void) {
@@ -381,6 +395,7 @@ void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_set_font_size (cr, scaling * viewport -> scaling);
 	cairo_text_extents (cr, text, & extent);
 	if (viewport -> scaling != 0.0) location . size = point (extent . width, extent . height) / viewport -> scaling;
+	else location . size = point (extent . width, extent . height);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	rect Location (point (location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
 	point centre = Location . centre ();
@@ -392,6 +407,8 @@ void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 }
 
 void text_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_TEXT, atom -> name (), text);}
+bool text_token :: should_save_size (void) {return false;}
+double text_token :: default_scaling (void) {return 24.0;}
 
 rect text_token :: get_bounding_box (void) {
 	if (rotation == 0.0) return location;
