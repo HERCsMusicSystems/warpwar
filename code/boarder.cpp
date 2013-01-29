@@ -1,5 +1,20 @@
 
 #include "boarder.h"
+#include <stdlib.h>
+
+///////////////////////
+// ROUNDED RECTANGLE //
+///////////////////////
+
+void cairo_rounded_rectangle (cairo_t * cr, double x, double y, double width, double height, double radius) {
+	cairo_new_sub_path (cr);
+	double half = M_PI * 0.5;
+	cairo_arc (cr, x + width - radius, y + radius, radius, - half, 0);
+	cairo_arc (cr, x + width - radius, y + height - radius, radius, 0, half);
+	cairo_arc (cr, x + radius, y + height - radius, radius, half, M_PI);
+	cairo_arc (cr, x + radius, y + radius, radius, M_PI, M_PI + half);
+	cairo_close_path (cr);
+}
 
 ///////////////////////
 // POINT RECT COLOUR //
@@ -228,6 +243,7 @@ boarder_token :: boarder_token (PrologAtom * atom) {
 	rotation = 0.0;
 	this -> atom = atom;
 	atom -> inc ();
+	side = 0;
 	next = 0;
 	token_counter++;
 }
@@ -248,6 +264,7 @@ void boarder_token :: save (FILE * tc) {
 	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, AINTCOLOUR (background_colour));
 	if (foreground_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, INTCOLOUR (foreground_colour));
 	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, AINTCOLOUR (foreground_colour));
+	if (side != 0) fprintf (tc, "[%s %s %i]\n", atom -> name (), SIDE, side);
 	if (rotation != 0.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), ROTATION, rotation);
 	if (scaling != default_scaling ()) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
 	if (locked) fprintf (tc, "[%s %s]\n", atom -> name (), LOCK);
@@ -294,6 +311,8 @@ boarder_token * boarder_token :: hit_test_next (rect area) {
 	if (next == 0) return 0;
 	return next -> hit_test (area);
 }
+
+int boarder_token :: randomize_side (void) {return side;}
 
 ////////////
 // TOKENS //
@@ -381,7 +400,7 @@ void picture_token :: set_location (rect location) {this -> location . position 
 
 text_token :: text_token (PrologAtom * atom, char * text) : boarder_token (atom) {
 	this -> text = create_text (text);
-	scaling = 24.0;
+	scaling = default_scaling ();
 }
 
 text_token :: ~ text_token (void) {
@@ -390,7 +409,6 @@ text_token :: ~ text_token (void) {
 }
 
 void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
-	double angle = rotation * M_PI / 6.0;
 	cairo_text_extents_t extent;
 	cairo_set_font_size (cr, scaling * viewport -> scaling);
 	cairo_text_extents (cr, text, & extent);
@@ -400,7 +418,7 @@ void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	rect Location (point (location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
 	point centre = Location . centre ();
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, angle);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
 	cairo_translate (cr, Location . size . x * -0.5, Location . size . y * 0.5);
 	cairo_show_text (cr, text);
 	cairo_identity_matrix (cr);
@@ -419,6 +437,65 @@ rect text_token :: get_bounding_box (void) {
 	ret . position . y += location . size . y * 0.5 - ret . size . y * 0.5;
 	return ret;
 }
+
+// DICE
+
+dice_token :: dice_token (PrologAtom * atom) : boarder_token (atom) {sides = 0; side = shift = multiplier = 1; scaling = default_scaling ();}
+dice_token :: dice_token (PrologAtom * atom, int sides) : boarder_token (atom) {this -> sides = sides; side = shift = 1; multiplier = 1; scaling = default_scaling ();}
+dice_token :: dice_token (PrologAtom * atom, int sides, int shift) : boarder_token (atom) {this -> sides = sides; side = this -> shift = shift; multiplier = 1; scaling = default_scaling ();}
+dice_token :: dice_token (PrologAtom * atom, int sides, int shift, int multiplier) : boarder_token (atom) {this -> sides = sides; side = this -> shift = shift; this -> multiplier = multiplier; scaling = default_scaling ();}
+dice_token :: ~ dice_token (void) {printf ("	DELETING DICE [%i]\n", sides);}
+
+bool dice_token :: should_save_size (void) {return false;}
+double dice_token :: default_scaling (void) {return 64.0;}
+void dice_token :: creation_call (FILE * tc) {
+	if (sides == 0) {fprintf (tc, "[%s %s]\n", CREATE_DICE, atom -> name ()); return;}
+	if (multiplier != 1) {fprintf (tc, "[%s %s %i %i %i]\n", CREATE_DICE, atom -> name (), sides, shift, multiplier); return;}
+	if (shift != 1) {fprintf (tc, "[%s %s %i %i]\n", CREATE_DICE, atom -> name (), sides, shift); return;}
+	fprintf (tc, "[%s %s %i]\n", CREATE_DICE, atom -> name (), sides);
+}
+
+void dice_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
+	location . size = point (scaling, scaling);
+	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
+	point centre = r . centre ();
+	cairo_translate (cr, POINT (centre));
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	cairo_scale (cr, r . size . x, r . size . y);
+	cairo_rounded_rectangle (cr, -0.5, -0.5, 1, 1, 0.125);
+	cairo_identity_matrix (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	if (background_colour == foreground_colour) cairo_fill (cr);
+	else {
+		cairo_fill_preserve (cr);
+		cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+		cairo_stroke (cr);
+	}
+	char command [16];
+	if (multiplier == 10) sprintf (command, "%02i", side);
+	else sprintf (command, "%i", side);
+	cairo_text_extents_t extent;
+	cairo_set_font_size (cr, scaling * viewport -> scaling * 0.75);
+	cairo_text_extents (cr, command, & extent);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_translate (cr, POINT (centre));
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
+	cairo_show_text (cr, command);
+	cairo_identity_matrix (cr);
+}
+
+rect dice_token :: get_bounding_box (void) {
+	if (rotation == 0.0) return location;
+	rect ret = location;
+	double angle = rotation * M_PI / 6.0;
+	ret . size = point (abs (scaling * cos (angle)) + abs (scaling * sin (angle)), abs (scaling * cos (angle)) + abs (scaling * sin (angle)));
+	ret . position . x += location . size . x * 0.5 - ret . size . x * 0.5;
+	ret . position . y += location . size . y * 0.5 - ret . size . y * 0.5;
+	return ret;
+}
+
+int dice_token :: randomize_side (void) {if (sides > 0) return side = multiplier * (rand () % sides + shift); return side = rand () % 6 + 1;}
 
 
 

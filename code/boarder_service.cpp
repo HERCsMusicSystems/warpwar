@@ -254,6 +254,7 @@ public:
 	PrologAtom * lock_atom, * unlock_atom, * is_locked_atom;
 	PrologAtom * select_atom, * deselect_atom, * is_selected_atom;
 	PrologAtom * rotation_atom;
+	PrologAtom * side_atom, * roll_atom;
 	boarder_token * token;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -368,6 +369,23 @@ public:
 			if (rotation -> isInteger ()) {token -> rotation = (double) rotation -> getInteger (); boarder_clean = false; return true;}
 			return false;
 		}
+		if (atom -> getAtom () == side_atom) {
+			if (parameters -> isVar ()) {parameters -> setPair (); parameters -> getLeft () -> setInteger (token -> side); return true;}
+			if (! parameters -> isPair ()) return false;
+			PrologElement * side = parameters -> getLeft ();
+			if (! side -> isInteger ()) return false;
+			token -> side = side -> getInteger ();
+			boarder_clean = false;
+			return true;
+		}
+		if (atom -> getAtom () == roll_atom) {
+			int ret = token -> randomize_side ();
+			boarder_clean = false;
+			if (parameters -> isEarth ()) return true;
+			parameters -> setPair ();
+			parameters -> getLeft () -> setInteger (ret);
+			return true;
+		}
 		if (atom -> getAtom () == lock_atom) {token -> locked = true; boarder_clean = false; return true;}
 		if (atom -> getAtom () == unlock_atom) {token -> locked = false; boarder_clean = false; return true;}
 		if (atom -> getAtom () == is_locked_atom) {return token -> locked;}
@@ -381,6 +399,7 @@ public:
 		location_atom = size_atom = position_atom = scaling_atom = background_colour_atom = foreground_colour_atom = 0;
 		lock_atom = unlock_atom = is_locked_atom = select_atom = deselect_atom = is_selected_atom = 0;
 		rotation_atom = 0;
+		side_atom = roll_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -396,6 +415,8 @@ public:
 			deselect_atom = directory -> searchAtom (DESELECT);
 			is_selected_atom = directory -> searchAtom (IS_SELECTED);
 			rotation_atom = directory -> searchAtom (ROTATION);
+			side_atom = directory -> searchAtom (SIDE);
+			roll_atom = directory -> searchAtom (ROLL);
 		}
 	}
 };
@@ -459,6 +480,46 @@ public:
 		return true;
 	}
 	create_picture (PrologDirectory * directory) {this -> directory = directory;}
+};
+
+class create_dice : public PrologNativeCode {
+public:
+	PrologDirectory * directory;
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * atom = parameters -> getLeft ();
+		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
+		if (! atom -> isAtom ()) return false;
+		parameters = parameters -> getRight ();
+		PrologElement * sides = 0;
+		PrologElement * shift = 0;
+		PrologElement * multiplier = 0;
+		if (parameters -> isPair ()) {
+			sides = parameters -> getLeft ();
+			if (! sides -> isInteger ()) return false;
+			parameters = parameters -> getRight ();
+			if (parameters -> isPair ()) {
+				shift = parameters -> getLeft ();
+				if (! shift -> isInteger ()) return false;
+				parameters = parameters -> getRight ();
+				if (parameters -> isPair ()) {
+					multiplier = parameters -> getLeft ();
+					if (! multiplier -> isInteger ()) return false;
+				}
+			}
+		}
+		token_actions * machine = new token_actions (directory);
+		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
+		if (multiplier) machine -> token = new dice_token (atom -> getAtom (), sides -> getInteger (), shift -> getInteger (), multiplier -> getInteger ());
+		else if (shift) machine -> token = new dice_token (atom -> getAtom (), sides -> getInteger (), shift -> getInteger ());
+		else if (sides) machine -> token = new dice_token (atom -> getAtom (), sides -> getInteger ());
+		else machine -> token = new dice_token (atom -> getAtom ());
+		board -> insert_token (machine -> token);
+		boarder_clean = false;
+		return true;
+	}
+	create_dice (PrologDirectory * directory) {this -> directory = directory;}
 };
 
 class create_text_token : public PrologNativeCode {
@@ -569,6 +630,7 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, CREATE_CIRCLE) == 0) return new create_circle (dir);
 	if (strcmp (name, CREATE_PICTURE) == 0) return new create_picture (dir);
 	if (strcmp (name, CREATE_TEXT) == 0) return new create_text_token (dir);
+	if (strcmp (name, CREATE_DICE) == 0) return new create_dice (dir);
 	if (strcmp (name, "diagnostics") == 0) return new diagnostics ();
 	return NULL;
 }

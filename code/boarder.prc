@@ -4,8 +4,8 @@ import f1
 
 program boarder #machine := "boarder" [
 					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase
-					CreateRectangle CreateCircle CreatePicture CreateText
-					Location Size Position Scaling Rotation
+					CreateRectangle CreateCircle CreatePicture CreateText CreateDice
+					Location Size Position Scaling Rotation Sides Side Roll
 					Lock Unlock Locked? Select Deselect Selected?
 					mariner viking voyager mix
 					diagnostics test
@@ -25,6 +25,7 @@ program boarder #machine := "boarder" [
 #machine CreateCircle := "CreateCircle"
 #machine CreatePicture := "CreatePicture"
 #machine CreateText := "CreateText"
+#machine CreateDice := "CreateDice"
 
 #machine diagnostics := "diagnostics"
 

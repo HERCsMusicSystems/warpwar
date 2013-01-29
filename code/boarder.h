@@ -12,6 +12,9 @@
 #define POSITION "Position"
 #define SCALING "Scaling"
 #define ROTATION "Rotation"
+#define SIDES "Sides"
+#define SIDE "Side"
+#define ROLL "Roll"
 #define BACKGROUND_COLOUR "BackgroundColour"
 #define FOREGROUND_COLOUR "ForegroundColour"
 #define LOCK "Lock"
@@ -30,6 +33,7 @@
 #define CREATE_CIRCLE "CreateCircle"
 #define CREATE_PICTURE "CreatePicture"
 #define CREATE_TEXT "CreateText"
+#define CREATE_DICE "CreateDice"
 
 class point;
 class rect;
@@ -137,6 +141,7 @@ public:
 	colour background_colour;
 	double scaling;
 	double rotation;
+	int side;
 	bool locked;
 	bool selected;
 	PrologAtom * atom;
@@ -151,6 +156,7 @@ public:
 	virtual void set_location (rect location);
 	virtual rect get_location (void);
 	virtual rect get_bounding_box (void);
+	virtual int randomize_side (void);
 	boarder_token * hit_test (rect area);
 	boarder_token * hit_test_next (rect area);
 	void save (FILE * tc);
@@ -190,7 +196,7 @@ public:
 };
 
 class picture_token : public boarder_token {
-public:
+protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
 	cairo_surface_t * surface;
@@ -201,6 +207,23 @@ public:
 	virtual void set_location (rect size);
 	picture_token (PrologAtom * atom, char * picture_location);
 	virtual ~ picture_token (void);
+};
+
+class dice_token : public boarder_token {
+protected:
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
+	int sides, shift, multiplier;
+public:
+	virtual void creation_call (FILE * tc);
+	virtual bool should_save_size (void);
+	virtual double default_scaling (void);
+	virtual rect get_bounding_box (void);
+	virtual int randomize_side (void);
+	dice_token (PrologAtom * atom);
+	dice_token (PrologAtom * atom, int sides);
+	dice_token (PrologAtom * atom, int sides, int shift);
+	dice_token (PrologAtom * atom, int sides, int shift, int multiplier);
+	virtual ~ dice_token (void);
 };
 
 #endif
