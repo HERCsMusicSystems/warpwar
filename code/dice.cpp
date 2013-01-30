@@ -166,6 +166,59 @@ void dice_token :: draw_octahedron (cairo_t * cr, boarder_viewport * viewport, r
 	cairo_identity_matrix (cr);
 }
 
+void dice_token :: draw_deltahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre) {
+	cairo_translate (cr, POINT (centre));
+	double hour = M_PI / 6.0;
+	if (rotation != 0.0) cairo_rotate (cr, rotation * hour);
+	cairo_scale (cr, r . size . x, r . size . y);
+	//double angle = hour * -3;
+	//cairo_move_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));
+	//for (int ind = 0; ind < 5; ind++) {angle += 2 * hour; cairo_line_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));}
+	//cairo_close_path (cr);
+	double across = 3.0 / 4.0;
+	double gridside = across / 1.11178594;
+	double half_angle = 0.45227844665387872478834364742025;
+	double skirt_angle = 1.1185178801410178944429780442195;
+	double angled_across_angle = 0.5 * (half_angle + skirt_angle);
+	double angled_across = gridside / cos (angled_across_angle - half_angle);
+	double skirt_side = gridside * sin (2.0 * 0.45227844665387872478834364742025);
+	double angle_shift = 0.0; //(double) diceValue * 2.0 * M_PI / 10.0;
+	point start (0, -0.375);
+	point p1 = start + point (skirt_side * sin (skirt_angle), skirt_side * cos (skirt_angle));
+	point p2 = start + point (angled_across * sin (angled_across_angle), angled_across * cos (angled_across_angle));
+	point p3 = start + point (across * sin (angle_shift), across * cos (angle_shift));
+	point p4 = start + point (angled_across * sin (- angled_across_angle), angled_across * cos (- angled_across_angle));
+	point p5 = start + point (skirt_side * sin (- skirt_angle), skirt_side * cos (- skirt_angle));
+	cairo_move_to (cr, POINT (start));
+	cairo_line_to (cr, POINT (p1));
+	cairo_line_to (cr, POINT (p2));
+	cairo_line_to (cr, POINT (p3));
+	cairo_line_to (cr, POINT (p4));
+	cairo_line_to (cr, POINT (p5));
+	cairo_close_path (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	cairo_fill_preserve (cr);
+	point p6 = start + point (gridside * sin (half_angle), gridside * cos (half_angle));
+	point p7 = start + point (gridside * sin (- half_angle), gridside * cos (- half_angle));
+	cairo_line_to (cr, POINT (p6));
+	cairo_move_to (cr, POINT (start));
+	cairo_line_to (cr, POINT (p7));
+	cairo_identity_matrix (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_stroke (cr);
+	char command [16];
+	sprintf (command, "%i", side);
+	cairo_text_extents_t extent;
+	cairo_set_font_size (cr, scaling * viewport -> scaling * 0.2);
+	cairo_text_extents (cr, command, & extent);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_translate (cr, POINT (centre));
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
+	cairo_show_text (cr, command);
+	cairo_identity_matrix (cr);
+}
+
 void dice_token :: draw_dodecahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre) {
 	cairo_translate (cr, POINT (centre));
 	double hour = M_PI / 5.0;
@@ -246,6 +299,7 @@ void dice_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	case 4: draw_tetrahedron (cr, viewport, r, centre); break;
 	case 6: draw_cube (cr, viewport, r, centre); break;
 	case 8: draw_octahedron (cr, viewport, r, centre); break;
+	case 10: draw_deltahedron (cr, viewport, r, centre); break;
 	case 12: draw_dodecahedron (cr, viewport, r, centre); break;
 	case 20: draw_icosahedron (cr, viewport, r, centre); break;
 	default: draw_cube (cr, viewport, r, centre); break;
