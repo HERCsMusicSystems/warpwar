@@ -211,8 +211,12 @@ public:
 
 class dice_token : public boarder_token {
 protected:
-	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 	int sides, shift, multiplier;
+	void draw_dice (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
+	void draw_tetrahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
+	void draw_cube (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
+	void draw_octahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
 	virtual void creation_call (FILE * tc);
 	virtual bool should_save_size (void);
