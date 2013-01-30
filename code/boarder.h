@@ -216,6 +216,8 @@ protected:
 	void draw_tetrahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
 	void draw_cube (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
 	void draw_octahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
+	void draw_dodecahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
+	void draw_icosahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
 	virtual void creation_call (FILE * tc);

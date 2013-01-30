@@ -145,23 +145,89 @@ void dice_token :: draw_octahedron (cairo_t * cr, boarder_viewport * viewport, r
 	cairo_line_to (cr, 0.5 * cos (angle), 0.5 * sin (angle)); angle += 2.0 * hour;
 	cairo_line_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));
 	cairo_close_path (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	cairo_fill_preserve (cr);
 	cairo_line_to (cr, 0.5 * cos (hour), 0.5 * sin (hour));
 	cairo_line_to (cr, 0.5 * cos (hour * 5), 0.5 * sin (hour * 5));
 	cairo_close_path (cr);
 	cairo_identity_matrix (cr);
-	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
-	//if (foreground_colour == background_colour) {
-	//	cairo_fill (cr);
-	//	return;
-	//} else {
-		cairo_fill_preserve (cr);
-		cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
-		cairo_stroke (cr);
-	//}
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_stroke (cr);
 	char command [16];
 	sprintf (command, "%i", side);
 	cairo_text_extents_t extent;
 	cairo_set_font_size (cr, scaling * viewport -> scaling * 0.5);
+	cairo_text_extents (cr, command, & extent);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_translate (cr, POINT (centre));
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
+	cairo_show_text (cr, command);
+	cairo_identity_matrix (cr);
+}
+
+void dice_token :: draw_dodecahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre) {
+	cairo_translate (cr, POINT (centre));
+	double hour = M_PI / 5.0;
+	if (rotation != 0.0) cairo_rotate (cr, rotation * hour);
+	cairo_scale (cr, r . size . x, r . size . y);
+	double angle = hour * -2.5;
+	cairo_move_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));
+	for (int ind = 0; ind < 9; ind++) {angle += hour; cairo_line_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));}
+	cairo_close_path (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	cairo_fill_preserve (cr);
+	double inner = 0.5 / 1.6180339887498948482045868343656;
+	angle = hour * -2.5;
+	for (int ind = 0; ind < 5; ind++) {cairo_move_to (cr, 0.5 * cos (angle), 0.5 * sin (angle)); cairo_line_to (cr, inner * cos (angle), inner * sin (angle)); angle += 2 * hour; cairo_line_to (cr, inner * cos (angle), inner * sin (angle));}
+	cairo_identity_matrix (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_stroke (cr);
+	char command [16];
+	sprintf (command, "%i", side);
+	cairo_text_extents_t extent;
+	cairo_set_font_size (cr, scaling * viewport -> scaling * 0.25);
+	cairo_text_extents (cr, command, & extent);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_translate (cr, POINT (centre));
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
+	cairo_show_text (cr, command);
+	cairo_identity_matrix (cr);
+}
+
+void dice_token :: draw_icosahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre) {
+	cairo_translate (cr, POINT (centre));
+	double hour = M_PI / 6.0;
+	if (rotation != 0.0) cairo_rotate (cr, rotation * hour);
+	cairo_scale (cr, r . size . x, r . size . y);
+	double angle = hour * -3;
+	cairo_move_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));
+	for (int ind = 0; ind < 5; ind++) {angle += 2 * hour; cairo_line_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));}
+	cairo_close_path (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	cairo_fill_preserve (cr);
+	double inner = 0.5 / 1.6180339887498948482045868343656;
+	angle = hour * -3;
+	for (int ind = 0; ind < 3; ind++) {
+		cairo_move_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));
+		point px (inner * cos (angle), inner * sin (angle));
+		cairo_line_to (cr, POINT (px));
+		angle += hour + hour;
+		point ix (0.5 * cos (angle), 0.5 * sin (angle));
+		cairo_move_to (cr, POINT (ix));
+		cairo_line_to (cr, POINT (px));
+		angle += hour + hour;
+		cairo_line_to (cr, inner * cos (angle), inner * sin (angle));
+		cairo_line_to (cr, POINT (ix));
+	}
+	cairo_identity_matrix (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_stroke (cr);
+	char command [16];
+	sprintf (command, "%i", side);
+	cairo_text_extents_t extent;
+	cairo_set_font_size (cr, scaling * viewport -> scaling * 0.25);
 	cairo_text_extents (cr, command, & extent);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_translate (cr, POINT (centre));
@@ -180,6 +246,8 @@ void dice_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	case 4: draw_tetrahedron (cr, viewport, r, centre); break;
 	case 6: draw_cube (cr, viewport, r, centre); break;
 	case 8: draw_octahedron (cr, viewport, r, centre); break;
+	case 12: draw_dodecahedron (cr, viewport, r, centre); break;
+	case 20: draw_icosahedron (cr, viewport, r, centre); break;
 	default: draw_cube (cr, viewport, r, centre); break;
 	}
 }
