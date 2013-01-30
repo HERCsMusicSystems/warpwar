@@ -171,10 +171,6 @@ void dice_token :: draw_deltahedron (cairo_t * cr, boarder_viewport * viewport, 
 	double hour = M_PI / 6.0;
 	if (rotation != 0.0) cairo_rotate (cr, rotation * hour);
 	cairo_scale (cr, r . size . x, r . size . y);
-	//double angle = hour * -3;
-	//cairo_move_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));
-	//for (int ind = 0; ind < 5; ind++) {angle += 2 * hour; cairo_line_to (cr, 0.5 * cos (angle), 0.5 * sin (angle));}
-	//cairo_close_path (cr);
 	double across = 3.0 / 4.0;
 	double gridside = across / 1.11178594;
 	double half_angle = 0.45227844665387872478834364742025;
@@ -182,11 +178,10 @@ void dice_token :: draw_deltahedron (cairo_t * cr, boarder_viewport * viewport, 
 	double angled_across_angle = 0.5 * (half_angle + skirt_angle);
 	double angled_across = gridside / cos (angled_across_angle - half_angle);
 	double skirt_side = gridside * sin (2.0 * 0.45227844665387872478834364742025);
-	double angle_shift = 0.0; //(double) diceValue * 2.0 * M_PI / 10.0;
 	point start (0, -0.375);
 	point p1 = start + point (skirt_side * sin (skirt_angle), skirt_side * cos (skirt_angle));
 	point p2 = start + point (angled_across * sin (angled_across_angle), angled_across * cos (angled_across_angle));
-	point p3 = start + point (across * sin (angle_shift), across * cos (angle_shift));
+	point p3 = start + point (0, across);
 	point p4 = start + point (angled_across * sin (- angled_across_angle), angled_across * cos (- angled_across_angle));
 	point p5 = start + point (skirt_side * sin (- skirt_angle), skirt_side * cos (- skirt_angle));
 	cairo_move_to (cr, POINT (start));
