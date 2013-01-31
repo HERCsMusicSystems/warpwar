@@ -61,6 +61,9 @@ public:
 	point operator / (const double & scale) const;
 	bool operator == (const point & p) const;
 	bool operator != (const point & p) const;
+	point operator += (const point & p);
+	point operator *= (const double & d);
+	point operator *= (const point & p);
 	point half (void);
 	void round (void);
 };
@@ -240,6 +243,9 @@ public:
 
 class grid_token : public boarder_token {
 protected:
+	void draw_square_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
+	void draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial);
+	void draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial);
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
 	virtual void creation_call (FILE * tc);

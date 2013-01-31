@@ -255,6 +255,7 @@ public:
 	PrologAtom * select_atom, * deselect_atom, * is_selected_atom;
 	PrologAtom * rotation_atom;
 	PrologAtom * side_atom, * roll_atom;
+	PrologAtom * indexing_atom;
 	boarder_token * token;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -378,6 +379,23 @@ public:
 			boarder_clean = false;
 			return true;
 		}
+		if (atom -> getAtom () == indexing_atom) {
+			if (parameters -> isVar ()) {
+				parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token -> indexing . position . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token -> indexing . position . y); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token -> indexing . size . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) token -> indexing . size . y);
+				return true;
+			}
+			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
+			token -> indexing = rect (x -> getInteger (), y -> getInteger (), width -> getInteger (), height -> getInteger ());
+			boarder_clean = false;
+			return true;
+		}
 		if (atom -> getAtom () == roll_atom) {
 			int ret = token -> randomize_side ();
 			boarder_clean = false;
@@ -400,6 +418,7 @@ public:
 		lock_atom = unlock_atom = is_locked_atom = select_atom = deselect_atom = is_selected_atom = 0;
 		rotation_atom = 0;
 		side_atom = roll_atom = 0;
+		indexing_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -417,6 +436,7 @@ public:
 			rotation_atom = directory -> searchAtom (ROTATION);
 			side_atom = directory -> searchAtom (SIDE);
 			roll_atom = directory -> searchAtom (ROLL);
+			indexing_atom = directory -> searchAtom (INDEXING);
 		}
 	}
 };

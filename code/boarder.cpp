@@ -33,6 +33,9 @@ point point :: operator * (const double & scale) const {return point (x * scale,
 point point :: operator / (const double & scale) const {if (scale == 0.0) return * this; return point (x / scale, y / scale);}
 bool point :: operator == (const point & p) const {return x == p . x && y == p . y;}
 bool point :: operator != (const point & p) const {return x != p . x || y != p . y;}
+point point :: operator += (const point & p) {x += p . x; y += p . y; return * this;}
+point point :: operator *= (const double & d) {x *= d; y *= d; return * this;}
+point point :: operator *= (const point & p) {x *= p . x; y *= p . y; return * this;}
 point point :: half (void) {return * this * 0.5;}
 void point :: round (void) {x = (double) ((int) (x + 0.5)); y = (double) ((int) (y + 0.5));}
 
@@ -252,7 +255,15 @@ boarder_token :: boarder_token (PrologAtom * atom) {
 	token_counter++;
 }
 boarder_token :: ~ boarder_token (void) {
-	if (atom) atom -> removeAtom ();
+	if (atom) {
+		PrologNativeCode * code = atom -> getMachine ();
+		if (code) delete code;
+		atom -> unProtect ();
+		atom -> setMachine (0);
+		atom -> unProtect ();
+		atom -> removeAtom ();
+	}
+	atom = 0;
 	printf ("DELETING TOKEN\n");
 	if (next) delete next; next = 0;
 	token_counter--;
