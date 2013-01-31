@@ -28,7 +28,7 @@ objectsosx = \
 	$(piosx)prolog_linux_console.o\
 	$(piosx)midi_command_prompt.o\
 	$(piosx)neural.o $(piosx)encoder.o $(piosx)notes.o\
-	$(piosx)mac_midi.o prolog_resources.o boarder_service.o boarder.o dice.o
+	$(piosx)mac_midi.o prolog_resources.o boarder_service.o boarder.o dice.o grid.o
 
 prc_objects = \
 	$(pc)studio.prc\
@@ -75,6 +75,9 @@ prolog_resources.o: prolog_resources.cpp
 
 dice.o: ../code/boarder.h ../code/dice.cpp
 	g++ -Wno-write-strings -I$(piosx) -I$(pc) ../code/dice.cpp -c -o dice.o `pkg-config --cflags gtk+-2.0`
+
+grid.o: ../code/boarder.h ../code/grid.cpp
+	g++ -Wno-write-strings -I$(piosx) -I$(pc) ../code/grid.cpp -c -o grid.o `pkg-config --cflags gtk+-2.0`
 
 boarder.o: ../code/boarder.h ../code/boarder.cpp
 	g++ -Wno-write-strings -I$(piosx) -I$(pc) ../code/boarder.cpp -c -o boarder.o `pkg-config --cflags gtk+-2.0`

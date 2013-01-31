@@ -52,6 +52,9 @@ void rect :: positivise (void) {
 	if (size . y < 0.0) {size . y = - size . y; position . y -= size . y;}
 }
 
+bool rect :: operator == (const rect & r) const {return position == r . position && size == r . size;}
+bool rect :: operator != (const rect & r) const {return position != r . position || size != r . size;}
+
 double int_to_colour (int c) {return c >= 255 ? 1.0 : (double) c / 256.0;}
 int colour_to_int (double c) {return c >= 1.0 ? 255 : (int) (256.0 * c);}
 colour :: colour (int red, int green, int blue, int alpha) {this -> red = int_to_colour (red); this -> green = int_to_colour (green); this -> blue = int_to_colour (blue); this -> alpha = int_to_colour (alpha);}
@@ -244,6 +247,7 @@ boarder_token :: boarder_token (PrologAtom * atom) {
 	this -> atom = atom;
 	atom -> inc ();
 	side = 0;
+	indexing = rect (0, 0, 4, 4);
 	next = 0;
 	token_counter++;
 }
@@ -267,6 +271,7 @@ void boarder_token :: save (FILE * tc) {
 	if (side != 0) fprintf (tc, "[%s %s %i]\n", atom -> name (), SIDE, side);
 	if (rotation != 0.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), ROTATION, rotation);
 	if (scaling != default_scaling ()) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
+	if (indexing != rect (0, 0, 4, 4)) fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), INDEXING, (int) indexing . position . x, (int) indexing . position . y, (int) indexing . size . x, (int) indexing . size . y);
 	if (locked) fprintf (tc, "[%s %s]\n", atom -> name (), LOCK);
 	fprintf (tc, "\n");
 }

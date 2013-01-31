@@ -29,11 +29,13 @@
 #define CLEAN "Clean"
 #define IS_CLEAN "Clean?"
 #define ERASE "Erase"
+#define INDEXING "Indexing"
 #define CREATE_RECTANGLE "CreateRectangle"
 #define CREATE_CIRCLE "CreateCircle"
 #define CREATE_PICTURE "CreatePicture"
 #define CREATE_TEXT "CreateText"
 #define CREATE_DICE "CreateDice"
+#define CREATE_GRID "CreateGrid"
 
 class point;
 class rect;
@@ -72,6 +74,8 @@ public:
 	point centre (double scaling);
 	bool overlap (rect area);
 	void positivise (void);
+	bool operator == (const rect & r) const;
+	bool operator != (const rect & r) const;
 	rect (point offset, point size);
 	rect (double x, double y, double width, double height);
 	rect (double locations [4]);
@@ -142,6 +146,7 @@ public:
 	double scaling;
 	double rotation;
 	int side;
+	rect indexing;
 	bool locked;
 	bool selected;
 	PrologAtom * atom;
@@ -231,6 +236,18 @@ public:
 	dice_token (PrologAtom * atom, int sides, int shift);
 	dice_token (PrologAtom * atom, int sides, int shift, int multiplier);
 	virtual ~ dice_token (void);
+};
+
+class grid_token : public boarder_token {
+protected:
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
+public:
+	virtual void creation_call (FILE * tc);
+	virtual bool should_save_size (void);
+	virtual double default_scaling (void);
+	virtual rect get_bounding_box (void);
+	grid_token (PrologAtom * atom);
+	virtual ~ grid_token (void);
 };
 
 #endif

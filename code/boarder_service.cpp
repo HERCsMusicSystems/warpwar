@@ -522,6 +522,24 @@ public:
 	create_dice (PrologDirectory * directory) {this -> directory = directory;}
 };
 
+class create_grid : public PrologNativeCode {
+public:
+	PrologDirectory * directory;
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * atom = parameters -> getLeft ();
+		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
+		if (! atom -> isAtom ()) return false;
+		token_actions * machine = new token_actions (directory);
+		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
+		board -> insert_token (machine -> token = new grid_token (atom -> getAtom ()));
+		boarder_clean = false;
+		return true;
+	}
+	create_grid (PrologDirectory * directory) {this -> directory = directory;}
+};
+
 class create_text_token : public PrologNativeCode {
 public:
 	PrologDirectory * directory;
@@ -631,6 +649,7 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, CREATE_PICTURE) == 0) return new create_picture (dir);
 	if (strcmp (name, CREATE_TEXT) == 0) return new create_text_token (dir);
 	if (strcmp (name, CREATE_DICE) == 0) return new create_dice (dir);
+	if (strcmp (name, CREATE_GRID) == 0) return new create_grid (dir);
 	if (strcmp (name, "diagnostics") == 0) return new diagnostics ();
 	return NULL;
 }

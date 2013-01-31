@@ -3,8 +3,8 @@ import studio
 import f1
 
 program boarder #machine := "boarder" [
-					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase
-					CreateRectangle CreateCircle CreatePicture CreateText CreateDice
+					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase Indexing
+					CreateRectangle CreateCircle CreatePicture CreateText CreateDice CreateGrid
 					Location Size Position Scaling Rotation Sides Side Roll
 					Lock Unlock Locked? Select Deselect Selected?
 					mariner viking voyager mix
@@ -26,6 +26,7 @@ program boarder #machine := "boarder" [
 #machine CreatePicture := "CreatePicture"
 #machine CreateText := "CreateText"
 #machine CreateDice := "CreateDice"
+#machine CreateGrid := "CreateGrid"
 
 #machine diagnostics := "diagnostics"
 
