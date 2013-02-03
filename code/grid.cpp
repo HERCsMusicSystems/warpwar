@@ -24,14 +24,58 @@ void grid_token :: draw_square_grid (cairo_t * cr, boarder_viewport * viewport, 
 }
 
 void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial) {
-	cairo_rectangle (cr, -0.5, -0.5, 1, 1);
+	double H = 0.5 * 0.866025404;
+	double vertical_shift = initial ? 0.0 : - H;
+	for (int x = 0; x < indexing . size . x; x++) {
+		double xx = -0.25 + (double) x * 0.75;
+		double yy = vertical_shift;
+		if (vertical_shift < 0.0 && x < indexing . size . x - 1) {cairo_move_to (cr, xx + 0.5, yy); cairo_line_to (cr, xx + 0.75, yy + H);}
+		for (int y = 0; y < indexing . size . y; y++) {
+			cairo_move_to (cr, xx + 0.5, yy);
+			cairo_line_to (cr, xx, yy);
+			cairo_line_to (cr, xx - 0.25, yy + H);
+			cairo_line_to (cr, xx, yy + H + H);
+			if (x == indexing . size . x - 1) {
+				cairo_move_to (cr, xx + 0.5, yy);
+				cairo_line_to (cr, xx + 0.75, yy + H);
+				cairo_line_to (cr, xx + 0.5, yy + H + H);
+			}
+			yy += H + H;
+		}
+		cairo_move_to (cr, xx, yy);
+		cairo_line_to (cr, xx + 0.5, yy);
+		if (vertical_shift == 0.0) cairo_line_to (cr, xx + 0.75, yy - H);
+		vertical_shift = vertical_shift == 0.0 ? - H : 0.0;
+	}
 	cairo_identity_matrix (cr);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_stroke (cr);
 }
 
 void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial) {
-	cairo_rectangle (cr, -0.5, -0.5, 1, 1);
+	double H = 0.5 * 0.866025404;
+	double horizontal_shift = initial ? 0.0 : - H;
+	for (int y = 0; y < indexing . size . y; y++) {
+		double yy = -0.25 + (double) y * 0.75;
+		double xx = horizontal_shift;
+		if (horizontal_shift < 0.0 && y < indexing . size . y - 1) {cairo_move_to (cr, xx, yy + 0.5); cairo_line_to (cr, xx + H, yy + 0.75);}
+		for (int x = 0; x < indexing . size . x; x++) {
+			cairo_move_to (cr, xx, yy + 0.5);
+			cairo_line_to (cr, xx, yy);
+			cairo_line_to (cr, xx + H, yy - 0.25);
+			cairo_line_to (cr, xx + H + H, yy);
+			if (y == indexing . size . y - 1) {
+				cairo_move_to (cr, xx, yy + 0.5);
+				cairo_line_to (cr, xx + H, yy + 0.75);
+				cairo_line_to (cr, xx + H + H, yy + 0.5);
+			}
+			xx += H + H;
+		}
+		cairo_move_to (cr, xx, yy);
+		cairo_line_to (cr, xx, yy + 0.5);
+		if (horizontal_shift == 0.0) cairo_line_to (cr, xx - H, yy + 0.75);
+		horizontal_shift = horizontal_shift == 0.0 ? - H : 0.0;
+	}
 	cairo_identity_matrix (cr);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_stroke (cr);
@@ -58,30 +102,24 @@ double positivise (double d) {return d >= 0.0 ? d : 0.0;}
 
 rect grid_token :: get_bounding_box (void) {
 	rect ret = location;
+	point factor (1, 1);
+	switch (side) {
+	case 1: case 2: if (indexing . size . x > 1) factor . x = (0.75 * (indexing . size . x - 1) + 1.0) / indexing . size . x; break;
+	case 3: case 4: if (indexing . size . y > 1) factor . y = (0.75 * (indexing . size . y - 1) + 1.0) / indexing . size . y; break;
+	default: break;
+	}
 	double angle = rotation * M_PI / 6.0;
 	double cell_size = (abs (cos (angle)) + abs (sin (angle))) * scaling;
 	ret . size = point (indexing . size . x * abs (cos (angle)) + indexing . size . y * abs (sin (angle)), indexing . size . y * abs (cos (angle)) + indexing . size . x * abs (sin (angle))) * scaling;
+	ret . size *= factor;
 	ret . position . x += 0.5 * (location . size . x - cell_size);
 	ret . position . y += 0.5 * (location . size . y - cell_size);
-	ret . position . x -= scaling * positivise (sin (angle)) * (indexing . size . y - 1);
-	ret . position . x -= scaling * positivise (- cos (angle)) * (indexing . size . x - 1);
-	ret . position . y -= scaling * positivise (- sin (angle)) * (indexing . size . x - 1);
-	ret . position . y -= scaling * positivise (- cos (angle)) * (indexing . size . y - 1);
+	ret . position . x -= scaling * positivise (sin (angle)) * (indexing . size . y - 1) * factor . y;
+	ret . position . x -= scaling * positivise (- cos (angle)) * (indexing . size . x - 1) * factor . x;
+	ret . position . y -= scaling * positivise (- sin (angle)) * (indexing . size . x - 1) * factor . x;
+	ret . position . y -= scaling * positivise (- cos (angle)) * (indexing . size . y - 1) * factor . y;
 	return ret;
 }
-/*
-rect grid_token :: get_bounding_box (void) {
-	rect ret = location;
-	//if (rotation != 0.0) {
-		double angle = rotation * M_PI / 6.0;
-		ret . size = point (abs (scaling * cos (angle)) + abs (scaling * sin (angle)), abs (scaling * cos (angle)) + abs (scaling * sin (angle)));
-	ret . position . x += location . size . x * 0.5 - ret . size . x * 0.5;
-	ret . position . y += location . size . y * 0.5 - ret . size . y * 0.5;
-		ret . size = point (abs (indexing . size . x * (scaling * cos (angle)) + abs (scaling * sin (angle))), indexing . size . y * (abs (scaling * cos (angle)) + abs (scaling * sin (angle))));
-	//}
-	return ret;
-}
-*/
 
 
 
