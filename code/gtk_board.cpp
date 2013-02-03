@@ -302,6 +302,7 @@ int main (int args, char * argv []) {
 		if (strcmp (argv [ind], "*gt") == 0) threads_type = 0;
 		else if (strcmp (argv [ind], "*ot") == 0) threads_type = 1;
 		else if (strcmp (argv [ind], "*nt") == 0) threads_type = 2;
+		else root -> addArg (argv [ind]);
 	}
 	//*
 	switch (threads_type) {
@@ -312,7 +313,7 @@ int main (int args, char * argv []) {
 	}
 	
 #ifdef LINUX_OPERATING_SYSTEM
-	console = threads_type == 2 ? new PrologLinuxConsole (10) : new PrologLinuxConsole (10);
+	console = threads_type == 2 ? new PrologLinuxConsole () : new PrologLinuxConsole (10);
 #endif
 #ifdef WINDOWS_OPERATING_SYSTEM
 	console = new PrologWindowsConsole (10);
