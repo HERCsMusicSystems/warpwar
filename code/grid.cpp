@@ -18,9 +18,22 @@ double grid_token :: default_scaling (void) {return 64.0;}
 void grid_token :: draw_square_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre) {
 	for (int ind = 0; ind <= indexing . size . y; ind++) {cairo_move_to (cr, -0.5, -0.5 + ind); cairo_line_to (cr, -0.5 + indexing . size . x, -0.5 + ind);}
 	for (int ind = 0; ind <= indexing . size . x; ind++) {cairo_move_to (cr, -0.5 + ind, -0.5); cairo_line_to (cr, -0.5 + ind, -0.5 + indexing . size . y);}
+	cairo_matrix_t matrix;
+	cairo_get_matrix (cr, & matrix);
 	cairo_identity_matrix (cr);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_stroke (cr);
+	if (no_indexing) return;
+	cairo_set_font_size (cr, 0.18);
+	cairo_set_matrix (cr, & matrix);
+	for (int x = 0; x < indexing . size . x; x++) {
+		for (int y = 0; y < indexing . size . y; y++) {
+			cairo_move_to (cr, x - 0.42, y - 0.3);
+			char command [24];
+			sprintf (command, "%02i%02i", (int) (x + indexing . position . x), (int) (y + indexing . position . y));
+			cairo_show_text (cr, command);
+		}
+	}
 }
 
 void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial) {
@@ -47,9 +60,24 @@ void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * view
 		if (vertical_shift == 0.0) cairo_line_to (cr, xx + 0.75, yy - H);
 		vertical_shift = vertical_shift == 0.0 ? - H : 0.0;
 	}
+	cairo_matrix_t matrix;
+	cairo_get_matrix (cr, & matrix);
 	cairo_identity_matrix (cr);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_stroke (cr);
+	if (no_indexing) return;
+	cairo_set_font_size (cr, 0.16);
+	cairo_set_matrix (cr, & matrix);
+	vertical_shift = initial ? H : 0.0;
+	for (int x = 0; x < indexing . size . x; x++) {
+		for (int y = 0; y < indexing . size . y; y++) {
+			cairo_move_to (cr, x * 0.75 - 0.24, y * (H + H) - 0.22 + vertical_shift);
+			char command [24];
+			sprintf (command, "%02i%02i", (int) (x + indexing . position . x), (int) (y + indexing . position . y));
+			cairo_show_text (cr, command);
+		}
+		vertical_shift = vertical_shift == 0.0 ? H : 0.0;
+	}
 }
 
 void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial) {
@@ -76,9 +104,24 @@ void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * vi
 		if (horizontal_shift == 0.0) cairo_line_to (cr, xx - H, yy + 0.75);
 		horizontal_shift = horizontal_shift == 0.0 ? - H : 0.0;
 	}
+	cairo_matrix_t matrix;
+	cairo_get_matrix (cr, & matrix);
 	cairo_identity_matrix (cr);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_stroke (cr);
+	if (no_indexing) return;
+	cairo_set_font_size (cr, 0.16);
+	cairo_set_matrix (cr, & matrix);
+	horizontal_shift = initial ? H : 0.0;
+	for (int y = 0; y < indexing . size . y; y++) {
+		for (int x = 0; x < indexing . size . x; x++) {
+			cairo_move_to (cr, x * (H + H) - 0.36 + horizontal_shift, y * 0.75 - 0.10);
+			char command [24];
+			sprintf (command, "%02i%02i", (int) (x + indexing . position . x), (int) (y + indexing . position . y));
+			cairo_show_text (cr, command);
+		}
+		horizontal_shift = horizontal_shift == 0.0 ? H : 0.0;
+	}
 }
 
 void grid_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {

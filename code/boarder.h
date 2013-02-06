@@ -30,6 +30,8 @@
 #define IS_CLEAN "Clean?"
 #define ERASE "Erase"
 #define INDEXING "Indexing"
+#define NO_INDEXING "NoIndexing"
+#define INDEXED "Indexed?"
 #define CREATE_RECTANGLE "CreateRectangle"
 #define CREATE_CIRCLE "CreateCircle"
 #define CREATE_PICTURE "CreatePicture"
@@ -150,6 +152,7 @@ public:
 	double rotation;
 	int side;
 	rect indexing;
+	bool no_indexing;
 	bool locked;
 	bool selected;
 	PrologAtom * atom;

@@ -3,7 +3,7 @@ import studio
 import f1
 
 program boarder #machine := "boarder" [
-					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase Indexing
+					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase Indexing NoIndexing Indexed?
 					CreateRectangle CreateCircle CreatePicture CreateText CreateDice CreateGrid
 					Location Size Position Scaling Rotation Sides Side Roll
 					Lock Unlock Locked? Select Deselect Selected?

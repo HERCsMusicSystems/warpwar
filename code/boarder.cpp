@@ -251,6 +251,7 @@ boarder_token :: boarder_token (PrologAtom * atom) {
 	atom -> inc ();
 	side = 0;
 	indexing = rect (0, 0, 4, 4);
+	no_indexing = false;
 	next = 0;
 	token_counter++;
 }
@@ -283,6 +284,7 @@ void boarder_token :: save (FILE * tc) {
 	if (rotation != 0.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), ROTATION, rotation);
 	if (scaling != default_scaling ()) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
 	if (indexing != rect (0, 0, 4, 4)) fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), INDEXING, (int) indexing . position . x, (int) indexing . position . y, (int) indexing . size . x, (int) indexing . size . y);
+	if (no_indexing) fprintf (tc, "[%s %s]\n", atom -> name (), NO_INDEXING);
 	if (locked) fprintf (tc, "[%s %s]\n", atom -> name (), LOCK);
 	fprintf (tc, "\n");
 }
@@ -425,6 +427,8 @@ text_token :: ~ text_token (void) {
 }
 
 void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
+	cairo_identity_matrix (cr);
+	cairo_move_to (cr, 0, 0);
 	cairo_text_extents_t extent;
 	cairo_set_font_size (cr, scaling * viewport -> scaling);
 	cairo_text_extents (cr, text, & extent);
@@ -436,6 +440,7 @@ void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_translate (cr, POINT (centre));
 	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
 	cairo_translate (cr, Location . size . x * -0.5, Location . size . y * 0.5);
+	cairo_move_to (cr, 0, 0);
 	cairo_show_text (cr, text);
 	cairo_identity_matrix (cr);
 }

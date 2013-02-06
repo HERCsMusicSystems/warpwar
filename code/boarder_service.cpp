@@ -255,7 +255,7 @@ public:
 	PrologAtom * select_atom, * deselect_atom, * is_selected_atom;
 	PrologAtom * rotation_atom;
 	PrologAtom * side_atom, * roll_atom;
-	PrologAtom * indexing_atom;
+	PrologAtom * indexing_atom, * no_indexing_atom, * indexed_atom;
 	boarder_token * token;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -380,6 +380,7 @@ public:
 			return true;
 		}
 		if (atom -> getAtom () == indexing_atom) {
+			if (parameters -> isEarth ()) {token -> no_indexing = false; boarder_clean = false; return true;}
 			if (parameters -> isVar ()) {
 				parameters -> setPair ();
 				parameters -> getLeft () -> setInteger ((int) token -> indexing . position . x); parameters = parameters -> getRight (); parameters -> setPair ();
@@ -396,6 +397,8 @@ public:
 			boarder_clean = false;
 			return true;
 		}
+		if (atom -> getAtom () == no_indexing_atom) {token -> no_indexing = true; boarder_clean = false; return true;}
+		if (atom -> getAtom () == indexed_atom) return ! token -> no_indexing;
 		if (atom -> getAtom () == roll_atom) {
 			int ret = token -> randomize_side ();
 			boarder_clean = false;
@@ -418,7 +421,7 @@ public:
 		lock_atom = unlock_atom = is_locked_atom = select_atom = deselect_atom = is_selected_atom = 0;
 		rotation_atom = 0;
 		side_atom = roll_atom = 0;
-		indexing_atom = 0;
+		indexing_atom = no_indexing_atom = indexed_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -437,6 +440,8 @@ public:
 			side_atom = directory -> searchAtom (SIDE);
 			roll_atom = directory -> searchAtom (ROLL);
 			indexing_atom = directory -> searchAtom (INDEXING);
+			no_indexing_atom = directory -> searchAtom (NO_INDEXING);
+			indexed_atom = directory -> searchAtom (INDEXED);
 		}
 	}
 };
