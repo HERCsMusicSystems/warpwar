@@ -207,6 +207,8 @@ public:
 };
 
 class picture_token : public boarder_token {
+private:
+	int sides;
 protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
@@ -216,7 +218,7 @@ public:
 	virtual bool should_save_size (void);
 	virtual void set_size (point size);
 	virtual void set_location (rect size);
-	picture_token (PrologAtom * atom, char * picture_location);
+	picture_token (PrologAtom * atom, char * picture_location, int sides = 1);
 	virtual ~ picture_token (void);
 };
 

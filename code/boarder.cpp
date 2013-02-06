@@ -386,10 +386,15 @@ void circle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE
 
 // PICTURE
 
-picture_token :: picture_token (PrologAtom * atom, char * picture_location) : boarder_token (atom) {
+picture_token :: picture_token (PrologAtom * atom, char * picture_location, int sides) : boarder_token (atom) {
 	this -> picture_location = create_text (picture_location);
 	surface = cairo_image_surface_create_from_png (picture_location);
-	location . size = point (cairo_image_surface_get_width (surface), cairo_image_surface_get_height (surface));
+	int width = cairo_image_surface_get_width (surface);
+	int height = cairo_image_surface_get_height (surface);
+	if (sides < 1) sides = 1;
+	if (sides > height) sides = height;
+	this -> sides = sides;
+	location . size = point (width, height / sides);
 }
 picture_token :: ~ picture_token (void) {
 	printf ("	DELETING PICTURE\n");
@@ -404,15 +409,21 @@ void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) 
 	double scale = scaling * viewport -> scaling;
 	if (scale != 1.0) cairo_scale (cr, scale, scale);
 	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
-	cairo_set_source_surface (cr, surface, POINT (half));
+	cairo_rectangle (cr, POINT (half), POINT (location . size));
+	if (side != 0) half . y -= location . size . y * side;
+	if (0 <= side && side < sides) cairo_set_source_surface (cr, surface, POINT (half));
+	else cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_fill (cr);
 	cairo_identity_matrix (cr);
-	cairo_paint (cr);
 }
 
-void picture_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_PICTURE, atom -> name (), picture_location);}
 bool picture_token :: should_save_size (void) {return false;}
 void picture_token :: set_size (point size) {}
 void picture_token :: set_location (rect location) {this -> location . position = location . position;}
+void picture_token :: creation_call (FILE * tc) {
+	if (sides == 1) fprintf (tc, "[%s %s \"%s\"]\n", CREATE_PICTURE, atom -> name (), picture_location);
+	else fprintf (tc, "[%s %s \"%s\" %i]\n", CREATE_PICTURE, atom -> name (), picture_location, sides);
+}
 
 // TEXT
 

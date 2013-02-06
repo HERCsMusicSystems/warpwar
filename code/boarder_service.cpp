@@ -497,9 +497,15 @@ public:
 		if (! parameters -> isPair ()) return false;
 		PrologElement * picture_location = parameters -> getLeft ();
 		if (! picture_location -> isText ()) return false;
+		parameters = parameters -> getRight ();
+		PrologElement * sides = 0;
+		if (parameters -> isPair ()) {
+			sides = parameters -> getLeft ();
+			if (! sides -> isInteger ()) return false;
+		}
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
-		machine -> token = new picture_token (atom -> getAtom (), picture_location -> getText ());
+		machine -> token = new picture_token (atom -> getAtom (), picture_location -> getText (), sides ? sides -> getInteger () : 1);
 		board -> insert_token (machine -> token);
 		boarder_clean = false;
 		return true;
