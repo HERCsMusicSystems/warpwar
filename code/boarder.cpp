@@ -470,10 +470,55 @@ rect text_token :: get_bounding_box (void) {
 	return ret;
 }
 
+// DECK
 
+deck_token :: deck_token (PrologAtom * atom, char * text) : boarder_token (atom) {
+	this -> text = create_text (text);
+	scaling = default_scaling ();
+}
 
+deck_token :: ~ deck_token (void) {
+	printf ("	DELETING DECK [%s]\n", text);
+	if (text) delete_text (text); text = 0;
+}
 
+void deck_token :: creation_call (FILE * tc) {
+	if (text == 0) fprintf (tc, "[%s %s]\n", CREATE_DECK, atom -> name ());
+	else fprintf (tc, "[%s %s \"%s\"]\n", CREATE_DECK, atom -> name (), text);
+}
 
+void deck_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
+	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
+	point centre = r . centre ();
+	cairo_translate (cr, POINT (centre));
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	cairo_scale (cr, POINT (r . size));
+	cairo_rectangle (cr, -0.5, -0.5, 1, 1);
+	cairo_identity_matrix (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
+	if (background_colour == foreground_colour) {cairo_fill (cr); return;}
+	cairo_fill_preserve (cr);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	cairo_stroke (cr);
+	if (text == 0 || no_indexing) return;
+	cairo_move_to (cr, 0, 0);
+	cairo_text_extents_t extent;
+	cairo_set_font_size (cr, indexing . size . y * viewport -> scaling * scaling);
+	cairo_text_extents (cr, text, & extent);
+	point size;
+	if (viewport -> scaling != 0.0) size = point (extent . width, extent . height) / viewport -> scaling;
+	else size = point (extent . width, extent . height);
+	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
+	rect Location (point (location . position + location . size * 0.5 * scaling - size * 0.5 - viewport -> board_position) * viewport -> scaling, size * viewport -> scaling);
+	point Centre = Location . centre ();
+	cairo_translate (cr, POINT (Centre));
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	point shift = indexing . position * viewport -> scaling * scaling;
+	cairo_translate (cr, Location . size . x * -0.5 + shift . x, Location . size . y * 0.5 + shift . y);
+	cairo_move_to (cr, 0, 0);
+	cairo_show_text (cr, text);
+	cairo_identity_matrix (cr);
+}
 
 
 

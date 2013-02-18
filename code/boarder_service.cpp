@@ -594,6 +594,31 @@ public:
 	create_text_token (PrologDirectory * directory) {this -> directory = directory;}
 };
 
+class create_deck : public PrologNativeCode {
+public:
+	PrologDirectory * directory;
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * atom = parameters -> getLeft ();
+		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
+		if (! atom -> isAtom ()) return false;
+		parameters = parameters -> getRight ();
+		PrologElement * text = 0;
+		if (parameters -> isPair ()) {
+			text = parameters -> getLeft ();
+			if (! text -> isText ()) return false;
+		}
+		token_actions * machine = new token_actions (directory);
+		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
+		machine -> token = new deck_token (atom -> getAtom (), text ? text -> getText () : 0);
+		board -> insert_token (machine -> token);
+		boarder_clean = false;
+		return true;
+	}
+	create_deck (PrologDirectory * directory) {this -> directory = directory;}
+};
+
 class background_colour : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -681,6 +706,7 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, CREATE_TEXT) == 0) return new create_text_token (dir);
 	if (strcmp (name, CREATE_DICE) == 0) return new create_dice (dir);
 	if (strcmp (name, CREATE_GRID) == 0) return new create_grid (dir);
+	if (strcmp (name, CREATE_DECK) == 0) return new create_deck (dir);
 	if (strcmp (name, "diagnostics") == 0) return new diagnostics ();
 	return NULL;
 }

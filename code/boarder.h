@@ -38,6 +38,7 @@
 #define CREATE_TEXT "CreateText"
 #define CREATE_DICE "CreateDice"
 #define CREATE_GRID "CreateGrid"
+#define CREATE_DECK "CreateDeck"
 
 class point;
 class rect;
@@ -186,6 +187,16 @@ public:
 	virtual rect get_bounding_box (void);
 	text_token (PrologAtom * atom, char * text);
 	virtual ~ text_token (void);
+};
+
+class deck_token : public boarder_token {
+protected:
+	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
+public:
+	char * text;
+	virtual void creation_call (FILE * tc);
+	deck_token (PrologAtom * atom, char * text);
+	virtual ~ deck_token (void);
 };
 
 class rectangle_token : public boarder_token {
