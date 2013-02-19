@@ -313,7 +313,7 @@ rect boarder_token :: get_bounding_box (void) {
 	rect ret = location;
 	ret . size = ret . size * scaling;
 	if (rotation != 0.0) {
-		double angle = rotation * M_PI / 6.0;
+		double angle = rotation * M_PI / 12.0;
 		ret . size = point (abs (ret . size . x * cos (angle)) + abs (ret . size . y * sin (angle)), abs (ret . size . y * cos (angle)) + abs (ret . size . x * sin (angle)));
 		ret . position . x += location . size . x * 0.5 * scaling - ret . size . x * 0.5;
 		ret . position . y += location . size . y * 0.5 * scaling - ret . size . y * 0.5;
@@ -347,7 +347,7 @@ void rectangle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport
 	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
 	point centre = r . centre ();
 	cairo_translate (cr, centre . x, centre . y);
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_scale (cr, r . size . x, r . size . y);
 	cairo_rectangle (cr, -0.5, -0.5, 1, 1);
 	cairo_identity_matrix (cr);
@@ -371,7 +371,7 @@ void circle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
 	point centre = r . centre ();
 	cairo_translate (cr, centre . x, centre . y);
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_scale (cr, r . size . x, r . size . y);
 	cairo_arc (cr, 0, 0, 0.5, 0, 2 * M_PI);
 	cairo_identity_matrix (cr);
@@ -408,7 +408,7 @@ void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) 
 	cairo_translate (cr, POINT (centre));
 	double scale = scaling * viewport -> scaling;
 	if (scale != 1.0) cairo_scale (cr, scale, scale);
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_rectangle (cr, POINT (half), POINT (location . size));
 	if (side != 0) half . y -= location . size . y * side;
 	if (0 <= side && side < sides) cairo_set_source_surface (cr, surface, POINT (half));
@@ -449,7 +449,7 @@ void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	rect Location (point (location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
 	point centre = Location . centre ();
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_translate (cr, Location . size . x * -0.5, Location . size . y * 0.5);
 	cairo_move_to (cr, 0, 0);
 	cairo_show_text (cr, text);
@@ -463,7 +463,7 @@ double text_token :: default_scaling (void) {return 24.0;}
 rect text_token :: get_bounding_box (void) {
 	if (rotation == 0.0) return location;
 	rect ret = location;
-	double angle = rotation * M_PI / 6.0;
+	double angle = rotation * M_PI / 12.0;
 	ret . size = point (abs (ret . size . x * cos (angle)) + abs (ret . size . y * sin (angle)), abs (ret . size . y * cos (angle)) + abs (ret . size . x * sin (angle)));
 	ret . position . x += location . size . x * 0.5 - ret . size . x * 0.5;
 	ret . position . y += location . size . y * 0.5 - ret . size . y * 0.5;
@@ -491,7 +491,7 @@ void deck_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * (scaling * viewport -> scaling));
 	point centre = r . centre ();
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_scale (cr, POINT (r . size));
 	cairo_rectangle (cr, -0.5, -0.5, 1, 1);
 	cairo_identity_matrix (cr);
@@ -512,7 +512,7 @@ void deck_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	rect Location (point (location . position + location . size * 0.5 * scaling - size * 0.5 - viewport -> board_position) * viewport -> scaling, size * viewport -> scaling);
 	point Centre = Location . centre ();
 	cairo_translate (cr, POINT (Centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	point shift = indexing . position * viewport -> scaling * scaling;
 	cairo_translate (cr, Location . size . x * -0.5 + shift . x, Location . size . y * 0.5 + shift . y);
 	cairo_move_to (cr, 0, 0);

@@ -22,7 +22,7 @@ void dice_token :: creation_call (FILE * tc) {
 
 void dice_token :: draw_cube (cairo_t * cr, boarder_viewport * viewport, rect r, point centre) {
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_scale (cr, r . size . x, r . size . y);
 	cairo_rounded_rectangle (cr, -0.5, -0.5, 1, 1, 0.125);
 	cairo_identity_matrix (cr);
@@ -43,7 +43,7 @@ void dice_token :: draw_cube (cairo_t * cr, boarder_viewport * viewport, rect r,
 	cairo_text_extents (cr, command, & extent);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
 	cairo_show_text (cr, command);
 	cairo_identity_matrix (cr);
@@ -51,7 +51,7 @@ void dice_token :: draw_cube (cairo_t * cr, boarder_viewport * viewport, rect r,
 
 void dice_token :: draw_dice (cairo_t * cr, boarder_viewport * viewport, rect r, point centre) {
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_scale (cr, r . size . x, r . size . y);
 	cairo_rounded_rectangle (cr, -0.5, -0.5, 1, 1, 0.125);
 	cairo_set_source_rgba (cr, ACOLOUR (background_colour));
@@ -126,7 +126,7 @@ void dice_token :: draw_tetrahedron (cairo_t * cr, boarder_viewport * viewport, 
 	cairo_text_extents (cr, command, & extent);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
 	cairo_show_text (cr, command);
 	cairo_identity_matrix (cr);
@@ -160,7 +160,7 @@ void dice_token :: draw_octahedron (cairo_t * cr, boarder_viewport * viewport, r
 	cairo_text_extents (cr, command, & extent);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
 	cairo_show_text (cr, command);
 	cairo_identity_matrix (cr);
@@ -208,7 +208,7 @@ void dice_token :: draw_deltahedron (cairo_t * cr, boarder_viewport * viewport, 
 	cairo_text_extents (cr, command, & extent);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
 	cairo_show_text (cr, command);
 	cairo_identity_matrix (cr);
@@ -238,7 +238,7 @@ void dice_token :: draw_dodecahedron (cairo_t * cr, boarder_viewport * viewport,
 	cairo_text_extents (cr, command, & extent);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
 	cairo_show_text (cr, command);
 	cairo_identity_matrix (cr);
@@ -279,7 +279,7 @@ void dice_token :: draw_icosahedron (cairo_t * cr, boarder_viewport * viewport, 
 	cairo_text_extents (cr, command, & extent);
 	cairo_set_source_rgba (cr, ACOLOUR (foreground_colour));
 	cairo_translate (cr, POINT (centre));
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_translate (cr, extent . width * -0.5, extent . height * 0.5);
 	cairo_show_text (cr, command);
 	cairo_identity_matrix (cr);
@@ -304,7 +304,7 @@ void dice_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 rect dice_token :: get_bounding_box (void) {
 	if (rotation == 0.0) return location;
 	rect ret = location;
-	double angle = rotation * M_PI / 6.0;
+	double angle = rotation * M_PI / 12.0;
 	ret . size = point (abs (scaling * cos (angle)) + abs (scaling * sin (angle)), abs (scaling * cos (angle)) + abs (scaling * sin (angle)));
 	ret . position . x += location . size . x * 0.5 - ret . size . x * 0.5;
 	ret . position . y += location . size . y * 0.5 - ret . size . y * 0.5;

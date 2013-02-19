@@ -129,7 +129,7 @@ void grid_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
 	point centre = r . centre ();
 	cairo_translate (cr, centre . x, centre . y);
-	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 6.0);
+	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
 	cairo_scale (cr, r . size . x, r . size . y);
 	switch (side) {
 	case 0: draw_square_grid (cr, viewport, r, centre); break;
@@ -151,7 +151,7 @@ rect grid_token :: get_bounding_box (void) {
 	case 3: case 4: if (indexing . size . y > 1) factor . y = (0.75 * (indexing . size . y - 1) + 1.0) / indexing . size . y; break;
 	default: break;
 	}
-	double angle = rotation * M_PI / 6.0;
+	double angle = rotation * M_PI / 12.0;
 	double cell_size = (abs (cos (angle)) + abs (sin (angle))) * scaling;
 	ret . size = point (indexing . size . x * abs (cos (angle)) + indexing . size . y * abs (sin (angle)), indexing . size . y * abs (cos (angle)) + indexing . size . x * abs (sin (angle))) * scaling;
 	ret . size *= factor;
