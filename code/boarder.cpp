@@ -80,11 +80,36 @@ boarder :: boarder (void) {
 	background_colour = colour (0, 0, 255);
 	viewports = 0;
 	tokens = 0;
+	deck = 0;
+	default_dice_foreground_colour = colour (0, 0, 0); default_dice_background_colour = colour (255, 255, 255);
+	default_tetrahedron_foreground_colour = colour (255, 255, 255); default_tetrahedron_background_colour = colour (255, 0, 0);
+	default_cube_foreground_colour = colour (255, 255, 255); default_cube_background_colour = colour (0, 0, 255);
+	default_octahedron_foreground_colour = colour (255, 255, 255); default_octahedron_background_colour = colour (0, 255, 0);
+	default_deltahedron_foreground_colour = colour (255, 255, 255); default_deltahedron_background_colour = colour (0xff, 0x8c, 0x00);
+	default_deltahedron_10_foreground_colour = colour (255, 255, 255); default_deltahedron_10_background_colour = colour (0x8a, 0x2b, 0xe2);
+	default_dodecahedron_foreground_colour = colour (255, 255, 255); default_dodecahedron_background_colour = colour (0x80, 0x80, 0x80);
+	default_icosahedron_foreground_colour = colour (255, 255, 255); default_icosahedron_background_colour = colour (255, 0, 0);
+	default_rectangle_foreground_colour = default_circle_foreground_colour = colour (255, 255, 0);
+	default_rectangle_background_colour = default_circle_background_colour = colour (0, 0, 255);
+	default_picture_foreground_colour = default_text_foreground_colour = default_deck_foreground_colour = default_grid_foreground_colour = colour (255, 255, 0);
+	default_picture_background_colour = default_text_background_colour = default_deck_background_colour = default_grid_background_colour = colour (0, 0, 255);
 }
 
 boarder :: ~ boarder (void) {
 	if (viewports != 0) delete viewports; viewports = 0;
 	erase ();
+}
+
+static void save_colour (FILE *tc, char * atom, char * command, colour c, colour default_c) {
+	if (c == default_c) return;
+	if (c . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom, command, INTCOLOUR (c));
+	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom, command, AINTCOLOUR (c));
+}
+
+static void save_colour (FILE *tc, char * command, colour c, colour default_c) {
+	if (c == default_c) return;
+	if (c . alpha == 1.0) fprintf (tc, "[%s %i %i %i]\n", command, INTCOLOUR (c));
+	else fprintf (tc, "[%s %i %i %i %i]\n", command, AINTCOLOUR (c));
 }
 
 void boarder :: erase (void) {if (tokens != 0) delete tokens; tokens = 0;}
@@ -93,8 +118,38 @@ bool boarder :: save (char * location) {
 	FILE * tc = fopen (location, "wb");
 	if (tc == 0) return false;
 	fprintf (tc, "[auto_atoms]\n\n");
-	fprintf (tc, "[%s]\n\n", ERASE);
-	if (tokens) tokens -> save (tc);
+	fprintf (tc, "[%s]\n", ERASE);
+	save_colour (tc, BACKGROUND_COLOUR, background_colour, colour (0, 0, 255));
+	save_colour (tc, DEFAULT_DICE_FOREGROUND, default_dice_foreground_colour, colour (0, 0, 0));
+	save_colour (tc, DEFAULT_DICE_BACKGROUND, default_dice_background_colour, colour (255, 255, 255));
+	save_colour (tc, DEFAULT_TETRAHEDRON_FOREGROUND, default_tetrahedron_foreground_colour, colour (255, 255, 255));
+	save_colour (tc, DEFAULT_TETRAHEDRON_BACKGROUND, default_tetrahedron_background_colour, colour (255, 0, 0));
+	save_colour (tc, DEFAULT_CUBE_FOREGROUND, default_cube_foreground_colour, colour (255, 255, 255));
+	save_colour (tc, DEFAULT_CUBE_BACKGROUND, default_cube_background_colour, colour (0, 0, 255));
+	save_colour (tc, DEFAULT_OCTAHEDRON_FOREGROUND, default_octahedron_foreground_colour, colour (255, 255, 255));
+	save_colour (tc, DEFAULT_OCTAHEDRON_BACKGROUND, default_octahedron_background_colour, colour (0, 255, 0));
+	save_colour (tc, DEFAULT_DELTAHEDRON_FOREGROUND, default_deltahedron_foreground_colour, colour (255, 255, 255));
+	save_colour (tc, DEFAULT_DELTAHEDRON_BACKGROUND, default_deltahedron_background_colour, colour (0xff, 0x8c, 0x00));
+	save_colour (tc, DEFAULT_DELTAHEDRON10_FOREGROUND, default_deltahedron_10_foreground_colour, colour (255, 255, 255));
+	save_colour (tc, DEFAULT_DELTAHEDRON10_BACKGROUND, default_deltahedron_10_background_colour, colour (0x8a, 0x2b, 0xe2));
+	save_colour (tc, DEFAULT_DODECAHEDRON_FOREGROUND, default_dodecahedron_foreground_colour, colour (255, 255, 255));
+	save_colour (tc, DEFAULT_DODECAHEDRON_BACKGROUND, default_dodecahedron_background_colour, colour (0x80, 0x80, 0x80));
+	save_colour (tc, DEFAULT_ICOSAHEDRON_FOREGROUND, default_icosahedron_foreground_colour, colour (255, 255, 255));
+	save_colour (tc, DEFAULT_ICOSAHEDRON_BACKGROUND, default_icosahedron_background_colour, colour (255, 0, 0));
+	save_colour (tc, DEFAULT_RECTANGLE_FOREGROUND, default_rectangle_foreground_colour, colour (255, 255, 0));
+	save_colour (tc, DEFAULT_RECTANGLE_BACKGROUND, default_rectangle_background_colour, colour (0, 0, 255));
+	save_colour (tc, DEFAULT_CIRCLE_FOREGROUND, default_circle_foreground_colour, colour (255, 255, 0));
+	save_colour (tc, DEFAULT_CIRCLE_BACKGROUND, default_circle_background_colour, colour (0, 0, 255));
+	save_colour (tc, DEFAULT_PICTURE_FOREGROUND, default_picture_foreground_colour, colour (255, 255, 0));
+	save_colour (tc, DEFAULT_PICTURE_BACKGROUND, default_picture_background_colour, colour (0, 0, 255));
+	save_colour (tc, DEFAULT_TEXT_FOREGROUND, default_text_foreground_colour, colour (255, 255, 0));
+	save_colour (tc, DEFAULT_TEXT_BACKGROUND, default_text_background_colour, colour (0, 0, 255));
+	save_colour (tc, DEFAULT_DECK_FOREGROUND, default_deck_foreground_colour, colour (255, 255, 0));
+	save_colour (tc, DEFAULT_DECK_BACKGROUND, default_deck_background_colour, colour (0, 0, 255));
+	save_colour (tc, DEFAULT_GRID_FOREGROUND, default_grid_foreground_colour, colour (255, 255, 0));
+	save_colour (tc, DEFAULT_GRID_BACKGROUND, default_grid_background_colour, colour (0, 0, 255));
+	fprintf (tc, "\n");
+	if (tokens) tokens -> save (this, tc);
 	if (viewports) viewports -> save (tc);
 	fprintf (tc, "[wait 100]\n");
 	fprintf (tc, "[%s]\n\n", CLEAN);
@@ -127,6 +182,10 @@ void boarder :: remove_viewport (boarder_viewport * viewport) {
 
 boarder_token * boarder :: insert_token (boarder_token * token) {
 	if (token == 0) return 0;
+	if (deck != 0) {
+		if (! deck -> can_insert ()) return 0;
+		return deck -> insert (token);
+	}
 	token -> next = tokens;
 	return tokens = token;
 }
@@ -190,6 +249,36 @@ void boarder :: move_selection (point delta) {
 	}
 }
 
+bool boarder :: transfer_token_to_deck (boarder_token * deck, boarder_token * token) {
+	if (! deck -> can_insert ()) return false;
+	boarder_token * btp = tokens;
+	if (btp == token) {tokens = btp -> next; deck -> insert (token); return true;}
+	while (btp -> next != 0) {
+		if (btp -> next == token) {btp -> next = token -> next; deck -> insert (token); return true;}
+		btp = btp -> next;
+	}
+	return false;
+}
+
+void boarder :: transfer_selection_to_deck (boarder_token * deck) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		boarder_token * next = token -> next;
+		if (token -> selected && token != deck) transfer_token_to_deck (deck, token);
+		token = next;
+	}
+}
+
+boarder_token * boarder :: release_token_from_deck (boarder_token * deck) {
+	if (! deck -> can_insert ()) return 0;
+	boarder_token * btp = deck -> release ();
+	if (btp == 0) return 0;
+	btp -> next = tokens;
+	tokens = btp;
+	btp -> set_position (deck -> get_location () . position);
+	return btp;
+}
+
 //////////////
 // VIEWPORT //
 //////////////
@@ -243,8 +332,8 @@ boarder_token :: boarder_token (PrologAtom * atom) {
 	location = rect (point (10, 10), point (200, 100));
 	selected = false;
 	locked = false;
-	foreground_colour = colour (255, 255, 0);
-	background_colour = colour (0, 0, 255);
+	foreground_colour = default_foreground ();
+	background_colour = default_background ();
 	scaling = default_scaling ();
 	rotation = 0.0;
 	this -> atom = atom;
@@ -270,16 +359,27 @@ boarder_token :: ~ boarder_token (void) {
 	token_counter--;
 }
 
-void boarder_token :: save (FILE * tc) {
-	if (next) next -> save (tc);
-	creation_call (tc);
+bool boarder_token :: can_insert (void) {return false;}
+boarder_token * boarder_token :: insert (boarder_token * token) {return 0;}
+boarder_token * boarder_token :: release (void) {return 0;}
+void boarder_token :: shuffle (void) {}
+
+void boarder_token :: save (boarder * board, FILE * tc) {
+	if (next) next -> save (board, tc);
+	creation_call (board, tc);
 	rect token_location = get_location ();
 	if (should_save_size ()) fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), LOCATION, (int) token_location . position . x, (int) token_location . position . y, (int) token_location . size . x, (int) token_location . size . y);
-	else fprintf (tc, "[%s %s %i %i]\n", atom -> name (), POSITION, (int) token_location . position . x, (int) token_location . position . y);
-	if (background_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, INTCOLOUR (background_colour));
-	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, AINTCOLOUR (background_colour));
-	if (foreground_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, INTCOLOUR (foreground_colour));
-	else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, AINTCOLOUR (foreground_colour));
+	else {
+		if (token_location . position != point (10, 10)) fprintf (tc, "[%s %s %i %i]\n", atom -> name (), POSITION, (int) token_location . position . x, (int) token_location . position . y);
+	}
+	if (background_colour != default_background_colour (board)) {
+		if (background_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, INTCOLOUR (background_colour));
+		else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), BACKGROUND_COLOUR, AINTCOLOUR (background_colour));
+	}
+	if (foreground_colour != default_foreground_colour (board)) {
+		if (foreground_colour . alpha == 1.0) fprintf (tc, "[%s %s %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, INTCOLOUR (foreground_colour));
+		else fprintf (tc, "[%s %s %i %i %i %i]\n", atom -> name (), FOREGROUND_COLOUR, AINTCOLOUR (foreground_colour));
+	}
 	if (side != 0) fprintf (tc, "[%s %s %i]\n", atom -> name (), SIDE, side);
 	if (rotation != 0.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), ROTATION, rotation);
 	if (scaling != default_scaling ()) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
@@ -332,6 +432,9 @@ boarder_token * boarder_token :: hit_test_next (rect area) {
 
 int boarder_token :: randomize_side (void) {return side;}
 
+colour boarder_token :: default_foreground (void) {return colour (255, 255, 0);}
+colour boarder_token :: default_background (void) {return colour (0, 0, 255);}
+
 ////////////
 // TOKENS //
 ////////////
@@ -358,7 +461,10 @@ void rectangle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport
 	cairo_stroke (cr);
 }
 
-void rectangle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_RECTANGLE, atom -> name ());}
+void rectangle_token :: creation_call (boarder * board, FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_RECTANGLE, atom -> name ());}
+
+colour rectangle_token :: default_foreground_colour (boarder * board) {return board ? board -> default_rectangle_foreground_colour : default_foreground ();}
+colour rectangle_token :: default_background_colour (boarder * board) {return board ? board -> default_rectangle_background_colour : default_background ();}
 
 // CIRCLE
 
@@ -382,7 +488,10 @@ void circle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_stroke (cr);
 }
 
-void circle_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_CIRCLE, atom -> name ());}
+void circle_token :: creation_call (boarder * board, FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_CIRCLE, atom -> name ());}
+
+colour circle_token :: default_foreground_colour (boarder * board) {return board ? board -> default_circle_foreground_colour : default_foreground ();}
+colour circle_token :: default_background_colour (boarder * board) {return board ? board -> default_circle_background_colour : default_background ();}
 
 // PICTURE
 
@@ -420,10 +529,13 @@ void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) 
 bool picture_token :: should_save_size (void) {return false;}
 void picture_token :: set_size (point size) {}
 void picture_token :: set_location (rect location) {this -> location . position = location . position;}
-void picture_token :: creation_call (FILE * tc) {
+void picture_token :: creation_call (boarder * board, FILE * tc) {
 	if (sides == 1) fprintf (tc, "[%s %s \"%s\"]\n", CREATE_PICTURE, atom -> name (), picture_location);
 	else fprintf (tc, "[%s %s \"%s\" %i]\n", CREATE_PICTURE, atom -> name (), picture_location, sides);
 }
+
+colour picture_token :: default_foreground_colour (boarder * board) {return board ? board -> default_picture_foreground_colour : default_foreground ();}
+colour picture_token :: default_background_colour (boarder * board) {return board ? board -> default_picture_background_colour : default_background ();}
 
 // TEXT
 
@@ -456,7 +568,7 @@ void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_identity_matrix (cr);
 }
 
-void text_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_TEXT, atom -> name (), text);}
+void text_token :: creation_call (boarder * board, FILE * tc) {fprintf (tc, "[%s %s \"%s\"]\n", CREATE_TEXT, atom -> name (), text);}
 bool text_token :: should_save_size (void) {return false;}
 double text_token :: default_scaling (void) {return 24.0;}
 
@@ -470,21 +582,30 @@ rect text_token :: get_bounding_box (void) {
 	return ret;
 }
 
+colour text_token :: default_foreground_colour (boarder * board) {return board ? board -> default_text_foreground_colour : default_foreground ();}
+colour text_token :: default_background_colour (boarder * board) {return board ? board -> default_text_background_colour : default_background ();}
+
 // DECK
 
 deck_token :: deck_token (PrologAtom * atom, char * text) : boarder_token (atom) {
-	this -> text = create_text (text);
-	scaling = default_scaling ();
+	this -> text = text ? create_text (text) : 0;
+	tokens = 0;
 }
 
 deck_token :: ~ deck_token (void) {
 	printf ("	DELETING DECK [%s]\n", text);
 	if (text) delete_text (text); text = 0;
+	if (tokens) delete tokens; tokens = 0;
 }
 
-void deck_token :: creation_call (FILE * tc) {
+void deck_token :: creation_call (boarder * board, FILE * tc) {
 	if (text == 0) fprintf (tc, "[%s %s]\n", CREATE_DECK, atom -> name ());
 	else fprintf (tc, "[%s %s \"%s\"]\n", CREATE_DECK, atom -> name (), text);
+	if (tokens) {
+		fprintf (tc, "[%s %s]\n", atom -> name (), SELECT_DECK);
+		tokens -> save (board, tc);
+		fprintf (tc, "[%s]\n", SELECT_DECK);
+	}
 }
 
 void deck_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
@@ -519,6 +640,15 @@ void deck_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_show_text (cr, text);
 	cairo_identity_matrix (cr);
 }
+
+bool deck_token :: can_insert (void) {return true;}
+boarder_token * deck_token :: insert (boarder_token * token) {if (token == 0) return 0; token -> next = tokens; return tokens = token;}
+boarder_token * deck_token :: release (void) {boarder_token * ret = tokens; if (tokens) tokens = tokens -> next; if (ret) ret -> next = 0; return ret;}
+void deck_token :: shuffle (void) {
+}
+
+colour deck_token :: default_foreground_colour (boarder * board) {return board ? board -> default_deck_foreground_colour : default_foreground ();}
+colour deck_token :: default_background_colour (boarder * board) {return board ? board -> default_deck_background_colour : default_background ();}
 
 
 

@@ -94,7 +94,10 @@ gtk_board.o: ../code/gtk_board.cpp ../code/boarder.h ../code/boarder_service.h
 
 boardmac: ../board
 
-01gurps: ../01gurps.app/Contents/MacOS/01gurps
+01gurps: ../01gurps.app/Contents/MacOS/01gurps /usr/local/bin/01gurps
+
+/usr/local/bin/01gurps: ../01gurps.app/Contents/MacOS/01gurps
+	cp ../01gurps.app/Contents/MacOS/01gurps /usr/local/bin/
 
 ../01gurps.app/Contents/MacOS/01gurps: gtk_board.o $(objectsosx)
 	g++ -lreadline -framework CoreMidi -framework CoreFoundation $(objectsosx) gtk_board.o -o ../01gurps.app/Contents/MacOS/01gurps `pkg-config --libs gtk+-2.0`

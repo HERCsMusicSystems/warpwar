@@ -11,7 +11,7 @@ grid_token :: ~ grid_token (void) {
 	printf ("	DELETE GRID\n");
 }
 
-void grid_token :: creation_call (FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_GRID, atom -> name ());}
+void grid_token :: creation_call (boarder * board, FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_GRID, atom -> name ());}
 bool grid_token :: should_save_size (void) {return false;}
 double grid_token :: default_scaling (void) {return 64.0;}
 
@@ -163,6 +163,10 @@ rect grid_token :: get_bounding_box (void) {
 	ret . position . y -= scaling * positivise (- cos (angle)) * (indexing . size . y - 1) * factor . y;
 	return ret;
 }
+
+colour grid_token :: default_foreground_colour (boarder * board) {return board ? board -> default_grid_foreground_colour : default_foreground ();}
+colour grid_token :: default_background_colour (boarder * board) {return board ? board -> default_grid_background_colour : default_background ();}
+
 
 
 

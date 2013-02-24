@@ -7,6 +7,35 @@
 #include "prolog.h"
 #include <gtk/gtk.h>
 
+#define DEFAULT_RECTANGLE_FOREGROUND "DefaultRectangleForeground"
+#define DEFAULT_RECTANGLE_BACKGROUND "DefaultRectangleBackground"
+#define DEFAULT_CIRCLE_FOREGROUND "DefaultCircleForeground"
+#define DEFAULT_CIRCLE_BACKGROUND "DefaultCircleBackground"
+#define DEFAULT_PICTURE_FOREGROUND "DefaultPictureForeground"
+#define DEFAULT_PICTURE_BACKGROUND "DefaultPictureBackground"
+#define DEFAULT_TEXT_FOREGROUND "DefaultTextForeground"
+#define DEFAULT_TEXT_BACKGROUND "DefaultTextBackground"
+#define DEFAULT_DECK_FOREGROUND "DefaultDeckForeground"
+#define DEFAULT_DECK_BACKGROUND "DefaultDeckBackground"
+#define DEFAULT_GRID_FOREGROUND "DefaultGridForeground"
+#define DEFAULT_GRID_BACKGROUND "DefaultGridBackground"
+#define DEFAULT_DICE_FOREGROUND "DefaultDiceForeground"
+#define DEFAULT_DICE_BACKGROUND "DefaultDiceBackground"
+#define DEFAULT_TETRAHEDRON_FOREGROUND "DefaultTetrahedronForeground"
+#define DEFAULT_TETRAHEDRON_BACKGROUND "DefaultTetrahedronBackground"
+#define DEFAULT_CUBE_FOREGROUND "DefaultCubeForeground"
+#define DEFAULT_CUBE_BACKGROUND "DefaultCubeBackground"
+#define DEFAULT_OCTAHEDRON_FOREGROUND "DefaultOctahedronForeground"
+#define DEFAULT_OCTAHEDRON_BACKGROUND "DefaultOctahedronBackground"
+#define DEFAULT_DELTAHEDRON_FOREGROUND "DefaultDeltahedronForeground"
+#define DEFAULT_DELTAHEDRON_BACKGROUND "DefaultDeltahedronBackground"
+#define DEFAULT_DELTAHEDRON10_FOREGROUND "DefaultDeltahedron10Foreground"
+#define DEFAULT_DELTAHEDRON10_BACKGROUND "DefaultDeltahedron10Background"
+#define DEFAULT_DODECAHEDRON_FOREGROUND "DefaultDodecahedronForeground"
+#define DEFAULT_DODECAHEDRON_BACKGROUND "DefaultDodecahedronBackground"
+#define DEFAULT_ICOSAHEDRON_FOREGROUND "DefaultIcosahedronForeground"
+#define DEFAULT_ICOSAHEDRON_BACKGROUND "DefaultIcosahedronBackground"
+
 #define LOCATION "Location"
 #define SIZE "Size"
 #define POSITION "Position"
@@ -32,6 +61,10 @@
 #define INDEXING "Indexing"
 #define NO_INDEXING "NoIndexing"
 #define INDEXED "Indexed?"
+#define SELECT_DECK "SelectDeck"
+#define SHUFFLE "Shuffle"
+#define INSERT "Insert"
+#define RELEASE "Release"
 #define CREATE_RECTANGLE "CreateRectangle"
 #define CREATE_CIRCLE "CreateCircle"
 #define CREATE_PICTURE "CreatePicture"
@@ -109,10 +142,30 @@ public:
 	colour background_colour;
 	boarder_viewport * viewports;
 	boarder_token * tokens;
+	boarder_token * deck;
+public:
+	colour default_rectangle_foreground_colour, default_rectangle_background_colour;
+	colour default_circle_foreground_colour, default_circle_background_colour;
+	colour default_picture_foreground_colour, default_picture_background_colour;
+	colour default_text_foreground_colour, default_text_background_colour;
+	colour default_deck_foreground_colour, default_deck_background_colour;
+	colour default_grid_foreground_colour, default_grid_background_colour;
+	colour default_dice_foreground_colour, default_dice_background_colour;
+	colour default_tetrahedron_foreground_colour, default_tetrahedron_background_colour;
+	colour default_cube_foreground_colour, default_cube_background_colour;
+	colour default_octahedron_foreground_colour, default_octahedron_background_colour;
+	colour default_deltahedron_foreground_colour, default_deltahedron_background_colour;
+	colour default_deltahedron_10_foreground_colour, default_deltahedron_10_background_colour;
+	colour default_dodecahedron_foreground_colour, default_dodecahedron_background_colour;
+	colour default_icosahedron_foreground_colour, default_icosahedron_background_colour;
+public:
 	boarder_viewport * insert_viewport (PrologAtom * atom, char * name, rect location);
 	void remove_viewport (boarder_viewport * viewport);
 	boarder_token * insert_token (boarder_token * token);
 	void remove_token (boarder_token * token);
+	bool transfer_token_to_deck (boarder_token * deck, boarder_token * token);
+	void transfer_selection_to_deck (boarder_token * deck);
+	boarder_token * release_token_from_deck (boarder_token * deck);
 	void erase (void);
 	bool save (char * location);
 	void draw (cairo_t * cr, boarder_viewport * viewport);
@@ -160,7 +213,7 @@ public:
 	boarder_token * next;
 	void draw (cairo_t * cr, boarder_viewport * viewport);
 	void draw_selection (cairo_t * cr, boarder_viewport * viewport);
-	virtual void creation_call (FILE * tc) = 0;
+	virtual void creation_call (boarder * board, FILE * tc) = 0;
 	virtual bool should_save_size (void);
 	virtual double default_scaling (void);
 	virtual void set_position (point position);
@@ -169,9 +222,17 @@ public:
 	virtual rect get_location (void);
 	virtual rect get_bounding_box (void);
 	virtual int randomize_side (void);
+	virtual bool can_insert (void);
+	virtual boarder_token * insert (boarder_token * token);
+	virtual boarder_token * release (void);
+	virtual void shuffle (void);
+	colour default_foreground (void);
+	colour default_background (void);
+	virtual colour default_foreground_colour (boarder * board) = 0;
+	virtual colour default_background_colour (boarder * board) = 0;
 	boarder_token * hit_test (rect area);
 	boarder_token * hit_test_next (rect area);
-	void save (FILE * tc);
+	void save (boarder * board, FILE * tc);
 	boarder_token (PrologAtom * atom);
 	virtual ~ boarder_token (void);
 };
@@ -181,10 +242,12 @@ protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
 	char * text;
-	virtual void creation_call (FILE * tc);
+	virtual void creation_call (boarder * board, FILE * tc);
 	virtual bool should_save_size (void);
 	virtual double default_scaling (void);
 	virtual rect get_bounding_box (void);
+	virtual colour default_foreground_colour (boarder * board);
+	virtual colour default_background_colour (boarder * board);
 	text_token (PrologAtom * atom, char * text);
 	virtual ~ text_token (void);
 };
@@ -192,9 +255,16 @@ public:
 class deck_token : public boarder_token {
 protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
+	boarder_token * tokens;
 public:
 	char * text;
-	virtual void creation_call (FILE * tc);
+	virtual void creation_call (boarder * board, FILE * tc);
+	virtual bool can_insert (void);
+	virtual boarder_token * insert (boarder_token * token);
+	virtual boarder_token * release (void);
+	virtual void shuffle (void);
+	virtual colour default_foreground_colour (boarder * board);
+	virtual colour default_background_colour (boarder * board);
 	deck_token (PrologAtom * atom, char * text);
 	virtual ~ deck_token (void);
 };
@@ -203,7 +273,9 @@ class rectangle_token : public boarder_token {
 protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-	virtual void creation_call (FILE * tc);
+	virtual void creation_call (boarder * board, FILE * tc);
+	virtual colour default_foreground_colour (boarder * board);
+	virtual colour default_background_colour (boarder * board);
 	rectangle_token (PrologAtom * atom);
 	virtual ~ rectangle_token (void);
 };
@@ -212,7 +284,9 @@ class circle_token : public boarder_token {
 protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-	virtual void creation_call (FILE * tc);
+	virtual void creation_call (boarder * board, FILE * tc);
+	virtual colour default_foreground_colour (boarder * board);
+	virtual colour default_background_colour (boarder * board);
 	circle_token (PrologAtom * atom);
 	virtual ~ circle_token (void);
 };
@@ -225,17 +299,18 @@ protected:
 public:
 	cairo_surface_t * surface;
 	char * picture_location;
-	virtual void creation_call (FILE * tc);
+	virtual void creation_call (boarder * board, FILE * tc);
 	virtual bool should_save_size (void);
 	virtual void set_size (point size);
 	virtual void set_location (rect size);
+	virtual colour default_foreground_colour (boarder * board);
+	virtual colour default_background_colour (boarder * board);
 	picture_token (PrologAtom * atom, char * picture_location, int sides = 1);
 	virtual ~ picture_token (void);
 };
 
 class dice_token : public boarder_token {
-protected:
-	int sides, shift, multiplier;
+private:
 	void draw_dice (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
 	void draw_tetrahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
 	void draw_cube (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
@@ -243,13 +318,17 @@ protected:
 	void draw_deltahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
 	void draw_dodecahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
 	void draw_icosahedron (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
+protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-	virtual void creation_call (FILE * tc);
+	int sides, shift, multiplier;
+	virtual void creation_call (boarder * board, FILE * tc);
 	virtual bool should_save_size (void);
 	virtual double default_scaling (void);
 	virtual rect get_bounding_box (void);
 	virtual int randomize_side (void);
+	virtual colour default_foreground_colour (boarder * board);
+	virtual colour default_background_colour (boarder * board);
 	dice_token (PrologAtom * atom);
 	dice_token (PrologAtom * atom, int sides);
 	dice_token (PrologAtom * atom, int sides, int shift);
@@ -264,10 +343,12 @@ protected:
 	void draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial);
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
-	virtual void creation_call (FILE * tc);
+	virtual void creation_call (boarder * board, FILE * tc);
 	virtual bool should_save_size (void);
 	virtual double default_scaling (void);
 	virtual rect get_bounding_box (void);
+	virtual colour default_foreground_colour (boarder * board);
+	virtual colour default_background_colour (boarder * board);
 	grid_token (PrologAtom * atom);
 	virtual ~ grid_token (void);
 };

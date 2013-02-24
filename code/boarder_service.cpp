@@ -107,6 +107,7 @@ static point click_init_point (0, 0);
 static point click_point (0, 0);
 static int click_button = 0;
 static bool has_selection = false;
+static bool moved = false;
 
 extern PrologLinuxConsole * console;
 static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
@@ -131,7 +132,8 @@ static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, board
 static gboolean viewport_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . size = point (widget -> allocation . width, widget -> allocation . height); boarder_clean = false; return FALSE;}
 static gboolean window_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . position = point (event -> configure . x, event -> configure . y); boarder_clean = false; return FALSE;}
 
-static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {\
+	moved = false;
 	if (board == 0) return TRUE;
 	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
 	rect hit_test_area = area; hit_test_area . position = hit_test_area . position + viewport -> board_position;
@@ -145,6 +147,7 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 		if (token) {token -> selected = true; has_selection = true;}
 		break;
 	case 3:
+		if (! board -> release_token_from_deck (token)) break;
 		if (token) {token -> selected = true; has_selection = true;}
 		break;
 	default: break;
@@ -160,6 +163,11 @@ static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, 
 	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
 	area . position . round ();
 	//printf ("RELEASED [%i %g %g]\n", event -> button, area . position . x, area . position . y);
+	if (has_selection && click_button > 0 && moved) {
+		boarder_token * deck = board -> hit_test (area);
+		while (deck != 0 && ! deck -> can_insert ()) deck = deck -> hit_test_next (area);
+		if (deck != 0) board -> transfer_selection_to_deck (deck);
+	}
 	if (click_button == 3 && click_init_point != click_point) {
 		rect location (click_init_point + viewport -> board_position, click_point - click_init_point);
 		location . positivise ();
@@ -175,6 +183,7 @@ static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, 
 }
 
 static gint window_button_motion_event (GtkWidget * window, GdkEventButton * event, boarder_viewport * viewport) {
+	moved = true;
 	if (board == 0) return TRUE;
 	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
 	area . position . round ();
@@ -256,6 +265,7 @@ public:
 	PrologAtom * rotation_atom;
 	PrologAtom * side_atom, * roll_atom;
 	PrologAtom * indexing_atom, * no_indexing_atom, * indexed_atom;
+	PrologAtom * shuffle_atom, * insert_atom, * release_atom, * select_deck_atom;
 	boarder_token * token;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -413,6 +423,19 @@ public:
 		if (atom -> getAtom () == select_atom) {token -> selected = true; return true;}
 		if (atom -> getAtom () == deselect_atom) {token -> selected = false; return true;}
 		if (atom -> getAtom () == is_selected_atom) {return token -> selected;}
+		if (atom -> getAtom () == select_deck_atom) {if (! token -> can_insert ()) return false; board -> deck = token; return true;}
+		if (atom -> getAtom () == shuffle_atom) {token -> shuffle (); return true;}
+		if (atom -> getAtom () == insert_atom) {
+			if (board -> deck == 0) return false;
+			return board -> transfer_token_to_deck (board -> deck, token);
+		}
+		if (atom -> getAtom () == release_atom) {
+			boarder_token * btp = board -> release_token_from_deck (token);
+			if (btp == 0) return false;
+			if (parameters -> isPair ()) parameters = parameters -> getLeft ();
+			if (parameters -> isVar ()) parameters -> setAtom (btp -> atom);
+			return true;
+		}
 		return false;
 	}
 	token_actions (PrologDirectory * directory) {
@@ -422,6 +445,7 @@ public:
 		rotation_atom = 0;
 		side_atom = roll_atom = 0;
 		indexing_atom = no_indexing_atom = indexed_atom = 0;
+		shuffle_atom = insert_atom = release_atom = select_deck_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -442,6 +466,10 @@ public:
 			indexing_atom = directory -> searchAtom (INDEXING);
 			no_indexing_atom = directory -> searchAtom (NO_INDEXING);
 			indexed_atom = directory -> searchAtom (INDEXED);
+			shuffle_atom = directory -> searchAtom (SHUFFLE);
+			insert_atom = directory -> searchAtom (INSERT);
+			release_atom = directory -> searchAtom (RELEASE);
+			select_deck_atom = directory -> searchAtom (SELECT_DECK);
 		}
 	}
 };
@@ -458,6 +486,8 @@ public:
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new rectangle_token (atom -> getAtom ());
+		machine -> token -> foreground_colour = board -> default_rectangle_foreground_colour;
+		machine -> token -> background_colour = board -> default_rectangle_background_colour;
 		board -> insert_token (machine -> token);
 		boarder_clean = false;
 		return true;
@@ -477,6 +507,8 @@ public:
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new circle_token (atom -> getAtom ());
+		machine -> token -> foreground_colour = board -> default_circle_foreground_colour;
+		machine -> token -> background_colour = board -> default_circle_background_colour;
 		board -> insert_token (machine -> token);
 		boarder_clean = false;
 		return true;
@@ -494,18 +526,22 @@ public:
 		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
 		if (! atom -> isAtom ()) return false;
 		parameters = parameters -> getRight ();
-		if (! parameters -> isPair ()) return false;
-		PrologElement * picture_location = parameters -> getLeft ();
-		if (! picture_location -> isText ()) return false;
-		parameters = parameters -> getRight ();
+		PrologElement * picture_location = 0;
 		PrologElement * sides = 0;
-		if (parameters -> isPair ()) {
-			sides = parameters -> getLeft ();
-			if (! sides -> isInteger ()) return false;
+		while (parameters -> isPair ()) {
+			PrologElement * left = parameters -> getLeft ();
+			if (left -> isInteger ()) sides = left;
+			else if (left -> isText ()) picture_location = left;
+			else return false;
+			parameters = parameters -> getRight ();
 		}
+		char area [128];
+		sprintf (area, "%s.png", atom -> getAtom () -> name ());
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
-		machine -> token = new picture_token (atom -> getAtom (), picture_location -> getText (), sides ? sides -> getInteger () : 1);
+		machine -> token = new picture_token (atom -> getAtom (), picture_location ? picture_location -> getText () : area, sides ? sides -> getInteger () : 1);
+		machine -> token -> foreground_colour = board -> default_picture_foreground_colour;
+		machine -> token -> background_colour = board -> default_picture_background_colour;
 		board -> insert_token (machine -> token);
 		boarder_clean = false;
 		return true;
@@ -542,10 +578,27 @@ public:
 		}
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
-		if (multiplier) machine -> token = new dice_token (atom -> getAtom (), sides -> getInteger (), shift -> getInteger (), multiplier -> getInteger ());
-		else if (shift) machine -> token = new dice_token (atom -> getAtom (), sides -> getInteger (), shift -> getInteger ());
-		else if (sides) machine -> token = new dice_token (atom -> getAtom (), sides -> getInteger ());
-		else machine -> token = new dice_token (atom -> getAtom ());
+		dice_token * dice = 0;
+		if (multiplier) dice = new dice_token (atom -> getAtom (), sides -> getInteger (), shift -> getInteger (), multiplier -> getInteger ());
+		else if (shift) dice = new dice_token (atom -> getAtom (), sides -> getInteger (), shift -> getInteger ());
+		else if (sides) dice = new dice_token (atom -> getAtom (), sides -> getInteger ());
+		else dice = new dice_token (atom -> getAtom ());
+		switch (dice -> sides) {
+		case 0: dice -> foreground_colour = board -> default_dice_foreground_colour; dice -> background_colour = board -> default_dice_background_colour; break;
+		case 4: dice -> foreground_colour = board -> default_tetrahedron_foreground_colour; dice -> background_colour = board -> default_tetrahedron_background_colour; break;
+		case 6: dice -> foreground_colour = board -> default_cube_foreground_colour; dice -> background_colour = board -> default_cube_background_colour; break;
+		case 8: dice -> foreground_colour = board -> default_octahedron_foreground_colour; dice -> background_colour = board -> default_octahedron_background_colour; break;
+		case 10:
+			if (dice -> multiplier == 1) {
+				dice -> foreground_colour = board -> default_deltahedron_foreground_colour; dice -> background_colour = board -> default_deltahedron_background_colour;
+			} else {
+				dice -> foreground_colour = board -> default_deltahedron_10_foreground_colour; dice -> background_colour = board -> default_deltahedron_10_background_colour;
+			} break;
+		case 12: dice -> foreground_colour = board -> default_dodecahedron_foreground_colour; dice -> background_colour = board -> default_dodecahedron_background_colour; break;
+		case 20: dice -> foreground_colour = board -> default_icosahedron_foreground_colour; dice -> background_colour = board -> default_icosahedron_background_colour; break;
+		default: dice -> foreground_colour = board -> default_dice_foreground_colour; dice -> background_colour = board -> default_dice_background_colour; break;
+		}
+		machine -> token = dice;
 		board -> insert_token (machine -> token);
 		boarder_clean = false;
 		return true;
@@ -565,6 +618,8 @@ public:
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		board -> insert_token (machine -> token = new grid_token (atom -> getAtom ()));
+		machine -> token -> foreground_colour = board -> default_grid_foreground_colour;
+		machine -> token -> background_colour = board -> default_grid_background_colour;
 		boarder_clean = false;
 		return true;
 	}
@@ -587,6 +642,8 @@ public:
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new text_token (atom -> getAtom (), text -> getText ());
+		machine -> token -> foreground_colour = board -> default_text_foreground_colour;
+		machine -> token -> background_colour = board -> default_text_background_colour;
 		board -> insert_token (machine -> token);
 		boarder_clean = false;
 		return true;
@@ -612,6 +669,8 @@ public:
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new deck_token (atom -> getAtom (), text ? text -> getText () : 0);
+		machine -> token -> foreground_colour = board -> default_deck_foreground_colour;
+		machine -> token -> background_colour = board -> default_deck_background_colour;
 		board -> insert_token (machine -> token);
 		boarder_clean = false;
 		return true;
@@ -672,6 +731,33 @@ class erase : public PrologNativeCode {
 public: bool code (PrologElement * parameters, PrologResolution * resolution) {if (board == 0) return false; board -> erase (); boarder_clean = false; return true;}
 };
 
+class select_deck : public PrologNativeCode {
+public: bool code (PrologElement * parameters, PrologResolution * resolution) {if (board == 0) return false; board -> deck = 0; return true;}
+};
+
+class default_colour : public PrologNativeCode {
+public:
+	colour * c;
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (parameters -> isVar ()) {
+			parameters -> setPair (); parameters -> getLeft () -> setInteger (colour_to_int (c -> red)); parameters = parameters -> getRight ();
+			parameters -> setPair (); parameters -> getLeft () -> setInteger (colour_to_int (c -> green)); parameters = parameters -> getRight ();
+			parameters -> setPair (); parameters -> getLeft () -> setInteger (colour_to_int (c -> blue)); parameters = parameters -> getRight ();
+			parameters -> setPair (); parameters -> getLeft () -> setInteger (colour_to_int (c -> alpha)); parameters = parameters -> getRight ();
+			return true;
+		}
+		if (! parameters -> isPair ()) return false;
+		PrologElement * red = parameters -> getLeft (); if (! red -> isInteger ()) return false; parameters = parameters -> getRight (); if (! parameters -> isPair ()) return false;
+		PrologElement * green = parameters -> getLeft (); if (! green -> isInteger ()) return false; parameters = parameters -> getRight (); if (! parameters -> isPair ()) return false;
+		PrologElement * blue = parameters -> getLeft (); if (! blue -> isInteger ()) return false; parameters = parameters -> getRight ();
+		PrologElement * alpha = 0; if (parameters -> isPair ()) {alpha = parameters -> getLeft (); if (! alpha -> isInteger ()) return false;}
+		* c = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger (), alpha ? alpha -> getInteger () : 255);
+		return true;
+	}
+	default_colour (colour * c) {this -> c = c;}
+};
+
 class diagnostics : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -700,6 +786,7 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, CLEAN) == 0) return new clean ();
 	if (strcmp (name, IS_CLEAN) == 0) return new is_clean ();
 	if (strcmp (name, ERASE) == 0) return new erase ();
+	if (strcmp (name, SELECT_DECK) == 0) return new select_deck ();
 	if (strcmp (name, CREATE_RECTANGLE) == 0) return new create_rectangle (dir);
 	if (strcmp (name, CREATE_CIRCLE) == 0) return new create_circle (dir);
 	if (strcmp (name, CREATE_PICTURE) == 0) return new create_picture (dir);
@@ -707,6 +794,34 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, CREATE_DICE) == 0) return new create_dice (dir);
 	if (strcmp (name, CREATE_GRID) == 0) return new create_grid (dir);
 	if (strcmp (name, CREATE_DECK) == 0) return new create_deck (dir);
+	if (strcmp (name, DEFAULT_RECTANGLE_FOREGROUND) == 0) return new default_colour (& board -> default_rectangle_foreground_colour);
+	if (strcmp (name, DEFAULT_RECTANGLE_BACKGROUND) == 0) return new default_colour (& board -> default_rectangle_background_colour);
+	if (strcmp (name, DEFAULT_CIRCLE_FOREGROUND) == 0) return new default_colour (& board -> default_circle_foreground_colour);
+	if (strcmp (name, DEFAULT_CIRCLE_BACKGROUND) == 0) return new default_colour (& board -> default_circle_background_colour);
+	if (strcmp (name, DEFAULT_PICTURE_FOREGROUND) == 0) return new default_colour (& board -> default_picture_foreground_colour);
+	if (strcmp (name, DEFAULT_PICTURE_BACKGROUND) == 0) return new default_colour (& board -> default_picture_background_colour);
+	if (strcmp (name, DEFAULT_TEXT_FOREGROUND) == 0) return new default_colour (& board -> default_text_foreground_colour);
+	if (strcmp (name, DEFAULT_TEXT_BACKGROUND) == 0) return new default_colour (& board -> default_text_background_colour);
+	if (strcmp (name, DEFAULT_DECK_FOREGROUND) == 0) return new default_colour (& board -> default_deck_foreground_colour);
+	if (strcmp (name, DEFAULT_DECK_BACKGROUND) == 0) return new default_colour (& board -> default_deck_background_colour);
+	if (strcmp (name, DEFAULT_GRID_FOREGROUND) == 0) return new default_colour (& board -> default_grid_foreground_colour);
+	if (strcmp (name, DEFAULT_GRID_BACKGROUND) == 0) return new default_colour (& board -> default_grid_background_colour);
+	if (strcmp (name, DEFAULT_DICE_FOREGROUND) == 0) return new default_colour (& board -> default_dice_foreground_colour);
+	if (strcmp (name, DEFAULT_DICE_BACKGROUND) == 0) return new default_colour (& board -> default_dice_background_colour);
+	if (strcmp (name, DEFAULT_TETRAHEDRON_FOREGROUND) == 0) return new default_colour (& board -> default_tetrahedron_foreground_colour);
+	if (strcmp (name, DEFAULT_TETRAHEDRON_BACKGROUND) == 0) return new default_colour (& board -> default_tetrahedron_background_colour);
+	if (strcmp (name, DEFAULT_CUBE_FOREGROUND) == 0) return new default_colour (& board -> default_cube_foreground_colour);
+	if (strcmp (name, DEFAULT_CUBE_BACKGROUND) == 0) return new default_colour (& board -> default_cube_background_colour);
+	if (strcmp (name, DEFAULT_OCTAHEDRON_FOREGROUND) == 0) return new default_colour (& board -> default_octahedron_foreground_colour);
+	if (strcmp (name, DEFAULT_OCTAHEDRON_BACKGROUND) == 0) return new default_colour (& board -> default_octahedron_background_colour);
+	if (strcmp (name, DEFAULT_DELTAHEDRON_FOREGROUND) == 0) return new default_colour (& board -> default_deltahedron_foreground_colour);
+	if (strcmp (name, DEFAULT_DELTAHEDRON_BACKGROUND) == 0) return new default_colour (& board -> default_deltahedron_background_colour);
+	if (strcmp (name, DEFAULT_DELTAHEDRON10_FOREGROUND) == 0) return new default_colour (& board -> default_deltahedron_10_foreground_colour);
+	if (strcmp (name, DEFAULT_DELTAHEDRON10_BACKGROUND) == 0) return new default_colour (& board -> default_deltahedron_10_background_colour);
+	if (strcmp (name, DEFAULT_DODECAHEDRON_FOREGROUND) == 0) return new default_colour (& board -> default_dodecahedron_foreground_colour);
+	if (strcmp (name, DEFAULT_DODECAHEDRON_BACKGROUND) == 0) return new default_colour (& board -> default_dodecahedron_background_colour);
+	if (strcmp (name, DEFAULT_ICOSAHEDRON_FOREGROUND) == 0) return new default_colour (& board -> default_icosahedron_foreground_colour);
+	if (strcmp (name, DEFAULT_ICOSAHEDRON_BACKGROUND) == 0) return new default_colour (& board -> default_icosahedron_background_colour);
 	if (strcmp (name, "diagnostics") == 0) return new diagnostics ();
 	return NULL;
 }
@@ -714,3 +829,29 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 boarder_service_class :: ~ boarder_service_class (void) {
 	if (board != 0) delete board; board = 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

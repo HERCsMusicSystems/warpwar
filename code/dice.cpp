@@ -13,7 +13,7 @@ dice_token :: ~ dice_token (void) {printf ("	DELETING DICE [%i]\n", sides);}
 
 bool dice_token :: should_save_size (void) {return false;}
 double dice_token :: default_scaling (void) {return 64.0;}
-void dice_token :: creation_call (FILE * tc) {
+void dice_token :: creation_call (boarder * board, FILE * tc) {
 	if (sides == 0) {fprintf (tc, "[%s %s]\n", CREATE_DICE, atom -> name ()); return;}
 	if (multiplier != 1) {fprintf (tc, "[%s %s %i %i %i]\n", CREATE_DICE, atom -> name (), sides, shift, multiplier); return;}
 	if (shift != 1) {fprintf (tc, "[%s %s %i %i]\n", CREATE_DICE, atom -> name (), sides, shift); return;}
@@ -312,6 +312,34 @@ rect dice_token :: get_bounding_box (void) {
 }
 
 int dice_token :: randomize_side (void) {if (sides > 0) return side = multiplier * (rand () % sides + shift); return side = rand () % 6 + 1;}
+
+colour dice_token :: default_foreground_colour (boarder * board) {
+	if (board == 0) return default_foreground ();
+	switch (sides) {
+	case 0: return board -> default_dice_foreground_colour; break;
+	case 4: return board -> default_tetrahedron_foreground_colour; break;
+	case 6: return board -> default_cube_foreground_colour; break;
+	case 8: return board -> default_octahedron_foreground_colour; break;
+	case 10: return multiplier != 1 ? board -> default_deltahedron_10_foreground_colour : board -> default_deltahedron_foreground_colour; break;
+	case 12: return board -> default_dodecahedron_foreground_colour; break;
+	case 20: return board -> default_icosahedron_foreground_colour; break;
+	default: return board -> default_dice_foreground_colour; break;
+	}
+}
+
+colour dice_token :: default_background_colour (boarder * board) {
+	if (board == 0) return default_background ();
+	switch (sides) {
+	case 0: return board -> default_dice_background_colour; break;
+	case 4: return board -> default_tetrahedron_background_colour; break;
+	case 6: return board -> default_cube_background_colour; break;
+	case 8: return board -> default_octahedron_foreground_colour; break;
+	case 10: return multiplier != 1 ? board -> default_deltahedron_10_background_colour : board -> default_deltahedron_background_colour; break;
+	case 12: return board -> default_dodecahedron_background_colour; break;
+	case 20: return board -> default_icosahedron_background_colour; break;
+	default: return board -> default_dice_background_colour; break;
+	}
+}
 
 
 
