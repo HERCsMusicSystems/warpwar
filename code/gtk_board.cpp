@@ -288,6 +288,7 @@ void create_main_windows (void) {
 extern int token_counter;
 
 int main (int args, char * argv []) {
+//	srand (time (0));
 	gtk_init (& args, & argv);
 
 	PrologRoot * root = new PrologRoot ();

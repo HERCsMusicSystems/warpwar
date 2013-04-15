@@ -265,7 +265,7 @@ public:
 	PrologAtom * rotation_atom;
 	PrologAtom * side_atom, * roll_atom;
 	PrologAtom * indexing_atom, * no_indexing_atom, * indexed_atom;
-	PrologAtom * shuffle_atom, * insert_atom, * release_atom, * select_deck_atom;
+	PrologAtom * shuffle_atom, * insert_atom, * release_atom, *release_random_atom, * select_deck_atom;
 	boarder_token * token;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -436,6 +436,13 @@ public:
 			if (parameters -> isVar ()) parameters -> setAtom (btp -> atom);
 			return true;
 		}
+		if (atom -> getAtom () == release_random_atom) {
+			boarder_token * btp = board -> release_random_token_from_deck (token);
+			if (btp == 0) return false;
+			if (parameters -> isPair ()) parameters = parameters -> getLeft ();
+			if (parameters -> isVar ()) parameters -> setAtom (btp -> atom);
+			return true;
+		}
 		return false;
 	}
 	token_actions (PrologDirectory * directory) {
@@ -445,7 +452,7 @@ public:
 		rotation_atom = 0;
 		side_atom = roll_atom = 0;
 		indexing_atom = no_indexing_atom = indexed_atom = 0;
-		shuffle_atom = insert_atom = release_atom = select_deck_atom = 0;
+		shuffle_atom = insert_atom = release_atom = release_random_atom = select_deck_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -469,6 +476,7 @@ public:
 			shuffle_atom = directory -> searchAtom (SHUFFLE);
 			insert_atom = directory -> searchAtom (INSERT);
 			release_atom = directory -> searchAtom (RELEASE);
+			release_random_atom = directory -> searchAtom (RELEASE_RANDOM);
 			select_deck_atom = directory -> searchAtom (SELECT_DECK);
 		}
 	}

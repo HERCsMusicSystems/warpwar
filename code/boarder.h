@@ -65,6 +65,7 @@
 #define SHUFFLE "Shuffle"
 #define INSERT "Insert"
 #define RELEASE "Release"
+#define RELEASE_RANDOM "ReleaseRandom"
 #define CREATE_RECTANGLE "CreateRectangle"
 #define CREATE_CIRCLE "CreateCircle"
 #define CREATE_PICTURE "CreatePicture"
@@ -166,6 +167,7 @@ public:
 	bool transfer_token_to_deck (boarder_token * deck, boarder_token * token);
 	void transfer_selection_to_deck (boarder_token * deck);
 	boarder_token * release_token_from_deck (boarder_token * deck);
+	boarder_token * release_random_token_from_deck (boarder_token * deck);
 	void erase (void);
 	bool save (char * location);
 	void draw (cairo_t * cr, boarder_viewport * viewport);
@@ -225,6 +227,7 @@ public:
 	virtual bool can_insert (void);
 	virtual boarder_token * insert (boarder_token * token);
 	virtual boarder_token * release (void);
+	virtual boarder_token * release_random (void);
 	virtual void shuffle (void);
 	colour default_foreground (void);
 	colour default_background (void);
@@ -256,12 +259,15 @@ class deck_token : public boarder_token {
 protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 	boarder_token * tokens;
+	int get_token_count (void);
+	boarder_token * get_from_deck (int position);
 public:
 	char * text;
 	virtual void creation_call (boarder * board, FILE * tc);
 	virtual bool can_insert (void);
 	virtual boarder_token * insert (boarder_token * token);
 	virtual boarder_token * release (void);
+	virtual boarder_token * release_random (void);
 	virtual void shuffle (void);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);

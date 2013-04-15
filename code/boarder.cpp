@@ -279,6 +279,16 @@ boarder_token * boarder :: release_token_from_deck (boarder_token * deck) {
 	return btp;
 }
 
+boarder_token * boarder :: release_random_token_from_deck (boarder_token * deck) {
+	if (! deck -> can_insert ()) return 0;
+	boarder_token * btp = deck -> release_random ();
+	if (btp == 0) return 0;
+	btp -> next = tokens;
+	tokens = btp;
+	btp -> set_position (deck -> get_location () . position);
+	return btp;
+}
+
 //////////////
 // VIEWPORT //
 //////////////
@@ -362,6 +372,7 @@ boarder_token :: ~ boarder_token (void) {
 bool boarder_token :: can_insert (void) {return false;}
 boarder_token * boarder_token :: insert (boarder_token * token) {return 0;}
 boarder_token * boarder_token :: release (void) {return 0;}
+boarder_token * boarder_token :: release_random (void) {return 0;}
 void boarder_token :: shuffle (void) {}
 
 void boarder_token :: save (boarder * board, FILE * tc) {
@@ -645,6 +656,32 @@ bool deck_token :: can_insert (void) {return true;}
 boarder_token * deck_token :: insert (boarder_token * token) {if (token == 0) return 0; token -> next = tokens; return tokens = token;}
 boarder_token * deck_token :: release (void) {boarder_token * ret = tokens; if (tokens) tokens = tokens -> next; if (ret) ret -> next = 0; return ret;}
 void deck_token :: shuffle (void) {
+	if (tokens == 0) return;
+	boarder_token * accumulator = 0;
+	boarder_token * bp = release_random ();
+	while (bp != 0) {bp -> next = accumulator; accumulator = bp; bp = release_random ();}
+	tokens = accumulator;
+}
+
+boarder_token * deck_token :: release_random (void) {
+	if (tokens == 0) return 0;
+	return get_from_deck (rand () % get_token_count ());
+}
+
+int deck_token :: get_token_count (void) {
+	boarder_token * bp = tokens;
+	int counter = 0;
+	while (bp) {bp = bp -> next; counter++;}
+	return counter;
+}
+
+boarder_token * deck_token :: get_from_deck (int position) {
+	if (tokens == 0) return 0;
+	boarder_token * bp = tokens;
+	if (position < 1) {tokens = tokens -> next; return bp;}
+	while (bp != 0 && position > 1) {bp = bp -> next; position--;}
+	if (bp != 0) {boarder_token * ret = bp -> next; if (ret != 0) bp -> next = ret -> next; else bp -> next = 0; return ret;}
+	return 0;
 }
 
 colour deck_token :: default_foreground_colour (boarder * board) {return board ? board -> default_deck_foreground_colour : default_foreground ();}
