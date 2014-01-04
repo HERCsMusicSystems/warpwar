@@ -27,6 +27,7 @@
 #define RETURN return 0;
 #endif
 
+/*
 #ifdef LINUX_OPERATING_SYSTEM
 #ifdef MAC_OPERATING_SYSTEM
 #include "mac_midi.h"
@@ -36,12 +37,14 @@ mac_midi_service midi_service ("STUDIO");
 linux_midi_service midi_service;
 #endif
 #endif
+*/
 
 #ifdef WINDOWS_OPERATING_SYSTEM
 #include "windows_midi.h"
 windows_midi_service midi_service;
 #endif
 
+/*
 prolog_midi_reader * midi_reader = NULL;
 
 volatile bool running = false;
@@ -59,6 +62,7 @@ RUNNER_RETURN transport_runner (RUNNER_PARAMETER root) {
 	running = true;
 	RETURN
 }
+*/
 
 #ifdef LINUX_OPERATING_SYSTEM
 typedef void * (* runner_procedure) (RUNNER_PARAMETER);
@@ -78,8 +82,8 @@ void beginthread (runner_procedure runner, int value, PrologRoot * root) {
 
 
 #ifdef INTERNAL_RESOURCES
-#include "neural.h"
-#include "notes.h"
+//#include "neural.h"
+//#include "notes.h"
 //#ifdef LINUX_OPERATING_SYSTEM
 //#include "prolog_mysql.h"
 //#endif
@@ -130,30 +134,39 @@ extern char resource_6 [];
 extern char resource_7 [];
 extern char resource_8 [];
 extern char resource_9 [];
+extern char resource_10 [];
+extern char resource_11 [];
+extern char resource_12 [];
 class resource_loader_class : public PrologResourceLoader {
 public:
 	char * load (char * name) {
 		char * ret = NULL;
 		if (strcmp (name, "studio") == 0) ret = resource_0;
-		if (strcmp (name, "store") == 0) ret = resource_1;
-		if (strcmp (name, "f1") == 0) ret = resource_2;
-		if (strcmp (name, "help") == 0) ret = resource_3;
-		if (strcmp (name, "record") == 0) ret = resource_4;
-		if (strcmp (name, "neural") == 0) ret = resource_5;
-		if (strcmp (name, "keyboard") == 0) ret = resource_6;
-		if (strcmp (name, "notes") == 0) ret = resource_7;
-		if (strcmp (name, "sql") == 0) ret = resource_8;
-		if (strcmp (name, "boarder") == 0) ret = resource_9;
+		if (strcmp (name, "conductor") == 0) ret = resource_1;
+		if (strcmp (name, "midi") == 0) ret = resource_2;
+		if (strcmp (name, "http") == 0) ret = resource_3;
+		if (strcmp (name, "store") == 0) ret = resource_4;
+		if (strcmp (name, "f1") == 0) ret = resource_5;
+		if (strcmp (name, "help") == 0) ret = resource_6;
+		if (strcmp (name, "record") == 0) ret = resource_7;
+		if (strcmp (name, "neural") == 0) ret = resource_8;
+		if (strcmp (name, "keyboard") == 0) ret = resource_9;
+		if (strcmp (name, "sql") == 0) ret = resource_10;
+		if (strcmp (name, "test") == 0) ret = resource_11;
+		if (strcmp (name, "boarder") == 0) ret = resource_12;
 		if (strcmp (name, "studio.prc") == 0) ret = resource_0;
-		if (strcmp (name, "store.prc") == 0) ret = resource_1;
-		if (strcmp (name, "f1.prc") == 0) ret = resource_2;
-		if (strcmp (name, "help.prc") == 0) ret = resource_3;
-		if (strcmp (name, "record.prc") == 0) ret = resource_4;
-		if (strcmp (name, "neural.prc") == 0) ret = resource_5;
-		if (strcmp (name, "keyboard.prc") == 0) ret = resource_6;
-		if (strcmp (name, "notes.prc") == 0) ret = resource_7;
-		if (strcmp (name, "sql.prc") == 0) ret = resource_8;
-		if (strcmp (name, "boarder.prc") == 0) ret = resource_9;
+		if (strcmp (name, "conductor.prc") == 0) ret = resource_1;
+		if (strcmp (name, "midi.prc") == 0) ret = resource_2;
+		if (strcmp (name, "http.prc") == 0) ret = resource_3;
+		if (strcmp (name, "store.prc") == 0) ret = resource_4;
+		if (strcmp (name, "f1.prc") == 0) ret = resource_5;
+		if (strcmp (name, "help.prc") == 0) ret = resource_6;
+		if (strcmp (name, "record.prc") == 0) ret = resource_7;
+		if (strcmp (name, "neural.prc") == 0) ret = resource_8;
+		if (strcmp (name, "keyboard.prc") == 0) ret = resource_9;
+		if (strcmp (name, "sql.prc") == 0) ret = resource_10;
+		if (strcmp (name, "test.prc") == 0) ret = resource_11;
+		if (strcmp (name, "boarder.prc") == 0) ret = resource_12;
 		return ret;
 	}
 } resource_loader;
@@ -162,8 +175,8 @@ public:
 class service_class_loader_class : public PrologServiceClassLoader {
 public:
 	PrologServiceClass * load (char * name) {
-		if (strcmp (name, "neural") == 0) return new neural_service ();
-		if (strcmp (name, "notes") == 0) return new NotesServiceClass ();
+		//if (strcmp (name, "neural") == 0) return new neural_service ();
+		//if (strcmp (name, "notes") == 0) return new NotesServiceClass ();
 		if (strcmp (name, "boarder") == 0) return new boarder_service_class ();
 		//#ifdef LINUX_OPERATING_SYSTEM
 		//#ifndef MAC_OPERATING_SYSTEM
@@ -177,6 +190,7 @@ public:
 #endif
 
 #ifdef LINUX_OPERATING_SYSTEM
+#include "prolog_linux_console.h"
 PrologLinuxConsole * console = NULL;
 #endif
 #ifdef WINDOWS_OPERATING_SYSTEM
@@ -186,8 +200,8 @@ PrologWindowsConsole * console = NULL;
 RUNNER_RETURN prc_runner (RUNNER_PARAMETER parameter) {
 	PrologRoot * root = (PrologRoot *) parameter;
 	root -> resolution ("boarder.prc");
-	midi_service . setOutputPort (-1);
-	midi_service . setInputPort (-1);
+//	midi_service . setOutputPort (-1);
+//	midi_service . setInputPort (-1);
 	gtk_main_quit ();
 	RETURN
 }
@@ -287,9 +301,12 @@ void create_main_windows (void) {
 
 extern int token_counter;
 
+#include <X11/Xlib.h>
+
 int main (int args, char * argv []) {
 //	srand (time (0));
 	gtk_init (& args, & argv);
+	XInitThreads ();
 
 	PrologRoot * root = new PrologRoot ();
 	root -> get_search_directories_from_environment ("PRC_MODULE_SEARCH_PATHS");
@@ -298,37 +315,13 @@ int main (int args, char * argv []) {
 	root -> setServiceClassLoader (& service_class_loader);
 #endif
 	root -> set_uap32_captions ();
-	int threads_type = 2;
-	for (int ind = 1; ind < args; ind++) {
-		if (strcmp (argv [ind], "*gt") == 0) threads_type = 0;
-		else if (strcmp (argv [ind], "*ot") == 0) threads_type = 1;
-		else if (strcmp (argv [ind], "*nt") == 0) threads_type = 2;
-		else root -> addArg (argv [ind]);
-	}
-	//*
-	switch (threads_type) {
-		case 0: root -> greenThreads (50); break;
-		case 1: root -> opaqueThreads (50); break;
-		case 2: root -> nativeThreads (50); break;
-		default: break;
-	}
-	
 #ifdef LINUX_OPERATING_SYSTEM
-	console = threads_type == 2 ? new PrologLinuxConsole () : new PrologLinuxConsole (10);
+	console = new PrologLinuxConsole ();
 #endif
 #ifdef WINDOWS_OPERATING_SYSTEM
-	console = new PrologWindowsConsole (10);
+	console = new PrologWindowsConsole ();
 #endif
-	
-	root -> setMidi (midi_service . getReceptionLine (), midi_service . getTransmissionLine ());
-	root -> setMidiPortServiceClass (& midi_service);
-	
-	if (threads_type == 1) beginthread (transport_runner, 0, root);
-	midi_reader = new prolog_midi_reader (root);
-	root -> setMidiReader (midi_reader);
-	if (root -> pool == NULL) midi_service . set_reader (midi_reader);
-	
-	console -> open ();
+//	console -> open ();
 	root -> insertCommander (console);
 	beginthread (prc_runner, 0, root);
 	
@@ -336,8 +329,8 @@ int main (int args, char * argv []) {
 	gtk_main ();
 	printf ("GTK MAIN LOOP STOPPED\n");
 	
-	console -> stop ();
-
+//	console -> stop ();
+/*
 	if (running) {
 		running = false;
 		while (! running) {
@@ -353,7 +346,9 @@ int main (int args, char * argv []) {
 
 	root -> removeThreads ();
 	if (root -> getCommander () != NULL) delete root -> getCommander ();
-	if (midi_reader != NULL) delete midi_reader;
+//	if (midi_reader != NULL) delete midi_reader;
+*/
+	if (root -> getCommander () != 0) delete root -> getCommander ();
 	delete root;
 	//	if (object_left ())
 	drop_object_counter ();
@@ -370,3 +365,4 @@ int main_bak (int argc, char * * argv) {
 	gtk_main ();
 	return 0;
 }
+

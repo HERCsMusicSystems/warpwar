@@ -8,7 +8,7 @@ program boarder #machine := "boarder" [
 					Location Size Position Scaling Rotation Sides Side Roll Shuffle Insert Release ReleaseRandom SelectDeck
 					Lock Unlock Locked? Select Deselect Selected?
 					mariner viking voyager mix
-					diagnostics test
+					diagnostics test sv
 					
 					DefaultRectangleForeground DefaultRectangleBackground
 					DefaultCircleForeground DefaultCircleBackground
@@ -97,6 +97,8 @@ program boarder #machine := "boarder" [
 	[diagnostics]
 ]
 
+[[sv] [SaveBoard "sonda.txt"]]
+
 end := [
 			[preprocessor f1]
 			[auto_atoms]
@@ -104,7 +106,7 @@ end := [
 			[command]
 			[SELECT
 				[[Clean?] [show "Nothing to save."]]
-				[[SaveBoard "sonda.txt"] [show "Board saved."]]
+				[[show [SaveBoard "sonda.txt"]] [show "Board saved."]]
 			]
 		] .
 

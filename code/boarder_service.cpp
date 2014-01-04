@@ -690,6 +690,20 @@ class background_colour : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
+		if (parameters -> isVar ()) {
+			parameters -> setPair ();
+			parameters -> getLeft () -> setInteger (colour_to_int (board -> background_colour . red));
+			parameters = parameters -> getRight ();
+			parameters -> setPair ();
+			parameters -> getLeft () -> setInteger (colour_to_int (board -> background_colour . green));
+			parameters = parameters -> getRight ();
+			parameters -> setPair ();
+			parameters -> getLeft () -> setInteger (colour_to_int (board -> background_colour . blue));
+			parameters = parameters -> getRight ();
+			parameters -> setPair ();
+			parameters -> getLeft () -> setInteger (colour_to_int (board -> background_colour . alpha));
+			return true;
+		}
 		if (! parameters -> isPair ()) return false;
 		PrologElement * red = parameters -> getLeft (); parameters = parameters -> getRight ();
 		if (! parameters -> isPair ()) return false;
@@ -736,7 +750,7 @@ public: bool code (PrologElement * parameters, PrologResolution * resolution) {r
 };
 
 class erase : public PrologNativeCode {
-public: bool code (PrologElement * parameters, PrologResolution * resolution) {if (board == 0) return false; board -> erase (); boarder_clean = false; return true;}
+public: bool code (PrologElement * parameters, PrologResolution * resolution) {if (board == 0) return false; board -> erase (); boarder_clean = true; return true;}
 };
 
 class select_deck : public PrologNativeCode {

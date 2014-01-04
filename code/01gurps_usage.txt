@@ -1,0 +1,12 @@
+COMMANDS:
+
+[Viewport (*)atom ("name") (x) (y) (width) (height)] => create a viewport
+	[viewport] => close the viewport
+	[viewport Location x y width height]
+	[viewport Location : *x] => [x y width height]
+	[viewport Position x y]
+	[viewport Position : *x] => [x y]
+	[viewport Size width height]
+	[viewport Size : *x] => [width height]
+	[viewport Scaling double]
+	[viewport Scaling : *double] => scaling

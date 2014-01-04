@@ -6,16 +6,15 @@ pc = ../../prolog/code/prolog/
 objects = \
 	$(pi)prolog_dll_loader.o\
 	$(pi)midi_stream.o $(pi)object_tracker.o $(pi)prolog_atom.o $(pi)prolog_command.o $(pi)prolog_directory.o \
-	$(pi)prolog_element.o $(pi)prolog_loader.o $(pi)prolog_match.o $(pi)prolog_midi_command.o \
+	$(pi)prolog_element.o $(pi)prolog_loader.o $(pi)prolog_match.o \
 	$(pi)prolog_native_code.o $(pi)prolog_query.o $(pi)prolog_reader.o $(pi)prolog_resolution.o \
-	$(pi)prolog_resolution_pool.o $(pi)prolog_root.o $(pi)prolog_service_class.o \
+	$(pi)prolog_root.o $(pi)prolog_service_class.o \
 	$(pi)prolog_studio.o \
 	$(pi)prolog_transport.o \
-	$(pi)prolog_transport_pool.o $(pi)prolog_variable.o \
+	$(pi)prolog_variable.o \
 	$(pi)prolog_linux_console.o\
-	$(pi)midi_command_prompt.o\
-	$(pi)neural.o $(pi)encoder.o $(pi)notes.o\
-	$(pi)linux_midi.o prolog_resources.o boarder_service.o boarder.o
+	$(pi)prolog_neural.o $(pi)encoder.o\
+	prolog_resources.o boarder_service.o boarder.o
 
 objectsosx = \
 	$(piosx)prolog_dll_loader.o\
@@ -33,14 +32,17 @@ objectsosx = \
 
 prc_objects = \
 	$(pc)studio.prc\
+	$(pc)conductor.prc\
+	$(pc)midi.prc\
+	$(pc)http.prc\
 	$(pc)store.prc\
 	$(pc)f1.prc\
 	$(pc)help.prc\
 	$(pc)record.prc\
 	$(pc)neural.prc\
 	$(pc)keyboard.prc\
-	$(pc)notes.prc\
 	$(pc)sql.prc\
+	$(pc)test.prc\
 	../code/boarder.prc
 
 
@@ -77,6 +79,12 @@ prolog_resources.o: prolog_resources.cpp
 boarder.o: ../code/boarder.h ../code/boarder.cpp
 	g++ -Wno-write-strings -I$(piosx) -I$(pc) ../code/boarder.cpp -c -o boarder.o `pkg-config --cflags gtk+-2.0`
 
+dice.o: ../code/boarder.h ../code/dice.cpp
+	g++ -Wno-write-strings -I$(piosx) -I$(pc) ../code/dice.cpp -c -o dice.o `pkg-config --cflags gtk+-2.0`
+
+grid.o: ../code/boarder.h ../code/grid.cpp
+	g++ -Wno-write-strings -I$(piosx) -I$(pc) ../code/grid.cpp -c -o grid.o `pkg-config --cflags gtk+-2.0`
+
 boarder_service.o: ../code/boarder.h ../code/boarder_service.h ../code/boarder_service.cpp
 	g++ -I$(pc) -I$(piosx) -Wno-write-strings ../code/boarder_service.cpp -c -o boarder_service.o `pkg-config --cflags gtk+-2.0`
 
@@ -90,5 +98,13 @@ gtk_board.o: ../code/gtk_board.cpp ../code/boarder.h ../code/boarder_service.h
 boardlinux: ~/bin/boarder
 
 ~/bin/boarder: gtk_board.o $(objects)
-	g++ -lreadline gtk_board.o $(objects) -o ~/bin/boarder `pkg-config --libs gtk+-2.0`
+	g++ gtk_board.o $(objects) -o ~/bin/boarder -lpthread -ldl -lreadline `pkg-config --libs gtk+-2.0`
+
+
+01gurps: ~/bin/01gurps
+
+01gurps_objects = gtk_board.o dice.o grid.o
+
+~/bin/01gurps: $(01gurps_objects) $(objects)
+	g++ $(01gurps_objects) $(objects) -o ~/bin/01gurps -lpthread -ldl -lreadline -lX11 `pkg-config --libs gtk+-2.0`
 
