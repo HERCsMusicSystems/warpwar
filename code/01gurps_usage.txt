@@ -14,11 +14,61 @@ COMMANDS:
 [BackgroundColour red green blue (alpha)] ; all integers 0..255, alpha optional
 [BackgroundColour : *x] => [red green blue alpha] all integers
 
+[Default***Background/Foreground red green blue (alpha)]    => all integers 0..255, alpha optional defualt = 255
+[Default***Background/Foreground : *x]                      => [red green blue alpha] all integers
+*** = Rectangle, Circle, Picture, Text, Deck, Grid,
+      Dice, Tetrahedron, Cube, Octahedron, Deltahedron, Deltahedron10, Dodecahedron, Icosahedron
+
 [Repaint]
 
 [SaveBoard "file_name.txt"]
 
-[Clean]  ; makes the board clean (not dirty)
-[Clean?] ; fails if the board dirty
-[Erase]  ; erases the entire board and makes it clean
+[Clean]         ; makes the board clean (not dirty)
+[Clean?]        ; fails if the board dirty
+[Erase]         ; erases the entire board and makes it clean
+[SelectDeck]    ; deselects the current board deck
 
+TOKEN ACTIONS:
+Applicable to: rectangle, circle, picture, dice, grid, text and deck.
+
+[token]                                             => close, remove, delete
+[token Location x y width height]                   => location on the board and dimension
+[token Location : *x]                               => returns location and dimension
+[token Position x y]                                => location on the board
+[token Position : *x]                               => returns location
+[token Size width height]                           => dimension
+[token Size : *x]                                   => returns dimension
+[token BackgroundColour red green blue (alpha)]     => background colour (alpha optional default = 255)
+[token BackgroundColour : *x]                       => returns background colour (including alpha)
+[token ForegroundColour red green blue (alpha)]     => foreground colour (alpha optional default = 255)
+[token ForegroundColour : *x]                       => returns foreground colour (including alpha)
+[token Scaling scale]                               => scaling (double/integer 1.0 = original scaling)
+[token Scaling : *x]                                => returns scaling
+[token Rotation rotatin]                            => rotation (double/integer 24.0 = 2PI)
+[token Rotation : *x]                               => returns rotation
+[token Side side]                                   => selects side of multi-sided tokens (dices, pictures)
+[token Side : *x]                                   => return side
+[token Indexing x y rows columns]                   => indexing
+[token Indexing : *x]                               => return indexing
+[token NoIndexing]                                  => cancels indexing
+[token Indexed?]                                    => fails in not indexed
+[token Roll ((:) *x)]                               => select side at random (and optionally returns it)
+[token (Lock | Unlock | Locked?)]                   => locking / unlocking, test fails if un-locked
+[token (Select | Deselect | Selected?)]             => selecting / deselecting, test fails if deselected
+[token SelectDeck]                                  => select this token as the current board deck
+[token Shuffle]                                     => shuffle if the token is a deck, otherwise fails
+[token Insert]                                      => inserts token into board's deck, otherwise fails
+[token Insert deck]                                 => inserts token into deck, otherwise fails
+[deck Insert token]                                 => inserts token into deck, otherwise fails
+[deck Release ((:) *x)]             => release a token from deck (and optionally return it), otherwise fail
+[deck ReleaseRandom ((:) *x)]       => release a random token from deck (and optionally return it), otherwise fail
+
+CREATING TOKENS:
+
+[CreateRectangle (*)atom]                           => creates a rectangle
+[CreateCircle (*)atom]                              => creates a circle
+[CreatePicture (*)atom (sides) "location" (sides)]  => creates a milti-sided picture
+[CreateDice (*)atom (sides (shift (multiplier)))]   => creates a dice
+[CreateGrid (*)atom]                                => creates a grid
+[CreateText (*)atom "text"]                         => creates a text
+[CreateDeck (*)atom ("text")]                       => creates a deck

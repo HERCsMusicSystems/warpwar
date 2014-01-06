@@ -2,6 +2,7 @@
 #ifndef _BOARDER_
 #define _BOARDER_
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "prolog.h"
@@ -228,7 +229,7 @@ public:
 	virtual boarder_token * insert (boarder_token * token);
 	virtual boarder_token * release (void);
 	virtual boarder_token * release_random (void);
-	virtual void shuffle (void);
+	virtual bool shuffle (void);
 	colour default_foreground (void);
 	colour default_background (void);
 	virtual colour default_foreground_colour (boarder * board) = 0;
@@ -268,7 +269,7 @@ public:
 	virtual boarder_token * insert (boarder_token * token);
 	virtual boarder_token * release (void);
 	virtual boarder_token * release_random (void);
-	virtual void shuffle (void);
+	virtual bool shuffle (void);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
 	deck_token (PrologAtom * atom, char * text);

@@ -20,7 +20,9 @@ void cairo_rounded_rectangle (cairo_t * cr, double x, double y, double width, do
 // POINT RECT COLOUR //
 ///////////////////////
 
+#ifndef WINDOWS_OPERATING_SYSTEM
 double abs (double value) {return value >= 0.0 ? value : - value;}
+#endif
 
 point :: point (void) {x = y = 0.0;}
 point :: point (double x, double y) {this -> x = x; this -> y = y;}
@@ -324,13 +326,13 @@ void boarder_viewport :: save (FILE * tc) {
 void boarder_viewport :: setWindowLocation (rect location) {
 	this -> location = location;
 	if (window == 0) return;
-	gtk_window_move (GTK_WINDOW (window), location . position . x, location . position . y);
-	gtk_window_resize (GTK_WINDOW (window), location . size . x, location . size . y);
+	gtk_window_move (GTK_WINDOW (window), (int) location . position . x, (int) location . position . y);
+	gtk_window_resize (GTK_WINDOW (window), (int) location . size . x, (int) location . size . y);
 }
 void boarder_viewport :: setWindowSize (point size) {
 	this -> location . size = size;
 	if (window == 0) return;
-	gtk_window_resize (GTK_WINDOW (window), location . size . x, location . size . y);
+	gtk_window_resize (GTK_WINDOW (window), (int) location . size . x, (int) location . size . y);
 }
 void boarder_viewport :: setBoardPosition (point position) {this -> board_position = position;}
 
@@ -373,7 +375,7 @@ bool boarder_token :: can_insert (void) {return false;}
 boarder_token * boarder_token :: insert (boarder_token * token) {return 0;}
 boarder_token * boarder_token :: release (void) {return 0;}
 boarder_token * boarder_token :: release_random (void) {return 0;}
-void boarder_token :: shuffle (void) {}
+bool boarder_token :: shuffle (void) {return false;}
 
 void boarder_token :: save (boarder * board, FILE * tc) {
 	if (next) next -> save (board, tc);
@@ -655,12 +657,13 @@ void deck_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 bool deck_token :: can_insert (void) {return true;}
 boarder_token * deck_token :: insert (boarder_token * token) {if (token == 0) return 0; token -> next = tokens; return tokens = token;}
 boarder_token * deck_token :: release (void) {boarder_token * ret = tokens; if (tokens) tokens = tokens -> next; if (ret) ret -> next = 0; return ret;}
-void deck_token :: shuffle (void) {
-	if (tokens == 0) return;
+bool deck_token :: shuffle (void) {
+	if (tokens == 0) return true;
 	boarder_token * accumulator = 0;
 	boarder_token * bp = release_random ();
 	while (bp != 0) {bp -> next = accumulator; accumulator = bp; bp = release_random ();}
 	tokens = accumulator;
+	return true;
 }
 
 boarder_token * deck_token :: release_random (void) {

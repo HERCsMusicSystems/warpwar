@@ -240,8 +240,8 @@ public:
 		g_signal_connect (G_OBJECT (window), "button_press_event", G_CALLBACK (window_button_down_event), machine -> viewport);
 		g_signal_connect (G_OBJECT (window), "button_release_event", G_CALLBACK (window_button_up_event), machine -> viewport);
 		g_signal_connect (G_OBJECT (window), "motion_notify_event", G_CALLBACK (window_button_motion_event), machine -> viewport);
-		gtk_window_move (GTK_WINDOW (window), machine -> viewport -> location . position . x, machine -> viewport -> location . position . y);
-		gtk_window_resize (GTK_WINDOW (window), machine -> viewport -> location . size . x, machine -> viewport -> location . size . y);
+		gtk_window_move (GTK_WINDOW (window), (int) machine -> viewport -> location . position . x, (int) machine -> viewport -> location . position . y);
+		gtk_window_resize (GTK_WINDOW (window), (int) machine -> viewport -> location . size . x, (int) machine -> viewport -> location . size . y);
 		gtk_widget_show_all (window);
 
 		machine -> viewport -> window = window;
@@ -250,6 +250,8 @@ public:
 	}
 	viewport (PrologDirectory * directory) {this -> directory = directory;}
 };
+
+static char * token_action_code = "Token Action Code";
 
 class token_actions : public PrologNativeCode {
 public:
@@ -267,6 +269,8 @@ public:
 	PrologAtom * indexing_atom, * no_indexing_atom, * indexed_atom;
 	PrologAtom * shuffle_atom, * insert_atom, * release_atom, *release_random_atom, * select_deck_atom;
 	boarder_token * token;
+	static char * name (void) {return token_action_code;}
+	char * codeName (void) {return token_action_code;}
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
 		if (token == 0) return false;
@@ -295,6 +299,7 @@ public:
 			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (parameters -> isEarth ()) {token -> set_location (rect (x -> getInteger (), y -> getInteger (), width -> getInteger (), width -> getInteger ())); boarder_clean = false; return true;}
 			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
 			token -> set_location (rect (x -> getInteger (), y -> getInteger (), width -> getInteger (), height -> getInteger ()));
 			boarder_clean = false;
@@ -323,6 +328,7 @@ public:
 				return true;
 			}
 			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (parameters -> isEarth ()) {token -> set_size (point (width -> getInteger (), width -> getInteger ())); boarder_clean = false; return true;}
 			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
 			token -> set_size (point (width -> getInteger (), height -> getInteger ()));
 			boarder_clean = false;
@@ -413,9 +419,9 @@ public:
 			int ret = token -> randomize_side ();
 			boarder_clean = false;
 			if (parameters -> isEarth ()) return true;
-			parameters -> setPair ();
-			parameters -> getLeft () -> setInteger (ret);
-			return true;
+			if (parameters -> isPair ()) parameters = parameters -> getLeft ();
+			if (parameters -> isVar ()) {parameters -> setInteger (ret); return true;}
+			return false;
 		}
 		if (atom -> getAtom () == lock_atom) {token -> locked = true; boarder_clean = false; return true;}
 		if (atom -> getAtom () == unlock_atom) {token -> locked = false; boarder_clean = false; return true;}
@@ -424,10 +430,21 @@ public:
 		if (atom -> getAtom () == deselect_atom) {token -> selected = false; return true;}
 		if (atom -> getAtom () == is_selected_atom) {return token -> selected;}
 		if (atom -> getAtom () == select_deck_atom) {if (! token -> can_insert ()) return false; board -> deck = token; return true;}
-		if (atom -> getAtom () == shuffle_atom) {token -> shuffle (); return true;}
+		if (atom -> getAtom () == shuffle_atom) {return token -> shuffle ();}
 		if (atom -> getAtom () == insert_atom) {
-			if (board -> deck == 0) return false;
-			return board -> transfer_token_to_deck (board -> deck, token);
+			if (parameters -> isEarth ()) {
+				if (board -> deck == 0) return false;
+				return board -> transfer_token_to_deck (board -> deck, token);
+			}
+			if (! parameters -> isPair ()) return false;
+			PrologElement * deck_element = parameters -> getLeft (); if (! deck_element -> isAtom ()) return false;
+			PrologAtom * deck_atom = deck_element -> getAtom (); if (deck_atom == 0) return false;
+			PrologNativeCode * deck_machine = deck_atom -> getMachine (); if (deck_machine == 0) return false;
+			if (deck_machine -> codeName () != token_actions :: name ()) return false;
+			boarder_token * deck_token = ((token_actions *) deck_machine) -> token; if (deck_token == 0) return false;
+			if (deck_token -> can_insert ()) return board -> transfer_token_to_deck (deck_token, token);
+			if (token -> can_insert ()) return board -> transfer_token_to_deck (token, deck_token);
+			return false;
 		}
 		if (atom -> getAtom () == release_atom) {
 			boarder_token * btp = board -> release_token_from_deck (token);
@@ -686,41 +703,6 @@ public:
 	create_deck (PrologDirectory * directory) {this -> directory = directory;}
 };
 
-class background_colour : public PrologNativeCode {
-public:
-	bool code (PrologElement * parameters, PrologResolution * resolution) {
-		if (board == 0) return false;
-		if (parameters -> isVar ()) {
-			parameters -> setPair ();
-			parameters -> getLeft () -> setInteger (colour_to_int (board -> background_colour . red));
-			parameters = parameters -> getRight ();
-			parameters -> setPair ();
-			parameters -> getLeft () -> setInteger (colour_to_int (board -> background_colour . green));
-			parameters = parameters -> getRight ();
-			parameters -> setPair ();
-			parameters -> getLeft () -> setInteger (colour_to_int (board -> background_colour . blue));
-			parameters = parameters -> getRight ();
-			parameters -> setPair ();
-			parameters -> getLeft () -> setInteger (colour_to_int (board -> background_colour . alpha));
-			return true;
-		}
-		if (! parameters -> isPair ()) return false;
-		PrologElement * red = parameters -> getLeft (); parameters = parameters -> getRight ();
-		if (! parameters -> isPair ()) return false;
-		PrologElement * green = parameters -> getLeft (); parameters = parameters -> getRight ();
-		if (! parameters -> isPair ()) return false;
-		PrologElement * blue = parameters -> getLeft (); parameters = parameters -> getRight ();
-		if (! red -> isInteger () || ! green -> isInteger () || ! blue -> isInteger ()) return false;
-		if (parameters -> isPair ()) {
-			PrologElement * alpha = parameters -> getLeft ();
-			if (! alpha -> isInteger ()) return false;
-			board -> background_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger (), alpha -> getInteger ());
-		} else board -> background_colour = colour (red -> getInteger (), green -> getInteger (), blue -> getInteger ());
-		boarder_clean = false;
-		return true;
-	}
-};
-
 class repaint : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -802,7 +784,7 @@ void boarder_service_class :: init (PrologRoot * root) {
 PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	PrologDirectory * dir = root -> searchDirectory ("boarder");
 	if (strcmp (name, VIEWPORT) == 0) return new viewport (dir);
-	if (strcmp (name, BACKGROUND_COLOUR) == 0) return new background_colour ();
+	if (strcmp (name, BACKGROUND_COLOUR) == 0) return new default_colour (& board -> background_colour);
 	if (strcmp (name, REPAINT) == 0) return new repaint ();
 	if (strcmp (name, SAVE_BOARD) == 0) return new save_board ();
 	if (strcmp (name, CLEAN) == 0) return new clean ();
