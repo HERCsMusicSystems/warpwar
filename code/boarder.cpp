@@ -78,11 +78,12 @@ int token_counter = 0;
 // BOARD //
 ///////////
 
-boarder :: boarder (void) {
+boarder :: boarder (PrologRoot * root) {
 	background_colour = colour (0, 0, 255);
 	viewports = 0;
 	tokens = 0;
 	deck = 0;
+	this -> root = root;
 	default_dice_foreground_colour = colour (0, 0, 0); default_dice_background_colour = colour (255, 255, 255);
 	default_tetrahedron_foreground_colour = colour (255, 255, 255); default_tetrahedron_background_colour = colour (255, 0, 0);
 	default_cube_foreground_colour = colour (255, 255, 255); default_cube_background_colour = colour (0, 0, 255);

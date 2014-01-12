@@ -7,6 +7,8 @@ program boarder #machine := "boarder" [
 					CreateRectangle CreateCircle CreatePicture CreatePictures CreateText CreateDice CreateGrid CreateDeck
 					Location Size Position Scaling Rotation Sides Side Roll Shuffle Insert Release ReleaseRandom SelectDeck
 					Lock Unlock Locked? Select Deselect Selected?
+					DragAndDrop
+
 					mariner viking voyager mix
 					diagnostics test sv
 					
@@ -75,6 +77,10 @@ program boarder #machine := "boarder" [
 #machine CreateDeck := "CreateDeck"
 
 #machine diagnostics := "diagnostics"
+
+[[DragAndDrop : *command]
+	[show "action => " *command]
+]
 
 [[CreatePictures]]
 [[CreatePictures *scaling] [is_number *scaling]]

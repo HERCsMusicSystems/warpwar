@@ -201,24 +201,49 @@ static gint window_button_motion_event (GtkWidget * window, GdkEventButton * eve
 
 void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
 				 GtkSelectionData *data, guint ttype, guint time, gpointer *NA) {
-	printf ("RECEIVE\n");
+	gchar * ptr = (char *) data -> data;
+	if (board == 0) return;
+	PrologRoot * root = board -> root;
+	if (root == 0) return;
+	char command [4096];
+	PrologElement * query = root -> earth ();
+	while (strncmp (ptr, "file:///", 8) == 0) {
+		ptr += 7;
+		char * cp = command;
+		while (* ptr >= ' ') {
+			* cp++ = * ptr++;
+		}
+		* cp = '\0';
+		query = root -> pair (root -> text (command), query);
+		while (* ptr > '\0' && * ptr <= ' ') ptr++;
+	}
+	query = root -> pair (root -> integer ((int) y), query);
+	query = root -> pair (root -> integer ((int) x), query);
+	query = root -> pair (root -> atom ("DragAndDrop"), query);
+	query = root -> pair (root -> earth (), root -> pair (query, root -> earth ()));
+	root -> resolution (query);
+	delete query;
 }
 
-
 gboolean DnDdrop (GtkWidget *widget, GdkDragContext *context, gint x, gint y, guint time, gpointer *NA) {
-	printf ("DROP\n");
+//	printf ("DROP\n");
+	GdkAtom target_type;
+	if(context -> targets) {
+		target_type = GDK_POINTER_TO_ATOM (g_list_nth_data (context -> targets, 0));
+		gtk_drag_get_data (widget, context, target_type, time);
+//		printf ("GET DRAG DATA\n");
+	} else return FALSE;
 	return TRUE;
 }
 
-
 void DnDleave (GtkWidget *widget, GdkDragContext *context, guint time, gpointer *NA) {
-	printf ("LEAVE\n");
+//	printf ("LEAVE\n");
 }
 
 
 gboolean DnDmotion (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
 					GtkSelectionData *seld, guint ttype, guint time, gpointer *NA) {
-	printf ("MOTION\n");
+	//printf ("MOTION\n");
 	return TRUE;
 }
 
@@ -815,7 +840,7 @@ public:
 };
 
 void boarder_service_class :: init (PrologRoot * root) {
-	board = new boarder ();
+	board = new boarder (root);
 	this -> root = root;
 }
 

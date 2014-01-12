@@ -145,6 +145,7 @@ public:
 	boarder_viewport * viewports;
 	boarder_token * tokens;
 	boarder_token * deck;
+	PrologRoot * root;
 public:
 	colour default_rectangle_foreground_colour, default_rectangle_background_colour;
 	colour default_circle_foreground_colour, default_circle_background_colour;
@@ -176,7 +177,7 @@ public:
 	boarder_token * hit_test (rect area);
 	void repaint (void);
 	void move_selection (point delta);
-	boarder (void);
+	boarder (PrologRoot * root);
 	~ boarder (void);
 };
 
