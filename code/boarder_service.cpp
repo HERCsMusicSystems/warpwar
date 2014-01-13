@@ -226,12 +226,10 @@ void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y,
 }
 
 gboolean DnDdrop (GtkWidget *widget, GdkDragContext *context, gint x, gint y, guint time, gpointer *NA) {
-//	printf ("DROP\n");
 	GdkAtom target_type;
 	if(context -> targets) {
 		target_type = GDK_POINTER_TO_ATOM (g_list_nth_data (context -> targets, 0));
 		gtk_drag_get_data (widget, context, target_type, time);
-//		printf ("GET DRAG DATA\n");
 	} else return FALSE;
 	return TRUE;
 }
@@ -766,6 +764,37 @@ public:
 	create_deck (PrologDirectory * directory) {this -> directory = directory;}
 };
 
+class hit_test : public PrologNativeCode {
+public:
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isPair ()) return false;
+		PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
+		if (! parameters -> isPair ()) return false;
+		PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
+		point location = point ((double) x -> getInteger (), (double) y -> getInteger ());
+		point size;
+		if (parameters -> isPair ()) {
+			PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
+			size = point ((double) width -> getInteger (), (double) height -> getInteger ());
+		} else size = point ();
+		if (! parameters -> isVar ()) return false;
+		rect area = rect (location, size);
+		boarder_token * token = board -> hit_test (area);
+		while (token != 0) {
+			if (token -> atom != 0) {
+				parameters -> setPair ();
+				parameters -> getLeft () -> setAtom (token -> atom);
+				parameters = parameters -> getRight ();
+			}
+			token = token -> hit_test (area);
+		}
+		return true;
+	}
+};
+
 class repaint : public PrologNativeCode {
 public:
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
@@ -861,6 +890,7 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, CREATE_DICE) == 0) return new create_dice (dir);
 	if (strcmp (name, CREATE_GRID) == 0) return new create_grid (dir);
 	if (strcmp (name, CREATE_DECK) == 0) return new create_deck (dir);
+	if (strcmp (name, HIT_TEST) == 0) return new hit_test ();
 	if (strcmp (name, DEFAULT_RECTANGLE_FOREGROUND) == 0) return new default_colour (& board -> default_rectangle_foreground_colour);
 	if (strcmp (name, DEFAULT_RECTANGLE_BACKGROUND) == 0) return new default_colour (& board -> default_rectangle_background_colour);
 	if (strcmp (name, DEFAULT_CIRCLE_FOREGROUND) == 0) return new default_colour (& board -> default_circle_foreground_colour);

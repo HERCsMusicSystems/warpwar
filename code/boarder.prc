@@ -7,7 +7,7 @@ program boarder #machine := "boarder" [
 					CreateRectangle CreateCircle CreatePicture CreatePictures CreateText CreateDice CreateGrid CreateDeck
 					Location Size Position Scaling Rotation Sides Side Roll Shuffle Insert Release ReleaseRandom SelectDeck
 					Lock Unlock Locked? Select Deselect Selected?
-					DragAndDrop
+					DragAndDrop HitTest
 
 					mariner viking voyager mix
 					diagnostics test sv
@@ -66,6 +66,7 @@ program boarder #machine := "boarder" [
 #machine Clean? := "Clean?"
 #machine Erase := "Erase"
 #machine SelectDeck := "SelectDeck"
+#machine HitTest := "HitTest"
 
 
 #machine CreateRectangle := "CreateRectangle"

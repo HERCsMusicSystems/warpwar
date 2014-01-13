@@ -74,6 +74,7 @@
 #define CREATE_DICE "CreateDice"
 #define CREATE_GRID "CreateGrid"
 #define CREATE_DECK "CreateDeck"
+#define HIT_TEST "HitTest"
 
 class point;
 class rect;
