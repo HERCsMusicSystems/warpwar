@@ -328,7 +328,7 @@ public:
 	PrologAtom * rotation_atom;
 	PrologAtom * side_atom, * roll_atom;
 	PrologAtom * indexing_atom, * no_indexing_atom, * indexed_atom;
-	PrologAtom * shuffle_atom, * insert_atom, * release_atom, *release_random_atom, * select_deck_atom;
+	PrologAtom * shuffle_atom, * insert_atom, * release_atom, *release_random_atom, * select_deck_atom, * is_deck_atom;
 	boarder_token * token;
 	static char * name (void) {return token_action_code;}
 	char * codeName (void) {return token_action_code;}
@@ -521,6 +521,7 @@ public:
 			if (parameters -> isVar ()) parameters -> setAtom (btp -> atom);
 			return true;
 		}
+		if (atom -> getAtom () == is_deck_atom) {return token -> can_insert ();}
 		return false;
 	}
 	token_actions (PrologDirectory * directory) {
@@ -530,7 +531,7 @@ public:
 		rotation_atom = 0;
 		side_atom = roll_atom = 0;
 		indexing_atom = no_indexing_atom = indexed_atom = 0;
-		shuffle_atom = insert_atom = release_atom = release_random_atom = select_deck_atom = 0;
+		shuffle_atom = insert_atom = release_atom = release_random_atom = select_deck_atom = is_deck_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -556,6 +557,7 @@ public:
 			release_atom = directory -> searchAtom (RELEASE);
 			release_random_atom = directory -> searchAtom (RELEASE_RANDOM);
 			select_deck_atom = directory -> searchAtom (SELECT_DECK);
+			is_deck_atom = directory -> searchAtom (IS_DECK);
 		}
 	}
 };
@@ -783,15 +785,53 @@ public:
 		if (! parameters -> isVar ()) return false;
 		rect area = rect (location, size);
 		boarder_token * token = board -> hit_test (area);
+		if (token == 0) {parameters -> setEarth (); return true;}
 		while (token != 0) {
 			if (token -> atom != 0) {
 				parameters -> setPair ();
 				parameters -> getLeft () -> setAtom (token -> atom);
 				parameters = parameters -> getRight ();
 			}
-			token = token -> hit_test (area);
+			token = token -> hit_test_next (area);
 		}
 		return true;
+	}
+};
+
+class selection : public PrologNativeCode {
+public:
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (board == 0) return false;
+		if (! parameters -> isVar ()) return false;
+		boarder_token * token = board -> tokens;
+		if (token == 0) {parameters -> setEarth (); return true;}
+		while (token != 0) {
+			if (token -> atom != 0 && token -> selected) {
+				parameters -> setPair ();
+				parameters -> getLeft () -> setAtom (token -> atom);
+				parameters = parameters -> getRight ();
+			}
+			token = token -> next;
+		}
+		return true;
+	}
+};
+
+class is_deck : public PrologNativeCode {
+public:
+	bool code (PrologElement * parameters, PrologResolution * resolution) {
+		if (! parameters -> isPair ()) return false;
+		parameters = parameters -> getLeft ();
+		if (! parameters -> isAtom ()) return false;
+		PrologAtom * atom = parameters -> getAtom ();
+		if (atom == 0) return false;
+		PrologNativeCode * machine = atom -> getMachine ();
+		if (machine == 0) return false;
+		if (machine -> codeName () != token_actions :: name ()) return false;
+		boarder_token * token = ((token_actions *) machine) -> token;
+		if (token == 0) return false;
+		if (token -> can_insert ()) return true;
+		return false;
 	}
 };
 
@@ -891,6 +931,8 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, CREATE_GRID) == 0) return new create_grid (dir);
 	if (strcmp (name, CREATE_DECK) == 0) return new create_deck (dir);
 	if (strcmp (name, HIT_TEST) == 0) return new hit_test ();
+	if (strcmp (name, SELECTION) == 0) return new selection ();
+	if (strcmp (name, IS_DECK) == 0) return new is_deck ();
 	if (strcmp (name, DEFAULT_RECTANGLE_FOREGROUND) == 0) return new default_colour (& board -> default_rectangle_foreground_colour);
 	if (strcmp (name, DEFAULT_RECTANGLE_BACKGROUND) == 0) return new default_colour (& board -> default_rectangle_background_colour);
 	if (strcmp (name, DEFAULT_CIRCLE_FOREGROUND) == 0) return new default_colour (& board -> default_circle_foreground_colour);

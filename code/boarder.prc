@@ -6,8 +6,8 @@ program boarder #machine := "boarder" [
 					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase Indexing NoIndexing Indexed?
 					CreateRectangle CreateCircle CreatePicture CreatePictures CreateText CreateDice CreateGrid CreateDeck
 					Location Size Position Scaling Rotation Sides Side Roll Shuffle Insert Release ReleaseRandom SelectDeck
-					Lock Unlock Locked? Select Deselect Selected?
-					DragAndDrop HitTest
+					Lock Unlock Locked? Select Deselect Selected? Selection
+					DragAndDrop HitTest IsDeck?
 
 					mariner viking voyager mix
 					diagnostics test sv
@@ -67,6 +67,8 @@ program boarder #machine := "boarder" [
 #machine Erase := "Erase"
 #machine SelectDeck := "SelectDeck"
 #machine HitTest := "HitTest"
+#machine Selection := "Selection"
+#machine IsDeck? := "IsDeck?"
 
 
 #machine CreateRectangle := "CreateRectangle"
