@@ -10,6 +10,26 @@
 static boarder * board = 0;
 static bool boarder_clean = true;
 
+extern PrologRoot * root;
+extern PrologCommand * console;
+static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
+	if (board == 0) return FALSE;
+	if (viewport == 0) return FALSE;
+	if (viewport -> atom == 0) return FALSE;
+	PrologNativeCode * machine = viewport -> atom -> getMachine ();
+	viewport -> atom -> setMachine (0);
+	board -> remove_viewport (viewport);
+	if (machine != 0) delete machine;
+	boarder_clean = false;
+	return FALSE;
+}
+	//char command [256];
+	//sprintf (command, "[%s]\n", viewport -> atom -> name ());
+	//console -> insert (command);
+	//return TRUE;
+//}
+static gboolean RemoveViewportIdleCode (GtkWidget * viewport) {gtk_widget_destroy (viewport); return FALSE;}
+
 class viewport_action : public PrologNativeCode {
 public:
 	PrologDirectory * directory;
@@ -23,10 +43,10 @@ public:
 		if (board == 0) return false;
 		if (viewport == 0) return false;
 		if (parameters -> isEarth ()) {
-			viewport -> atom -> unProtect ();
-			viewport -> atom -> setMachine (NULL);
-			viewport -> atom -> unProtect ();
-			gtk_widget_destroy (viewport -> window);
+			//viewport -> atom -> unProtect ();
+			viewport -> atom -> setMachine (0);
+			//viewport -> atom -> unProtect ();
+			g_idle_add ((GSourceFunc) RemoveViewportIdleCode, viewport -> window); //gtk_widget_destroy (viewport -> window);
 			board -> remove_viewport (viewport);
 			delete this;
 			boarder_clean = false;
@@ -109,13 +129,24 @@ static int click_button = 0;
 static bool has_selection = false;
 static bool moved = false;
 
-extern PrologLinuxConsole * console;
+/*
 static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
-	char command [256];
-	sprintf (command, "[%s]\n", viewport -> atom -> name ());
-	console -> insert (command);
+	if (root == 0) return TRUE;
+	PrologElement * query = root -> pair (
+		root -> earth (),
+		root -> pair (
+				root -> pair (
+					root -> atom (viewport -> atom),
+					root -> earth ()
+				),
+				root -> earth ()
+			)
+		);
+	root -> resolution (query);
+	delete query;
 	return TRUE;
 }
+*/
 static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
 	if (viewport == 0) return FALSE;
 	if (viewport -> board == 0) return FALSE;
@@ -238,11 +269,67 @@ void DnDleave (GtkWidget *widget, GdkDragContext *context, guint time, gpointer 
 //	printf ("LEAVE\n");
 }
 
-
 gboolean DnDmotion (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
 					GtkSelectionData *seld, guint ttype, guint time, gpointer *NA) {
 	//printf ("MOTION\n");
 	return TRUE;
+}
+
+/*
+// In a dedicated thread:
+while (...) {
+    Package*  package = do_read ();  // This call is slow or blocks.
+    if (package)
+        g_idle_add ((GSourceFunc) process_package, package);
+}
+
+// This is called in the main thread.  Should be fast to not freeze GUI.
+gboolean
+process_package (Package* package)
+{
+    ...
+    package_free (package);
+}
+*/
+
+//class viewport : public PrologNativeCode {
+//public:
+//	PrologDirectory * directory;
+//void CreateViewportCode (PrologDirectory * directory, PrologElement * parameters) {
+
+static gboolean CreateViewportIdleCode (boarder_viewport * viewport) {
+	GtkWidget * window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title (GTK_WINDOW (window), viewport -> name);
+	g_signal_connect (window, "delete-event", G_CALLBACK (viewport_delete_event), viewport);
+	GtkWidget * drawing_area = gtk_drawing_area_new ();
+	gtk_container_add (GTK_CONTAINER (window), drawing_area);
+	g_signal_connect (G_OBJECT (drawing_area), "expose-event", G_CALLBACK (viewport_draw_event), viewport);
+	g_signal_connect (G_OBJECT (drawing_area), "configure-event", G_CALLBACK (viewport_configure_event), viewport);
+	g_signal_connect (G_OBJECT (window), "configure-event", G_CALLBACK (window_configure_event), viewport);
+	gtk_widget_add_events (window, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_RELEASE_MASK);
+	g_signal_connect (G_OBJECT (window), "button_press_event", G_CALLBACK (window_button_down_event), viewport);
+	g_signal_connect (G_OBJECT (window), "button_release_event", G_CALLBACK (window_button_up_event), viewport);
+	g_signal_connect (G_OBJECT (window), "motion_notify_event", G_CALLBACK (window_button_motion_event), viewport);
+	gtk_window_move (GTK_WINDOW (window), (int) viewport -> location . position . x, (int) viewport -> location . position . y);
+	gtk_window_resize (GTK_WINDOW (window), (int) viewport -> location . size . x, (int) viewport -> location . size . y);
+		
+		//gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,NULL,0,GDK_ACTION_COPY);
+		//gtk_drag_dest_add_text_targets(drawing_area);
+		//gtk_drag_dest_add_uri_targets(drawing_area);
+		const GtkTargetEntry targets[2] = { {"text/plain",0,0}, { "application/x-rootwindow-drop",0,0 } };
+		gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,targets,2,GDK_ACTION_COPY);
+		g_signal_connect(drawing_area,"drag-drop",G_CALLBACK(DnDdrop),NULL);
+		g_signal_connect(drawing_area,"drag-motion",G_CALLBACK(DnDmotion),NULL);
+		g_signal_connect(drawing_area,"drag-data-received",G_CALLBACK(DnDreceive),NULL);
+        g_signal_connect (drawing_area, "drag-leave",G_CALLBACK(DnDleave),NULL);
+
+		
+		//gtk_window_move (GTK_WINDOW (window), machine -> viewport -> location . position . x, machine -> viewport -> location . position . y);
+		//gtk_window_resize (GTK_WINDOW (window), machine -> viewport -> location . size . x, machine -> viewport -> location . size . y);
+	gtk_widget_show_all (window);
+	viewport -> window = window;
+	boarder_clean = false;
+	return FALSE; // to be called once only!
 }
 
 class viewport : public PrologNativeCode {
@@ -265,48 +352,14 @@ public:
 		if (atom == 0) return false;
 		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
 		if (! atom -> isAtom ()) return false;
-
 		viewport_action * machine = new viewport_action (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
-
 		PROLOG_STRING viewport_name;
 		if (name == 0) prolog_string_copy (viewport_name, "VIEWPORT");
 		else prolog_string_copy (viewport_name, name -> getText ());
 		machine -> viewport = board -> insert_viewport (atom -> getAtom (), viewport_name, rect (locations));
-
-		GtkWidget * window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-		gtk_window_set_title (GTK_WINDOW (window), viewport_name);
-		g_signal_connect (window, "delete-event", G_CALLBACK (viewport_delete_event), machine -> viewport);
-		GtkWidget * drawing_area = gtk_drawing_area_new ();
-		gtk_container_add (GTK_CONTAINER (window), drawing_area);
-		g_signal_connect (G_OBJECT (drawing_area), "expose-event", G_CALLBACK (viewport_draw_event), machine -> viewport);
-		g_signal_connect (G_OBJECT (drawing_area), "configure-event", G_CALLBACK (viewport_configure_event), machine -> viewport);
-		g_signal_connect (G_OBJECT (window), "configure-event", G_CALLBACK (window_configure_event), machine -> viewport);
-		gtk_widget_add_events (window, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_RELEASE_MASK);
-		g_signal_connect (G_OBJECT (window), "button_press_event", G_CALLBACK (window_button_down_event), machine -> viewport);
-		g_signal_connect (G_OBJECT (window), "button_release_event", G_CALLBACK (window_button_up_event), machine -> viewport);
-		g_signal_connect (G_OBJECT (window), "motion_notify_event", G_CALLBACK (window_button_motion_event), machine -> viewport);
-		gtk_window_move (GTK_WINDOW (window), (int) machine -> viewport -> location . position . x, (int) machine -> viewport -> location . position . y);
-		gtk_window_resize (GTK_WINDOW (window), (int) machine -> viewport -> location . size . x, (int) machine -> viewport -> location . size . y);
-		
-		//gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,NULL,0,GDK_ACTION_COPY);
-		//gtk_drag_dest_add_text_targets(drawing_area);
-		//gtk_drag_dest_add_uri_targets(drawing_area);
-		const GtkTargetEntry targets[2] = { {"text/plain",0,0}, { "application/x-rootwindow-drop",0,0 } };
-		gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,targets,2,GDK_ACTION_COPY);
-		g_signal_connect(drawing_area,"drag-drop",G_CALLBACK(DnDdrop),NULL);
-		g_signal_connect(drawing_area,"drag-motion",G_CALLBACK(DnDmotion),NULL);
-		g_signal_connect(drawing_area,"drag-data-received",G_CALLBACK(DnDreceive),NULL);
-        g_signal_connect (drawing_area, "drag-leave",G_CALLBACK(DnDleave),NULL);
-
-		
-		//gtk_window_move (GTK_WINDOW (window), machine -> viewport -> location . position . x, machine -> viewport -> location . position . y);
-		//gtk_window_resize (GTK_WINDOW (window), machine -> viewport -> location . size . x, machine -> viewport -> location . size . y);
-
-		gtk_widget_show_all (window);
-
-		machine -> viewport -> window = window;
-		boarder_clean = false;
+		//CreateViewportIdleCode (machine -> viewport);
+		g_idle_add ((GSourceFunc) CreateViewportIdleCode, machine -> viewport);
 		return true;
 	}
 	viewport (PrologDirectory * directory) {this -> directory = directory;}

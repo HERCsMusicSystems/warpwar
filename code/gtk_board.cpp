@@ -193,12 +193,13 @@ public:
 
 #ifdef LINUX_OPERATING_SYSTEM
 #include "prolog_linux_console.h"
-PrologLinuxConsole * console = NULL;
 #endif
 #ifdef WINDOWS_OPERATING_SYSTEM
 #include "prolog_windows_console.h"
-PrologWindowsConsole * console = NULL;
 #endif
+
+PrologRoot * root = 0;
+PrologCommand * console = 0;
 
 RUNNER_RETURN prc_runner (RUNNER_PARAMETER parameter) {
 	PrologRoot * root = (PrologRoot *) parameter;
