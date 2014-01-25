@@ -312,10 +312,6 @@ extern int token_counter;
 int main (int args, char * argv []) {
 //	srand (time (0));
 	gtk_init (& args, & argv);
-#ifdef LINUX_OPERATING_SYSTEM
-	XInitThreads ();
-#endif
-
 	PrologRoot * root = new PrologRoot ();
 	root -> get_search_directories_from_environment ("PRC_MODULE_SEARCH_PATHS");
 #ifdef INTERNAL_RESOURCES

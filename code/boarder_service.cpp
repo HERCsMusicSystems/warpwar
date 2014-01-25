@@ -58,16 +58,23 @@ public:
 		if (atom -> getAtom () == location_atom) {
 			if (parameters -> isVar ()) {
 				parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) viewport -> location . position . x); parameters = parameters -> getRight (); parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) viewport -> location . position . y); parameters = parameters -> getRight (); parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) viewport -> location . size . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) viewport -> location . position . x);
+				parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) viewport -> location . position . y);
+				parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) viewport -> location . size . x);
+				parameters = parameters -> getRight (); parameters -> setPair ();
 				parameters -> getLeft () -> setInteger ((int) viewport -> location . size . y);
 				return true;
 			}
-			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
-			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
-			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
-			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
 			viewport -> setWindowLocation (rect (x -> getInteger (), y -> getInteger (), width -> getInteger (), height -> getInteger ()));
 			boarder_clean = false;
 			return true;
@@ -75,12 +82,15 @@ public:
 		if (atom -> getAtom () == position_atom) {
 			if (parameters -> isVar ()) {
 				parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) viewport -> board_position . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) viewport -> board_position . x);
+				parameters = parameters -> getRight (); parameters -> setPair ();
 				parameters -> getLeft () -> setInteger ((int) viewport -> board_position . y);
 				return true;
 			}
-			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
-			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
 			viewport -> setBoardPosition (point (x -> getInteger (), y -> getInteger ()));
 			boarder_clean = false;
 			return true;
@@ -88,12 +98,15 @@ public:
 		if (atom -> getAtom () == size_atom) {
 			if (parameters -> isVar ()) {
 				parameters -> setPair ();
-				parameters -> getLeft () -> setInteger ((int) viewport -> location . size . x); parameters = parameters -> getRight (); parameters -> setPair ();
+				parameters -> getLeft () -> setInteger ((int) viewport -> location . size . x);
+				parameters = parameters -> getRight (); parameters -> setPair ();
 				parameters -> getLeft () -> setInteger ((int) viewport -> location . size . y);
 				return true;
 			}
-			if (! parameters -> isPair ()) return false; PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
-			if (! parameters -> isPair ()) return false; PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * width = parameters -> getLeft (); if (! width -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false;
+			PrologElement * height = parameters -> getLeft (); if (! height -> isInteger ()) return false; parameters = parameters -> getRight ();
 			viewport -> setWindowSize (point (width -> getInteger (), height -> getInteger ()));
 			boarder_clean = false;
 			return true;
@@ -129,24 +142,6 @@ static int click_button = 0;
 static bool has_selection = false;
 static bool moved = false;
 
-/*
-static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
-	if (root == 0) return TRUE;
-	PrologElement * query = root -> pair (
-		root -> earth (),
-		root -> pair (
-				root -> pair (
-					root -> atom (viewport -> atom),
-					root -> earth ()
-				),
-				root -> earth ()
-			)
-		);
-	root -> resolution (query);
-	delete query;
-	return TRUE;
-}
-*/
 static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
 	if (viewport == 0) return FALSE;
 	if (viewport -> board == 0) return FALSE;
@@ -160,8 +155,10 @@ static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, board
 	cairo_destroy (cr);
 	return FALSE;
 }
-static gboolean viewport_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . size = point (widget -> allocation . width, widget -> allocation . height); boarder_clean = false; return FALSE;}
-static gboolean window_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {viewport -> location . position = point (event -> configure . x, event -> configure . y); boarder_clean = false; return FALSE;}
+static gboolean viewport_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
+	viewport -> location . size = point (widget -> allocation . width, widget -> allocation . height); boarder_clean = false; return FALSE;}
+static gboolean window_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
+	viewport -> location . position = point (event -> configure . x, event -> configure . y); boarder_clean = false; return FALSE;}
 
 static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {\
 	moved = false;
