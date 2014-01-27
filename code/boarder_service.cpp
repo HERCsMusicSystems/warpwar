@@ -160,6 +160,34 @@ static gboolean viewport_configure_event (GtkWidget * widget, GdkEvent * event, 
 static gboolean window_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
 	viewport -> location . position = point (event -> configure . x, event -> configure . y); boarder_clean = false; return FALSE;}
 
+static void response (char * command) {
+	printf ("action [%s]\n", command);
+}
+static GtkWidget * right_click_menu = 0;
+static void CreateRightClickMenu (void) {
+	if (right_click_menu != 0) return;
+	right_click_menu = gtk_menu_new ();
+	GtkWidget * create_rectangle_menu = gtk_menu_item_new_with_label ("Create Rectanle");
+	GtkWidget * create_square_menu = gtk_menu_item_new_with_label ("Create Square");
+	GtkWidget * create_ellipse_menu = gtk_menu_item_new_with_label ("Create Ellispe");
+	GtkWidget * create_circle_menu = gtk_menu_item_new_with_label ("Create Circle");
+	GtkWidget * create_dice_menu = gtk_menu_item_new_with_label ("Create Dice");
+	GtkWidget * dice_menu = gtk_menu_new ();
+	gtk_menu_item_set_submenu (GTK_MENU_ITEM (create_dice_menu), dice_menu);
+	GtkWidget * create_dice_pyramid_menu = gtk_menu_item_new_with_label ("Create Pyramid");
+	gtk_menu_append (GTK_MENU (right_click_menu), create_rectangle_menu);
+	gtk_menu_append (GTK_MENU (right_click_menu), create_square_menu);
+	gtk_menu_append (GTK_MENU (right_click_menu), create_ellipse_menu);
+	gtk_menu_append (GTK_MENU (right_click_menu), create_circle_menu);
+	gtk_menu_append (GTK_MENU (right_click_menu), create_dice_menu);
+	gtk_menu_append (GTK_MENU (create_dice_menu), create_dice_pyramid_menu);
+	gtk_menu_append (GTK_MENU (dice_menu), create_dice_pyramid_menu);
+	gtk_signal_connect_object (GTK_OBJECT (create_rectangle_menu), "activate", GTK_SIGNAL_FUNC (response), (gpointer) "create rectangle");
+	gtk_signal_connect_object (GTK_OBJECT (create_square_menu), "activate", GTK_SIGNAL_FUNC (response), (gpointer) "create square");
+	gtk_signal_connect_object (GTK_OBJECT (create_ellipse_menu), "activate", GTK_SIGNAL_FUNC (response), (gpointer) "create ellipse");
+	gtk_signal_connect_object (GTK_OBJECT (create_circle_menu), "activate", GTK_SIGNAL_FUNC (response), (gpointer) "create circle");
+}
+
 static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {\
 	moved = false;
 	if (board == 0) return TRUE;
@@ -175,8 +203,17 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 		if (token) {token -> selected = true; has_selection = true;}
 		break;
 	case 3:
-		if (! board -> release_token_from_deck (token)) break;
-		if (token) {token -> selected = true; has_selection = true;}
+		if (token) {
+			if (! board -> release_token_from_deck (token)) break;
+			token -> selected = true;
+			has_selection = true;
+			break;
+		} else {
+			CreateRightClickMenu ();
+			gtk_widget_show_all (right_click_menu);
+			gtk_menu_popup (GTK_MENU (right_click_menu), 0, 0, 0, 0, 3, gdk_event_get_time ((GdkEvent *) event));
+			break;
+		}
 		break;
 	default: break;
 	}
