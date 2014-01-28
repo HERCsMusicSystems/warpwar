@@ -7,6 +7,20 @@
 
 #include "prolog_linux_console.h"
 
+static char * edit_mode_none = "None";
+static char * create_square_mode = "Create Square";
+static char * create_rectangle_mode = "Create Rectangle";
+static char * create_circle_mode = "Create Circle";
+static char * create_ellipse_mode = "Create Ellipse";
+static char * create_tetrahedron_mode = "Create Tetrahedron";
+static char * create_cube_mode = "Create Cube";
+static char * create_dice_mode = "Create Dice";
+static char * create_octahedron_mode = "Create Octahedron";
+static char * create_deltahedron_mode = "Create Deltahedron";
+static char * create_deltahedron_10_mode = "Create Deltahedron 10";
+static char * create_dodecahedron_mode = "Create Dodecahedron";
+static char * create_icosahedron_mode = "Create Icosahedron";
+
 static boarder * board = 0;
 static bool boarder_clean = true;
 
@@ -23,11 +37,6 @@ static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boa
 	boarder_clean = false;
 	return FALSE;
 }
-	//char command [256];
-	//sprintf (command, "[%s]\n", viewport -> atom -> name ());
-	//console -> insert (command);
-	//return TRUE;
-//}
 static gboolean RemoveViewportIdleCode (GtkWidget * viewport) {gtk_widget_destroy (viewport); return FALSE;}
 
 class viewport_action : public PrologNativeCode {
@@ -141,17 +150,19 @@ static point click_point (0, 0);
 static int click_button = 0;
 static bool has_selection = false;
 static bool moved = false;
+static char * edit_mode = edit_mode_none;
+static boarder_token * edited_token = 0;
 
 static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
 	if (viewport == 0) return FALSE;
 	if (viewport -> board == 0) return FALSE;
 	cairo_t * cr = gdk_cairo_create (gtk_widget_get_window (widget));
 	board -> draw (cr, viewport);
-	if (click_button == 3 && click_init_point != click_point) {
+	/*if (click_button == 3 && click_init_point != click_point) {
 		rect location (click_init_point * viewport -> scaling, (click_point - click_init_point) * viewport -> scaling);
 		cairo_rectangle (cr, RECT (location));
 		cairo_stroke (cr);
-	}
+	}*/
 	cairo_destroy (cr);
 	return FALSE;
 }
@@ -160,35 +171,77 @@ static gboolean viewport_configure_event (GtkWidget * widget, GdkEvent * event, 
 static gboolean window_configure_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
 	viewport -> location . position = point (event -> configure . x, event -> configure . y); boarder_clean = false; return FALSE;}
 
-static void response (char * command) {
+static void CreateDiceCommand (int order, bool extended = false) {
+	if (board == 0) return;
+	PrologRoot * root = board -> root;
+	if (root == 0) return;
+	PrologElement * location_query = root -> pair (root -> var (0),
+		root -> pair (root -> atom ("boarder", "Location"),
+		root -> pair (root -> integer ((int) click_init_point . x),
+		root -> pair (root -> integer ((int) click_init_point . y),
+		root -> earth ()))));
+	PrologElement * creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
+		root -> pair (root -> var (0),
+		root -> pair (root -> integer (order),
+		root -> earth ())));
+	PrologElement * query = root -> pair (root -> earth (), root -> pair (creation_query, root -> pair (location_query, root -> earth ())));
+	root -> resolution (query);
+	char command [1024];
+	root -> getValue (query, command, 0);
+	printf ("command => %s\n", command);
+	delete query;
+}
+
+static void CreateRectangleCommand (void);
+
+static void create_response (char * command) {
 	printf ("action [%s]\n", command);
+	if (command == edit_mode_none) {edit_mode = edit_mode_none; return;}
+	if (command == create_rectangle_mode) {CreateRectangleCommand (); edit_mode = edit_mode_none; return;}
+	if (command == create_tetrahedron_mode) {CreateDiceCommand (4); edit_mode = edit_mode_none; return;}
+	if (command == create_cube_mode) {CreateDiceCommand (6); edit_mode = edit_mode_none; return;}
+	if (command == create_dice_mode) {CreateDiceCommand (6, true); edit_mode = edit_mode_none; return;}
+	if (command == create_octahedron_mode) {CreateDiceCommand (8); edit_mode = edit_mode_none; return;}
+	if (command == create_deltahedron_mode) {CreateDiceCommand (10); edit_mode = edit_mode_none; return;}
+	if (command == create_deltahedron_10_mode) {CreateDiceCommand (10, true); edit_mode = edit_mode_none; return;}
+	if (command == create_dodecahedron_mode) {CreateDiceCommand (12); edit_mode = edit_mode_none; return;}
+	if (command == create_icosahedron_mode) {CreateDiceCommand (20); edit_mode = edit_mode_none; return;}
 }
 static GtkWidget * right_click_menu = 0;
+static GtkWidget * AddMenu (GtkWidget * menu, char * label, void action (char *)) {
+	GtkWidget * item = gtk_menu_item_new_with_label (label);
+	gtk_menu_append (GTK_MENU (menu), item);
+	gtk_signal_connect_object (GTK_OBJECT (item), "activate", GTK_SIGNAL_FUNC (action), (gpointer) label);
+	return item;
+}
+static GtkWidget * AddSubMenu (GtkWidget * menu, char * label) {
+	GtkWidget * sub_menu = gtk_menu_new ();
+	GtkWidget * item = gtk_menu_item_new_with_label (label);
+	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), sub_menu);
+	gtk_menu_append (GTK_MENU (menu), item);
+	return sub_menu;
+}
 static void CreateRightClickMenu (void) {
 	if (right_click_menu != 0) return;
 	right_click_menu = gtk_menu_new ();
-	GtkWidget * create_rectangle_menu = gtk_menu_item_new_with_label ("Create Rectanle");
-	GtkWidget * create_square_menu = gtk_menu_item_new_with_label ("Create Square");
-	GtkWidget * create_ellipse_menu = gtk_menu_item_new_with_label ("Create Ellispe");
-	GtkWidget * create_circle_menu = gtk_menu_item_new_with_label ("Create Circle");
-	GtkWidget * create_dice_menu = gtk_menu_item_new_with_label ("Create Dice");
-	GtkWidget * dice_menu = gtk_menu_new ();
-	gtk_menu_item_set_submenu (GTK_MENU_ITEM (create_dice_menu), dice_menu);
-	GtkWidget * create_dice_pyramid_menu = gtk_menu_item_new_with_label ("Create Pyramid");
-	gtk_menu_append (GTK_MENU (right_click_menu), create_rectangle_menu);
-	gtk_menu_append (GTK_MENU (right_click_menu), create_square_menu);
-	gtk_menu_append (GTK_MENU (right_click_menu), create_ellipse_menu);
-	gtk_menu_append (GTK_MENU (right_click_menu), create_circle_menu);
-	gtk_menu_append (GTK_MENU (right_click_menu), create_dice_menu);
-	gtk_menu_append (GTK_MENU (create_dice_menu), create_dice_pyramid_menu);
-	gtk_menu_append (GTK_MENU (dice_menu), create_dice_pyramid_menu);
-	gtk_signal_connect_object (GTK_OBJECT (create_rectangle_menu), "activate", GTK_SIGNAL_FUNC (response), (gpointer) "create rectangle");
-	gtk_signal_connect_object (GTK_OBJECT (create_square_menu), "activate", GTK_SIGNAL_FUNC (response), (gpointer) "create square");
-	gtk_signal_connect_object (GTK_OBJECT (create_ellipse_menu), "activate", GTK_SIGNAL_FUNC (response), (gpointer) "create ellipse");
-	gtk_signal_connect_object (GTK_OBJECT (create_circle_menu), "activate", GTK_SIGNAL_FUNC (response), (gpointer) "create circle");
+	AddMenu (right_click_menu, edit_mode_none, create_response);
+	AddMenu (right_click_menu, create_rectangle_mode, create_response);
+	AddMenu (right_click_menu, create_square_mode, create_response);
+	AddMenu (right_click_menu, create_ellipse_mode, create_response);
+	AddMenu (right_click_menu, create_circle_mode, create_response);
+	GtkWidget * dice_submenu = AddSubMenu (right_click_menu, create_dice_mode);
+	AddMenu (dice_submenu, create_tetrahedron_mode, create_response);
+	AddMenu (dice_submenu, create_cube_mode, create_response);
+	AddMenu (dice_submenu, create_dice_mode, create_response);
+	AddMenu (dice_submenu, create_octahedron_mode, create_response);
+	AddMenu (dice_submenu, create_deltahedron_mode, create_response);
+	AddMenu (dice_submenu, create_deltahedron_10_mode, create_response);
+	AddMenu (dice_submenu, create_dodecahedron_mode, create_response);
+	AddMenu (dice_submenu, create_icosahedron_mode, create_response);
 }
 
-static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {\
+static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	edited_token = 0;
 	moved = false;
 	if (board == 0) return TRUE;
 	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
@@ -224,6 +277,7 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 }
 
 static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	edited_token = 0;
 	if (board == 0) return TRUE;
 	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
 	area . position . round ();
@@ -260,6 +314,10 @@ static gint window_button_motion_event (GtkWidget * window, GdkEventButton * eve
 		viewport -> board_position = viewport -> board_position - area . position + click_point;
 	}
 	click_point = area . position;
+	if (edited_token != 0) {
+		point size = click_point - click_init_point;
+		if (size . x > 1.0 && size . y > 1.0) edited_token -> set_size (size);
+	}
 	if (click_button > 0) board -> repaint ();
 	return TRUE;
 }
@@ -648,6 +706,32 @@ public:
 		}
 	}
 };
+
+static void CreateRectangleCommand (void) {
+	if (board == 0) return;
+	PrologRoot * root = board -> root;
+	if (root == 0) return;
+	PrologElement * location_query = root -> pair (root -> var (0),
+		root -> pair (root -> atom ("boarder", "Location"),
+		root -> pair (root -> integer ((int) click_init_point . x),
+		root -> pair (root -> integer ((int) click_init_point . y),
+		root -> earth ()))));
+	PrologElement * creation_query = root -> pair (root -> atom ("boarder", "CreateRectangle"),
+		root -> pair (root -> var (0),
+		root -> earth ()));
+	PrologElement * return_atom = root -> var (0);
+	PrologElement * query = root -> pair (root -> pair (return_atom, root -> earth ()), root -> pair (creation_query, root -> pair (location_query, root -> earth ())));
+	root -> resolution (query);
+	if (return_atom -> isAtom ()) {
+		PrologNativeCode * machine = return_atom -> getAtom () -> getMachine ();
+		if (machine != 0) {
+			if (machine -> codeName () == token_actions :: name ()) {
+				edited_token = ((token_actions *) machine) -> token;
+			}
+		}
+	}
+	delete query;
+}
 
 class create_rectangle : public PrologNativeCode {
 public:
