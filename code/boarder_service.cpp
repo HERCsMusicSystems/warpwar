@@ -176,7 +176,7 @@ static void CreateDiceCommand (int order, bool extended = false) {
 	PrologRoot * root = board -> root;
 	if (root == 0) return;
 	PrologElement * location_query = root -> pair (root -> var (0),
-		root -> pair (root -> atom ("boarder", "Location"),
+		root -> pair (root -> atom ("boarder", "Position"),
 		root -> pair (root -> integer ((int) click_init_point . x),
 		root -> pair (root -> integer ((int) click_init_point . y),
 		root -> earth ()))));
@@ -190,6 +190,7 @@ static void CreateDiceCommand (int order, bool extended = false) {
 	root -> getValue (query, command, 0);
 	printf ("command => %s\n", command);
 	delete query;
+	board -> repaint ();
 }
 
 static void CreateRectangleCommand (void);
@@ -197,7 +198,7 @@ static void CreateRectangleCommand (void);
 static void create_response (char * command) {
 	printf ("action [%s]\n", command);
 	if (command == edit_mode_none) {edit_mode = edit_mode_none; return;}
-	if (command == create_rectangle_mode) {CreateRectangleCommand (); edit_mode = edit_mode_none; return;}
+	if (command == create_rectangle_mode) {edit_mode = create_rectangle_mode; return;}
 	if (command == create_tetrahedron_mode) {CreateDiceCommand (4); edit_mode = edit_mode_none; return;}
 	if (command == create_cube_mode) {CreateDiceCommand (6); edit_mode = edit_mode_none; return;}
 	if (command == create_dice_mode) {CreateDiceCommand (6, true); edit_mode = edit_mode_none; return;}
@@ -249,10 +250,12 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 	area . position . round ();
 	//printf ("CLICKED [%i %g %g]\n", event -> button, area . position . x, area . position . y);
 	boarder_token * token = board -> hit_test (hit_test_area);
+	click_init_point = click_point = area . position;
 	switch (event -> button) {
 	case 1:
 		board -> clear_selection ();
 		has_selection = false;
+		if (edit_mode == create_rectangle_mode) CreateRectangleCommand ();
 		if (token) {token -> selected = true; has_selection = true;}
 		break;
 	case 3:
@@ -271,7 +274,6 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 	default: break;
 	}
 	board -> repaint ();
-	click_init_point = click_point = area . position;
 	click_button = event -> button;
 	return TRUE;
 }
@@ -307,16 +309,19 @@ static gint window_button_motion_event (GtkWidget * window, GdkEventButton * eve
 	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
 	area . position . round ();
 	//printf ("MOVE [%i %g %g]\n", event -> button, area . position . x, area . position . y);
-	if (has_selection && click_button > 0) {
-		board -> move_selection (area . position - click_point);
-	}
-	if (! has_selection && click_button == 1) {
-		viewport -> board_position = viewport -> board_position - area . position + click_point;
+	if (edited_token == 0) {
+		if (has_selection && click_button > 0) {
+			board -> move_selection (area . position - click_point);
+		}
+		if (! has_selection && click_button == 1) {
+			viewport -> board_position = viewport -> board_position - area . position + click_point;
+		}
 	}
 	click_point = area . position;
 	if (edited_token != 0) {
 		point size = click_point - click_init_point;
-		if (size . x > 1.0 && size . y > 1.0) edited_token -> set_size (size);
+		//if (size . x > 1.0 && size . y > 1.0)
+		edited_token -> set_size (size);
 	}
 	if (click_button > 0) board -> repaint ();
 	return TRUE;
@@ -715,14 +720,23 @@ static void CreateRectangleCommand (void) {
 		root -> pair (root -> atom ("boarder", "Location"),
 		root -> pair (root -> integer ((int) click_init_point . x),
 		root -> pair (root -> integer ((int) click_init_point . y),
-		root -> earth ()))));
+		root -> pair (root -> integer (0),
+		root -> pair (root -> integer (0),
+		root -> earth ()))))));
 	PrologElement * creation_query = root -> pair (root -> atom ("boarder", "CreateRectangle"),
 		root -> pair (root -> var (0),
 		root -> earth ()));
-	PrologElement * return_atom = root -> var (0);
-	PrologElement * query = root -> pair (root -> pair (return_atom, root -> earth ()), root -> pair (creation_query, root -> pair (location_query, root -> earth ())));
+	PrologElement * query = root -> pair (root -> pair (root -> var (0), root -> earth ()),
+		root -> pair (creation_query, root -> pair (location_query, root -> earth ())));
 	root -> resolution (query);
+	char command [1024];
+	root -> getValue (query, command, 0);
+	printf ("command => %s\n", command);
+	PrologElement * return_atom = query;
+	if (return_atom -> isPair ()) return_atom = return_atom -> getLeft ();
+	if (return_atom -> isPair ()) return_atom = return_atom -> getLeft ();
 	if (return_atom -> isAtom ()) {
+		printf ("atom => %s\n", return_atom -> getAtom () -> name ());
 		PrologNativeCode * machine = return_atom -> getAtom () -> getMachine ();
 		if (machine != 0) {
 			if (machine -> codeName () == token_actions :: name ()) {
