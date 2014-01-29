@@ -306,6 +306,7 @@ boarder_viewport :: boarder_viewport (boarder * board, PrologAtom * atom, char *
 	this -> next = next;
 	board_position = point (0, 0);
 	scaling = 1.0;
+	edit_mode = boarder_viewport :: move;
 	token_counter++;
 }
 

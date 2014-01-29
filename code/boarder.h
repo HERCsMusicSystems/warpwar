@@ -55,6 +55,7 @@
 #define IS_SELECTED "Selected?"
 #define VIEWPORT "Viewport"
 #define REPAINT "Repaint"
+#define MODE "Mode"
 #define SAVE_BOARD "SaveBoard"
 #define CLEAN "Clean"
 #define IS_CLEAN "Clean?"
@@ -186,6 +187,16 @@ public:
 
 class boarder_viewport {
 public:
+	enum edit_modes {
+		move = 0, select,
+		create_rectangle, create_square, create_ellipse, create_circle,
+		create_tetrahedron, create_cube, create_dice,
+		create_octahedron, create_deltahedron, create_deltahedron_10,
+		create_dodecahedron, create_icosahedron,
+		create_text, creage_grid, create_deck,
+		edit
+	};
+public:
 	boarder * board;
 	GtkWidget * window;
 	PrologAtom * atom;
@@ -193,6 +204,7 @@ public:
 	rect location;
 	point board_position;
 	double scaling;
+	edit_modes edit_mode;
 	boarder_viewport * next;
 	void setWindowLocation (rect location);
 	void setWindowSize (point size);

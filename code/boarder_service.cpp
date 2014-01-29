@@ -38,6 +38,12 @@ static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boa
 	return FALSE;
 }
 static gboolean RemoveViewportIdleCode (GtkWidget * viewport) {gtk_widget_destroy (viewport); return FALSE;}
+static gboolean ChangeViewportNameIdleCode (boarder_viewport * viewport) {
+	char command [256];
+	sprintf (command, "%s [%i]", viewport -> name, (int) viewport -> edit_mode);
+	gtk_window_set_title (GTK_WINDOW (viewport -> window), command);
+	return FALSE;
+}
 
 class viewport_action : public PrologNativeCode {
 public:
@@ -47,6 +53,7 @@ public:
 	PrologAtom * position_atom;
 	PrologAtom * scaling_atom;
 	PrologAtom * repaint_atom;
+	PrologAtom * mode_atom;
 	boarder_viewport * viewport;
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
@@ -64,6 +71,11 @@ public:
 		if (! parameters -> isPair ()) return false;
 		PrologElement * atom = parameters -> getLeft (); parameters = parameters -> getRight ();
 		if (! atom -> isAtom ()) return false;
+		if (atom -> getAtom () == mode_atom ) {
+			if (parameters -> isVar ()) {parameters -> setInteger ((int) viewport -> edit_mode); return true;}
+			g_idle_add ((GSourceFunc) ChangeViewportNameIdleCode, viewport);
+			return true;
+		}
 		if (atom -> getAtom () == location_atom) {
 			if (parameters -> isVar ()) {
 				parameters -> setPair ();
@@ -133,7 +145,7 @@ public:
 	}
 	viewport_action (PrologDirectory * directory) {
 		this -> directory = directory;
-		location_atom = size_atom = position_atom = scaling_atom = repaint_atom = 0;
+		location_atom = size_atom = position_atom = scaling_atom = repaint_atom = mode_atom = 0;
 		this -> viewport = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -141,6 +153,7 @@ public:
 			position_atom = directory -> searchAtom (POSITION);
 			scaling_atom = directory -> searchAtom (SCALING);
 			repaint_atom = directory -> searchAtom (REPAINT);
+			mode_atom = directory -> searchAtom (MODE);
 		}
 	}
 };

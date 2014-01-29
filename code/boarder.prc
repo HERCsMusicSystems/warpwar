@@ -5,7 +5,7 @@ import f1
 program boarder #machine := "boarder" [
 					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase Indexing NoIndexing Indexed?
 					CreateRectangle CreateCircle CreatePicture CreatePictures CreateText CreateDice CreateGrid CreateDeck
-					Location Size Position Scaling Rotation Sides Side Roll Shuffle Insert Release ReleaseRandom SelectDeck
+					Location Size Position Mode Scaling Rotation Sides Side Roll Shuffle Insert Release ReleaseRandom SelectDeck
 					Lock Unlock Locked? Select Deselect Selected? Selection
 					DragAndDrop HitTest IsDeck?
 
