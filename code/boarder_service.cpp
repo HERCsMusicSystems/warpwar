@@ -73,6 +73,9 @@ public:
 		if (! atom -> isAtom ()) return false;
 		if (atom -> getAtom () == mode_atom ) {
 			if (parameters -> isVar ()) {parameters -> setInteger ((int) viewport -> edit_mode); return true;}
+			if (! parameters -> isPair ()) return false; parameters = parameters -> getLeft ();
+			if (! parameters -> isInteger ()) return false;
+			viewport -> edit_mode = (boarder_viewport :: edit_modes) parameters -> getInteger ();
 			g_idle_add ((GSourceFunc) ChangeViewportNameIdleCode, viewport);
 			return true;
 		}
@@ -1111,7 +1114,8 @@ public:
 		boarder_viewport * viewport = board -> viewports;
 		printf ("DIAGNOSTICS:\n");
 		while (viewport != 0) {
-			printf ("	viewport [%s %s] <%i %i>\n", viewport -> atom -> name (), viewport -> name, (int) viewport -> board_position . x, (int) viewport -> board_position . y);
+			printf ("	viewport [%s %s] <%i %i>\n", viewport -> atom -> name (),
+				viewport -> name, (int) viewport -> board_position . x, (int) viewport -> board_position . y);
 			viewport = viewport -> next;
 		}
 		return true;
