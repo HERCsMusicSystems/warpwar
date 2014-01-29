@@ -153,6 +153,16 @@ static bool moved = false;
 static char * edit_mode = edit_mode_none;
 static boarder_token * edited_token = 0;
 
+static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
+	printf ("key on [%s]\n", gdk_keyval_name (event -> keyval));
+	return FALSE;
+}
+
+static gboolean viewport_key_off_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
+	printf ("key off [%s]\n", gdk_keyval_name (event -> keyval));
+	return FALSE;
+}
+
 static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, boarder_viewport * viewport) {
 	if (viewport == 0) return FALSE;
 	if (viewport -> board == 0) return FALSE;
@@ -407,6 +417,8 @@ static gboolean CreateViewportIdleCode (boarder_viewport * viewport) {
 	g_signal_connect (G_OBJECT (window), "button_press_event", G_CALLBACK (window_button_down_event), viewport);
 	g_signal_connect (G_OBJECT (window), "button_release_event", G_CALLBACK (window_button_up_event), viewport);
 	g_signal_connect (G_OBJECT (window), "motion_notify_event", G_CALLBACK (window_button_motion_event), viewport);
+	g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (viewport_key_on_event), viewport);
+	g_signal_connect (G_OBJECT (window), "key-release-event", G_CALLBACK (viewport_key_off_event), viewport);
 	gtk_window_move (GTK_WINDOW (window), (int) viewport -> location . position . x, (int) viewport -> location . position . y);
 	gtk_window_resize (GTK_WINDOW (window), (int) viewport -> location . size . x, (int) viewport -> location . size . y);
 		
