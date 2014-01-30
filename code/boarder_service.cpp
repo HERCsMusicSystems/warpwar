@@ -7,6 +7,7 @@
 
 #include "prolog_linux_console.h"
 
+/*
 static char * edit_mode_none = "None";
 static char * create_square_mode = "Create Square";
 static char * create_rectangle_mode = "Create Rectangle";
@@ -20,6 +21,7 @@ static char * create_deltahedron_mode = "Create Deltahedron";
 static char * create_deltahedron_10_mode = "Create Deltahedron 10";
 static char * create_dodecahedron_mode = "Create Dodecahedron";
 static char * create_icosahedron_mode = "Create Icosahedron";
+*/
 
 static boarder * board = 0;
 static bool boarder_clean = true;
@@ -39,8 +41,22 @@ static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boa
 }
 static gboolean RemoveViewportIdleCode (GtkWidget * viewport) {gtk_widget_destroy (viewport); return FALSE;}
 static gboolean ChangeViewportNameIdleCode (boarder_viewport * viewport) {
+	if (viewport == 0) return FALSE;
+	if (viewport -> edit_mode == boarder_viewport :: move) {
+		gtk_window_set_title (GTK_WINDOW (viewport -> window), viewport -> name);
+		return FALSE;
+	}
+	char * mode;
+	switch (viewport -> edit_mode) {
+	case boarder_viewport :: move: mode = "Move"; break;
+	case boarder_viewport :: select: mode = "Select"; break;
+	case boarder_viewport :: create_rectangle: mode = "Create Rectangle"; break;
+	case boarder_viewport :: create_square: mode = "Create Square"; break;
+	case boarder_viewport :: create_tetrahedron: mode = "Create Tetrahedron"; break;
+	default: mode = "None"; break;
+	}
 	char command [256];
-	sprintf (command, "%s [%i]", viewport -> name, (int) viewport -> edit_mode);
+	sprintf (command, "%s [%i]", viewport -> name, mode);
 	gtk_window_set_title (GTK_WINDOW (viewport -> window), command);
 	return FALSE;
 }
@@ -166,7 +182,7 @@ static point click_point (0, 0);
 static int click_button = 0;
 static bool has_selection = false;
 static bool moved = false;
-static char * edit_mode = edit_mode_none;
+//static char * edit_mode = edit_mode_none;
 static boarder_token * edited_token = 0;
 
 static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
@@ -221,6 +237,7 @@ static void CreateDiceCommand (int order, bool extended = false) {
 
 static void CreateRectangleCommand (void);
 
+/*
 static void create_response (char * command) {
 	printf ("action [%s]\n", command);
 	if (command == edit_mode_none) {edit_mode = edit_mode_none; return;}
@@ -234,6 +251,7 @@ static void create_response (char * command) {
 	if (command == create_dodecahedron_mode) {CreateDiceCommand (12); edit_mode = edit_mode_none; return;}
 	if (command == create_icosahedron_mode) {CreateDiceCommand (20); edit_mode = edit_mode_none; return;}
 }
+*/
 static GtkWidget * right_click_menu = 0;
 static GtkWidget * AddMenu (GtkWidget * menu, char * label, void action (char *)) {
 	GtkWidget * item = gtk_menu_item_new_with_label (label);
@@ -248,6 +266,7 @@ static GtkWidget * AddSubMenu (GtkWidget * menu, char * label) {
 	gtk_menu_append (GTK_MENU (menu), item);
 	return sub_menu;
 }
+/*
 static void CreateRightClickMenu (void) {
 	if (right_click_menu != 0) return;
 	right_click_menu = gtk_menu_new ();
@@ -266,8 +285,52 @@ static void CreateRightClickMenu (void) {
 	AddMenu (dice_submenu, create_dodecahedron_mode, create_response);
 	AddMenu (dice_submenu, create_icosahedron_mode, create_response);
 }
+*/
+
+static point BoardPoint (boarder_viewport * viewport, GdkEventButton * event) {
+	return viewport -> board_position + point (event -> x, event -> y) /
+		(viewport -> scaling != 0.0 ? viewport -> scaling : 1.0);
+}
+static rect edit_area (point (0, 0), point (0, 0));
+static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	edited_token = 0;
+	if (board == 0) return TRUE;
+	edit_area . size = BoardPoint (viewport, event) - edit_area . position;
+	return TRUE;
+}
 
 static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	if (board == 0) return TRUE;
+	edit_area = rect (BoardPoint (viewport, event), point (0, 0));
+	switch (viewport -> edit_mode) {
+	case boarder_viewport :: create_rectangle:
+		CreateRectangleCommand ();
+		break;
+	case boarder_viewport :: create_tetrahedron:
+		CreateDiceCommand (4);
+		break;
+	default: break;
+	}
+	return TRUE;
+}
+
+static gint window_button_motion_event (GtkWidget * window, GdkEventButton * event, boarder_viewport * viewport) {
+	if (board == 0) return TRUE;
+	point p = BoardPoint (viewport, event);
+	point delta = p - edit_area . position - edit_area . size;
+	edit_area . size = p - edit_area . position;
+	switch (viewport -> edit_mode) {
+	case boarder_viewport :: move:
+		viewport -> board_position -= delta;
+		break;
+	case boarder_viewport :: create_rectangle:
+		if (edited_token != 0) edited_token -> set_location (edit_area);
+		break;
+	default: break;
+	}
+	return TRUE;
+}
+/*
 	edited_token = 0;
 	moved = false;
 	if (board == 0) return TRUE;
@@ -352,6 +415,7 @@ static gint window_button_motion_event (GtkWidget * window, GdkEventButton * eve
 	if (click_button > 0) board -> repaint ();
 	return TRUE;
 }
+*/
 
 void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
 				 GtkSelectionData *data, guint ttype, guint time, gpointer *NA) {

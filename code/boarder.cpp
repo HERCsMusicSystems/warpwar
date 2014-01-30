@@ -36,6 +36,7 @@ point point :: operator / (const double & scale) const {if (scale == 0.0) return
 bool point :: operator == (const point & p) const {return x == p . x && y == p . y;}
 bool point :: operator != (const point & p) const {return x != p . x || y != p . y;}
 point point :: operator += (const point & p) {x += p . x; y += p . y; return * this;}
+point point :: operator -= (const point & p) {x -= p . x; y -= p . y; return * this;}
 point point :: operator *= (const double & d) {x *= d; y *= d; return * this;}
 point point :: operator *= (const point & p) {x *= p . x; y *= p . y; return * this;}
 point point :: half (void) {return * this * 0.5;}

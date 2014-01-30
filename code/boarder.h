@@ -104,6 +104,7 @@ public:
 	bool operator == (const point & p) const;
 	bool operator != (const point & p) const;
 	point operator += (const point & p);
+	point operator -= (const point & p);
 	point operator *= (const double & d);
 	point operator *= (const point & p);
 	point half (void);
