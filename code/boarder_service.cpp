@@ -56,7 +56,7 @@ static gboolean ChangeViewportNameIdleCode (boarder_viewport * viewport) {
 	default: mode = "None"; break;
 	}
 	char command [256];
-	sprintf (command, "%s [%i]", viewport -> name, mode);
+	sprintf (command, "%s [%s]", viewport -> name, mode);
 	gtk_window_set_title (GTK_WINDOW (viewport -> window), command);
 	return FALSE;
 }
@@ -184,6 +184,7 @@ static bool has_selection = false;
 static bool moved = false;
 //static char * edit_mode = edit_mode_none;
 static boarder_token * edited_token = 0;
+static bool dragging = false;
 
 static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
 	printf ("key on [%s]\n", gdk_keyval_name (event -> keyval));
@@ -294,12 +295,14 @@ static point BoardPoint (boarder_viewport * viewport, GdkEventButton * event) {
 static rect edit_area (point (0, 0), point (0, 0));
 static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
 	edited_token = 0;
+	dragging = false;
 	if (board == 0) return TRUE;
 	edit_area . size = BoardPoint (viewport, event) - edit_area . position;
 	return TRUE;
 }
 
 static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	dragging = true;
 	if (board == 0) return TRUE;
 	edit_area = rect (BoardPoint (viewport, event), point (0, 0));
 	switch (viewport -> edit_mode) {
@@ -316,15 +319,20 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 
 static gint window_button_motion_event (GtkWidget * window, GdkEventButton * event, boarder_viewport * viewport) {
 	if (board == 0) return TRUE;
+	if (! dragging) return TRUE;
 	point p = BoardPoint (viewport, event);
 	point delta = p - edit_area . position - edit_area . size;
 	edit_area . size = p - edit_area . position;
 	switch (viewport -> edit_mode) {
 	case boarder_viewport :: move:
-		viewport -> board_position -= delta;
+		viewport -> board_position -= edit_area . size;
+		gtk_widget_queue_draw (viewport -> window);
 		break;
 	case boarder_viewport :: create_rectangle:
-		if (edited_token != 0) edited_token -> set_location (edit_area);
+		if (edited_token != 0) {
+			edited_token -> set_location (edit_area);
+			board -> repaint ();
+		}
 		break;
 	default: break;
 	}
