@@ -51,7 +51,7 @@ static gboolean ChangeViewportNameIdleCode (boarder_viewport * viewport) {
 	case boarder_viewport :: move: mode = "Move"; break;
 	case boarder_viewport :: select: mode = "Select"; break;
 	case boarder_viewport :: create_rectangle: mode = "Create Rectangle"; break;
-	case boarder_viewport :: create_square: mode = "Create Square"; break;
+	case boarder_viewport :: create_circle: mode = "Create Circle"; break;
 	case boarder_viewport :: create_tetrahedron: mode = "Create Tetrahedron"; break;
 	default: mode = "None"; break;
 	}
@@ -177,21 +177,28 @@ public:
 	}
 };
 
-static point click_init_point (0, 0);
-static point click_point (0, 0);
 static int click_button = 0;
 static bool has_selection = false;
 static bool moved = false;
 //static char * edit_mode = edit_mode_none;
 static boarder_token * edited_token = 0;
 static bool dragging = false;
+static bool minimise_square_area = false;
+static bool maximise_square_area = false;
+static rect edit_area (point (0, 0), point (0, 0));
 
 static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
-	printf ("key on [%s]\n", gdk_keyval_name (event -> keyval));
+	printf ("key on [%s %i]\n", gdk_keyval_name (event -> keyval), (int) event -> keyval);
+	switch ((int) event -> keyval) {
+	case 72: minimise_square_area = true; break;
+	case 73: maximise_square_area = true; break;
+	default: break;
+	}
 	return FALSE;
 }
 
 static gboolean viewport_key_off_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
+	minimise_square_area = maximise_square_area = false;
 	printf ("key off [%s]\n", gdk_keyval_name (event -> keyval));
 	return FALSE;
 }
@@ -201,6 +208,10 @@ static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, board
 	if (viewport -> board == 0) return FALSE;
 	cairo_t * cr = gdk_cairo_create (gtk_widget_get_window (widget));
 	board -> draw (cr, viewport);
+	if (viewport -> edit_mode == boarder_viewport :: select) {
+		cairo_rectangle (cr, RECT (edit_area));
+		cairo_stroke (cr);
+	}
 	/*if (click_button == 3 && click_init_point != click_point) {
 		rect location (click_init_point * viewport -> scaling, (click_point - click_init_point) * viewport -> scaling);
 		cairo_rectangle (cr, RECT (location));
@@ -220,8 +231,8 @@ static void CreateDiceCommand (int order, bool extended = false) {
 	if (root == 0) return;
 	PrologElement * location_query = root -> pair (root -> var (0),
 		root -> pair (root -> atom ("boarder", "Position"),
-		root -> pair (root -> integer ((int) click_init_point . x),
-		root -> pair (root -> integer ((int) click_init_point . y),
+		root -> pair (root -> integer ((int) edit_area . position . x),
+		root -> pair (root -> integer ((int) edit_area . position . y),
 		root -> earth ()))));
 	PrologElement * creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
 		root -> pair (root -> var (0),
@@ -236,7 +247,7 @@ static void CreateDiceCommand (int order, bool extended = false) {
 	board -> repaint ();
 }
 
-static void CreateRectangleCommand (void);
+static void CreateFigureCommand (char * figure);
 
 /*
 static void create_response (char * command) {
@@ -292,26 +303,48 @@ static point BoardPoint (boarder_viewport * viewport, GdkEventButton * event) {
 	return viewport -> board_position + point (event -> x, event -> y) /
 		(viewport -> scaling != 0.0 ? viewport -> scaling : 1.0);
 }
-static rect edit_area (point (0, 0), point (0, 0));
 static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	printf ("button up [%i]\n", event -> button);
 	edited_token = 0;
 	dragging = false;
 	if (board == 0) return TRUE;
 	edit_area . size = BoardPoint (viewport, event) - edit_area . position;
+	if (minimise_square_area) edit_area . minimise ();
+	if (maximise_square_area) edit_area . maximise ();
+	boarder_token * token = 0;
+	switch (viewport -> edit_mode) {
+	case boarder_viewport :: select:
+		token = board -> hit_test (edit_area);
+		while (token != 0) {token -> selected = true; token = token -> hit_test_next (edit_area);}
+		board -> repaint ();
+		break;
+	default: break;
+	}
 	return TRUE;
 }
 
 static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
+	printf ("button down [%i]\n", (int) event -> button);
 	dragging = true;
 	if (board == 0) return TRUE;
 	edit_area = rect (BoardPoint (viewport, event), point (0, 0));
+	boarder_token * token = 0;
 	switch (viewport -> edit_mode) {
-	case boarder_viewport :: create_rectangle:
-		CreateRectangleCommand ();
+	case boarder_viewport :: move:
+		token = board -> hit_test (edit_area);
+		if (token != 0) token -> selected = has_selection = true;
+		else board -> clear_selection (has_selection = false);
 		break;
-	case boarder_viewport :: create_tetrahedron:
-		CreateDiceCommand (4);
-		break;
+	case boarder_viewport :: create_rectangle: CreateFigureCommand ("CreateRectangle"); boarder_clean = false; break;
+	case boarder_viewport :: create_circle: CreateFigureCommand ("CreateCircle"); boarder_clean = false; break;
+	case boarder_viewport :: create_tetrahedron: CreateDiceCommand (4); boarder_clean = false; break;
+	case boarder_viewport :: create_cube: CreateDiceCommand (6); boarder_clean = false; break;
+	case boarder_viewport :: create_dice: CreateDiceCommand (6, true); boarder_clean = false; break;
+	case boarder_viewport :: create_octahedron: CreateDiceCommand (8); boarder_clean = false; break;
+	case boarder_viewport :: create_deltahedron: CreateDiceCommand (10); boarder_clean = false; break;
+	case boarder_viewport :: create_deltahedron_10: CreateDiceCommand (10, true); boarder_clean = false; break;
+	case boarder_viewport :: create_dodecahedron: CreateDiceCommand (12); boarder_clean = false; break;
+	case boarder_viewport :: create_icosahedron: CreateDiceCommand (20); boarder_clean = false; break;
 	default: break;
 	}
 	return TRUE;
@@ -323,14 +356,24 @@ static gint window_button_motion_event (GtkWidget * window, GdkEventButton * eve
 	point p = BoardPoint (viewport, event);
 	point delta = p - edit_area . position - edit_area . size;
 	edit_area . size = p - edit_area . position;
+	if (minimise_square_area) edit_area . minimise ();
+	if (maximise_square_area) edit_area . maximise ();
 	switch (viewport -> edit_mode) {
 	case boarder_viewport :: move:
-		viewport -> board_position -= edit_area . size;
-		gtk_widget_queue_draw (viewport -> window);
+		boarder_clean = false;
+		if (has_selection) {
+			board -> move_selection (delta);
+			board -> repaint ();
+		} else {
+			viewport -> board_position -= edit_area . size;
+			gtk_widget_queue_draw (viewport -> window);
+		}
 		break;
 	case boarder_viewport :: create_rectangle:
+	case boarder_viewport :: create_circle:
 		if (edited_token != 0) {
 			edited_token -> set_location (edit_area);
+			boarder_clean = false;
 			board -> repaint ();
 		}
 		break;
@@ -812,18 +855,18 @@ public:
 	}
 };
 
-static void CreateRectangleCommand (void) {
+static void CreateFigureCommand (char * figure) {
 	if (board == 0) return;
 	PrologRoot * root = board -> root;
 	if (root == 0) return;
 	PrologElement * location_query = root -> pair (root -> var (0),
 		root -> pair (root -> atom ("boarder", "Location"),
-		root -> pair (root -> integer ((int) click_init_point . x),
-		root -> pair (root -> integer ((int) click_init_point . y),
+		root -> pair (root -> integer ((int) edit_area . position . x),
+		root -> pair (root -> integer ((int) edit_area . position . y),
 		root -> pair (root -> integer (0),
 		root -> pair (root -> integer (0),
 		root -> earth ()))))));
-	PrologElement * creation_query = root -> pair (root -> atom ("boarder", "CreateRectangle"),
+	PrologElement * creation_query = root -> pair (root -> atom ("boarder", figure),
 		root -> pair (root -> var (0),
 		root -> earth ()));
 	PrologElement * query = root -> pair (root -> pair (root -> var (0), root -> earth ()),

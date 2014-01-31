@@ -41,6 +41,8 @@ point point :: operator *= (const double & d) {x *= d; y *= d; return * this;}
 point point :: operator *= (const point & p) {x *= p . x; y *= p . y; return * this;}
 point point :: half (void) {return * this * 0.5;}
 void point :: round (void) {x = (double) ((int) (x + 0.5)); y = (double) ((int) (y + 0.5));}
+void point :: minimise (void) {if (x > y) x = y; else if (y > x) y = x;}
+void point :: maximise (void) {if (x < y) x = y; else if (y < x) y = x;}
 
 rect :: rect (void) {position = size = point (0.0, 0.0);}
 rect :: rect (point position, point size) {this -> position = position; this -> size = size;}
@@ -60,6 +62,8 @@ void rect :: positivise (void) {
 
 bool rect :: operator == (const rect & r) const {return position == r . position && size == r . size;}
 bool rect :: operator != (const rect & r) const {return position != r . position || size != r . size;}
+void rect :: minimise (void) {size . minimise ();}
+void rect :: maximise (void) {size . maximise ();}
 
 double int_to_colour (int c) {return c >= 255 ? 1.0 : (double) c / 256.0;}
 int colour_to_int (double c) {return c >= 1.0 ? 255 : (int) (256.0 * c);}
@@ -248,7 +252,8 @@ void boarder :: repaint (void) {
 void boarder :: move_selection (point delta) {
 	boarder_token * token = tokens;
 	while (token != 0) {
-		if (token -> selected) token -> set_position (delta + token -> get_location () . position);
+		//if (token -> selected) token -> set_position (delta + token -> get_location () . position);
+		if (token -> selected) token -> move_position (delta);
 		token = token -> next;
 	}
 }
@@ -421,6 +426,7 @@ void boarder_token :: draw_selection ( cairo_t * cr, boarder_viewport * viewport
 }
 
 void boarder_token :: set_position (point position) {this -> location . position = position;}
+void boarder_token :: move_position (point delta) {this -> location . position += delta;}
 void boarder_token :: set_size (point size) {this -> location . size = size;}
 void boarder_token :: set_location (rect location) {this -> location = location;}
 rect boarder_token :: get_location (void) {return location;}

@@ -109,6 +109,8 @@ public:
 	point operator *= (const point & p);
 	point half (void);
 	void round (void);
+	void minimise (void);
+	void maximise (void);
 };
 
 #define RECT(r) r . position . x, r . position . y, r . size . x, r . size . y
@@ -122,6 +124,8 @@ public:
 	void positivise (void);
 	bool operator == (const rect & r) const;
 	bool operator != (const rect & r) const;
+	void minimise (void);
+	void maximise (void);
 	rect (point offset, point size);
 	rect (double x, double y, double width, double height);
 	rect (double locations [4]);
@@ -190,7 +194,7 @@ class boarder_viewport {
 public:
 	enum edit_modes {
 		move = 0, select,
-		create_rectangle, create_square, create_ellipse, create_circle,
+		create_rectangle, create_circle,
 		create_tetrahedron, create_cube, create_dice,
 		create_octahedron, create_deltahedron, create_deltahedron_10,
 		create_dodecahedron, create_icosahedron,
@@ -237,6 +241,7 @@ public:
 	virtual bool should_save_size (void);
 	virtual double default_scaling (void);
 	virtual void set_position (point position);
+	virtual void move_position (point delta);
 	virtual void set_size (point size);
 	virtual void set_location (rect location);
 	virtual rect get_location (void);
