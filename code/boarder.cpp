@@ -122,6 +122,10 @@ static void save_colour (FILE *tc, char * command, colour c, colour default_c) {
 
 void boarder :: erase (void) {if (tokens != 0) delete tokens; tokens = 0;}
 
+void boarder :: apply_colour_to_selection (int red, int green, int blue, bool foreground) {
+	if (tokens != 0) tokens -> apply_colour_to_selection (red, green, blue, foreground);
+}
+
 bool boarder :: save (char * location) {
 	FILE * tc = fopen (location, "wb");
 	if (tc == 0) return false;
@@ -325,9 +329,11 @@ boarder_viewport :: ~ boarder_viewport (void) {
 
 void boarder_viewport :: save (FILE * tc) {
 	if (next) next -> save (tc);
-	fprintf (tc, "[%s %s \"%s\" %i %i %i %i]\n", VIEWPORT, atom -> name (), name, (int) location . position . x, (int) location . position . y, (int) location . size . x, (int) location . size . y);
+	fprintf (tc, "[%s %s \"%s\" %i %i %i %i]\n", VIEWPORT, atom -> name (), name,
+		(int) location . position . x, (int) location . position . y, (int) location . size . x, (int) location . size . y);
 	fprintf (tc, "[%s %s %i %i]\n", atom -> name (), POSITION, (int) board_position . x, (int) board_position . y);
 	if (scaling != 1.0) fprintf (tc, "[%s %s %g]\n", atom -> name (), SCALING, scaling);
+	if (edit_mode != 0) fprintf (tc, "[%s %s %i]\n", atom -> name (), MODE, (int) edit_mode);
 	fprintf (tc, "\n");
 }
 
@@ -384,6 +390,14 @@ boarder_token * boarder_token :: insert (boarder_token * token) {return 0;}
 boarder_token * boarder_token :: release (void) {return 0;}
 boarder_token * boarder_token :: release_random (void) {return 0;}
 bool boarder_token :: shuffle (void) {return false;}
+
+void boarder_token :: apply_colour_to_selection (int red, int green, int blue, bool foreground) {
+	if (selected) {
+		if (foreground) foreground_colour = colour (red, green, blue, colour_to_int (foreground_colour . alpha));
+		else background_colour = colour (red, green, blue, colour_to_int (background_colour . alpha));
+	}
+	if (next != 0) next -> apply_colour_to_selection (red, green, blue, foreground);
+}
 
 void boarder_token :: save (boarder * board, FILE * tc) {
 	if (next) next -> save (board, tc);

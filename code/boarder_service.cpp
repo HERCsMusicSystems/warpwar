@@ -7,22 +7,6 @@
 
 #include "prolog_linux_console.h"
 
-/*
-static char * edit_mode_none = "None";
-static char * create_square_mode = "Create Square";
-static char * create_rectangle_mode = "Create Rectangle";
-static char * create_circle_mode = "Create Circle";
-static char * create_ellipse_mode = "Create Ellipse";
-static char * create_tetrahedron_mode = "Create Tetrahedron";
-static char * create_cube_mode = "Create Cube";
-static char * create_dice_mode = "Create Dice";
-static char * create_octahedron_mode = "Create Octahedron";
-static char * create_deltahedron_mode = "Create Deltahedron";
-static char * create_deltahedron_10_mode = "Create Deltahedron 10";
-static char * create_dodecahedron_mode = "Create Dodecahedron";
-static char * create_icosahedron_mode = "Create Icosahedron";
-*/
-
 static boarder * board = 0;
 static bool boarder_clean = true;
 
@@ -40,11 +24,11 @@ static gboolean viewport_delete_event (GtkWidget * widget, GdkEvent * event, boa
 	return FALSE;
 }
 static gboolean RemoveViewportIdleCode (GtkWidget * viewport) {gtk_widget_destroy (viewport); return FALSE;}
-static gboolean ChangeViewportNameIdleCode (boarder_viewport * viewport) {
-	if (viewport == 0) return FALSE;
+static void ChangeViewportName (boarder_viewport * viewport) {
+	if (viewport == 0) return;
 	if (viewport -> edit_mode == boarder_viewport :: move) {
 		gtk_window_set_title (GTK_WINDOW (viewport -> window), viewport -> name);
-		return FALSE;
+		return;
 	}
 	char * mode;
 	switch (viewport -> edit_mode) {
@@ -53,13 +37,20 @@ static gboolean ChangeViewportNameIdleCode (boarder_viewport * viewport) {
 	case boarder_viewport :: create_rectangle: mode = "Create Rectangle"; break;
 	case boarder_viewport :: create_circle: mode = "Create Circle"; break;
 	case boarder_viewport :: create_tetrahedron: mode = "Create Tetrahedron"; break;
+	case boarder_viewport :: create_dice: mode = "Create Dice"; break;
+	case boarder_viewport :: create_cube: mode = "Create Cube"; break;
+	case boarder_viewport :: create_octahedron: mode = "Create Octahedron"; break;
+	case boarder_viewport :: create_deltahedron: mode = "Create Deltahedron"; break;
+	case boarder_viewport :: create_deltahedron_10: mode = "Create Deltahedron 10"; break;
+	case boarder_viewport :: create_dodecahedron: mode = "Create Dodecahedron"; break;
+	case boarder_viewport :: create_icosahedron: mode = "Create Icosahedron"; break;
 	default: mode = "None"; break;
 	}
 	char command [256];
 	sprintf (command, "%s [%s]", viewport -> name, mode);
 	gtk_window_set_title (GTK_WINDOW (viewport -> window), command);
-	return FALSE;
 }
+static gboolean ChangeViewportNameIdleCode (boarder_viewport * viewport) {ChangeViewportName (viewport); return FALSE;}
 
 class viewport_action : public PrologNativeCode {
 public:
@@ -185,21 +176,78 @@ static boarder_token * edited_token = 0;
 static bool dragging = false;
 static bool minimise_square_area = false;
 static bool maximise_square_area = false;
+static bool shift_on (void) {return minimise_square_area || maximise_square_area;}
 static rect edit_area (point (0, 0), point (0, 0));
 
 static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
 	printf ("key on [%s %i]\n", gdk_keyval_name (event -> keyval), (int) event -> keyval);
-	switch ((int) event -> keyval) {
-	case 72: minimise_square_area = true; break;
-	case 73: maximise_square_area = true; break;
+	if (board == 0) return FALSE;
+	int key = (int) event -> keyval;
+	switch (key) {
+	case 49:
+		viewport -> edit_mode = boarder_viewport :: move;
+		ChangeViewportName (viewport);
+		break;
+	case 50:
+		viewport -> edit_mode = boarder_viewport :: select;
+		board -> clear_selection ();
+		has_selection = false;
+		ChangeViewportName (viewport);
+		board -> repaint ();
+		break;
+	case 59: case 39:
+		if (viewport -> edit_mode == boarder_viewport :: select) {
+			GtkWidget * colour_dialog = gtk_color_selection_dialog_new (key == 59 ? "Foreground Colour" : "Background Colour");
+			if (gtk_dialog_run (GTK_DIALOG (colour_dialog)) == GTK_RESPONSE_OK) {
+				printf ("foreground [%i %i %i %i]\n", 1, 2, 3, 4);
+				GtkColorSelection * selection = GTK_COLOR_SELECTION (GTK_COLOR_SELECTION_DIALOG (colour_dialog) -> colorsel);
+				GdkColor colour;
+				gtk_color_selection_get_current_color (selection, & colour);
+				board -> apply_colour_to_selection (colour . red >> 8, colour . green >> 8, colour . blue >> 8, key == 59);
+				board -> repaint ();
+			}
+			gtk_widget_destroy (colour_dialog);
+		}
+		break;
+	case 51: viewport -> edit_mode = boarder_viewport :: create_rectangle; ChangeViewportName (viewport); break;
+	case 52: viewport -> edit_mode = boarder_viewport :: create_circle; ChangeViewportName (viewport); break;
+	case 121: viewport -> edit_mode = boarder_viewport :: create_tetrahedron; ChangeViewportName (viewport); break;
+	case 117: viewport -> edit_mode = boarder_viewport :: create_dice; ChangeViewportName (viewport); break;
+	case 105: viewport -> edit_mode = boarder_viewport :: create_cube; ChangeViewportName (viewport); break;
+	case 111: viewport -> edit_mode = boarder_viewport :: create_octahedron; ChangeViewportName (viewport); break;
+	case 112: viewport -> edit_mode = boarder_viewport :: create_deltahedron; ChangeViewportName (viewport); break;
+	case 91: viewport -> edit_mode = boarder_viewport :: create_deltahedron_10; ChangeViewportName (viewport); break;
+	case 93: viewport -> edit_mode = boarder_viewport :: create_dodecahedron; ChangeViewportName (viewport); break;
+	case 92: viewport -> edit_mode = boarder_viewport :: create_icosahedron; ChangeViewportName (viewport); break;
+	case 65505: maximise_square_area = true; break;
+	case 65506: minimise_square_area = true; break;
+	case 65361: case 65362: case 65363: case 65364:
+		if (viewport -> edit_mode <= boarder_viewport :: select) {
+			boarder_clean = false;
+			int step = minimise_square_area ? 8 : maximise_square_area ? 32 : 1;
+			point delta (key == 65363 ? step : key == 65361 ? -step : 0, key == 65362 ? -step : key == 65364 ? step : 0);
+			if (has_selection) {
+				board -> move_selection (delta);
+				board -> repaint ();
+			} else {
+				viewport -> board_position -= delta;
+				gtk_widget_queue_draw (viewport -> window);
+			}
+		}
+		break;
 	default: break;
 	}
 	return FALSE;
 }
 
 static gboolean viewport_key_off_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
-	minimise_square_area = maximise_square_area = false;
-	printf ("key off [%s]\n", gdk_keyval_name (event -> keyval));
+	int key = (int) event -> keyval;
+	switch (key) {
+	case 65505: maximise_square_area = false; break;
+	case 65506: minimise_square_area = false; break;
+	default: break;
+	}
+	printf ("key off [%s %i]\n", gdk_keyval_name (event -> keyval), key);
 	return FALSE;
 }
 
@@ -208,15 +256,11 @@ static gboolean viewport_draw_event (GtkWidget * widget, GdkEvent * event, board
 	if (viewport -> board == 0) return FALSE;
 	cairo_t * cr = gdk_cairo_create (gtk_widget_get_window (widget));
 	board -> draw (cr, viewport);
-	if (viewport -> edit_mode == boarder_viewport :: select) {
-		cairo_rectangle (cr, RECT (edit_area));
-		cairo_stroke (cr);
-	}
-	/*if (click_button == 3 && click_init_point != click_point) {
-		rect location (click_init_point * viewport -> scaling, (click_point - click_init_point) * viewport -> scaling);
+	if (viewport -> edit_mode == boarder_viewport :: select && dragging) {
+		rect location ((edit_area . position - viewport -> board_position) * viewport -> scaling, edit_area . size * viewport -> scaling);
 		cairo_rectangle (cr, RECT (location));
 		cairo_stroke (cr);
-	}*/
+	}
 	cairo_destroy (cr);
 	return FALSE;
 }
@@ -234,7 +278,18 @@ static void CreateDiceCommand (int order, bool extended = false) {
 		root -> pair (root -> integer ((int) edit_area . position . x),
 		root -> pair (root -> integer ((int) edit_area . position . y),
 		root -> earth ()))));
-	PrologElement * creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
+	PrologElement * creation_query;
+	if (extended) {
+		if (order == 6) creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
+					root -> pair (root -> var (0),
+					root -> earth ()));
+		else creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
+			root -> pair (root -> var (0),
+			root -> pair (root -> integer (order),
+			root -> pair (root -> integer (0),
+			root -> pair (root -> integer (10),
+			root -> earth ())))));
+	} else creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
 		root -> pair (root -> var (0),
 		root -> pair (root -> integer (order),
 		root -> earth ())));
@@ -315,6 +370,7 @@ static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, 
 	switch (viewport -> edit_mode) {
 	case boarder_viewport :: select:
 		token = board -> hit_test (edit_area);
+		has_selection |= token != 0;
 		while (token != 0) {token -> selected = true; token = token -> hit_test_next (edit_area);}
 		board -> repaint ();
 		break;
@@ -332,19 +388,30 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 	switch (viewport -> edit_mode) {
 	case boarder_viewport :: move:
 		token = board -> hit_test (edit_area);
-		if (token != 0) token -> selected = has_selection = true;
-		else board -> clear_selection (has_selection = false);
+		if (token != 0) {
+			if (! token -> selected) board -> clear_selection ();
+			token -> selected = has_selection = true;
+		} else board -> clear_selection (has_selection = false);
+		board -> repaint ();
 		break;
 	case boarder_viewport :: create_rectangle: CreateFigureCommand ("CreateRectangle"); boarder_clean = false; break;
 	case boarder_viewport :: create_circle: CreateFigureCommand ("CreateCircle"); boarder_clean = false; break;
-	case boarder_viewport :: create_tetrahedron: CreateDiceCommand (4); boarder_clean = false; break;
-	case boarder_viewport :: create_cube: CreateDiceCommand (6); boarder_clean = false; break;
-	case boarder_viewport :: create_dice: CreateDiceCommand (6, true); boarder_clean = false; break;
-	case boarder_viewport :: create_octahedron: CreateDiceCommand (8); boarder_clean = false; break;
-	case boarder_viewport :: create_deltahedron: CreateDiceCommand (10); boarder_clean = false; break;
-	case boarder_viewport :: create_deltahedron_10: CreateDiceCommand (10, true); boarder_clean = false; break;
-	case boarder_viewport :: create_dodecahedron: CreateDiceCommand (12); boarder_clean = false; break;
-	case boarder_viewport :: create_icosahedron: CreateDiceCommand (20); boarder_clean = false; break;
+	case boarder_viewport :: create_tetrahedron: CreateDiceCommand (4);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_cube: CreateDiceCommand (6);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_dice: CreateDiceCommand (6, true);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_octahedron: CreateDiceCommand (8);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_deltahedron: CreateDiceCommand (10);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_deltahedron_10: CreateDiceCommand (10, true);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_dodecahedron: CreateDiceCommand (12);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_icosahedron: CreateDiceCommand (20);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
 	default: break;
 	}
 	return TRUE;
@@ -369,6 +436,7 @@ static gint window_button_motion_event (GtkWidget * window, GdkEventButton * eve
 			gtk_widget_queue_draw (viewport -> window);
 		}
 		break;
+	case boarder_viewport :: select: board -> repaint (); break;
 	case boarder_viewport :: create_rectangle:
 	case boarder_viewport :: create_circle:
 		if (edited_token != 0) {

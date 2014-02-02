@@ -139,6 +139,7 @@ void grid_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	case 4: draw_horizontal_hex_grid (cr, viewport, r, centre, true); break;
 	default: draw_square_grid (cr, viewport, r, centre); break;
 	}
+	cairo_identity_matrix (cr);
 }
 
 double positivise (double d) {return d >= 0.0 ? d : 0.0;}

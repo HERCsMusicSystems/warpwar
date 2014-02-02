@@ -186,6 +186,7 @@ public:
 	boarder_token * hit_test (rect area);
 	void repaint (void);
 	void move_selection (point delta);
+	void apply_colour_to_selection (int red, int green, int blue, bool foreground);
 	boarder (PrologRoot * root);
 	~ boarder (void);
 };
@@ -258,6 +259,7 @@ public:
 	virtual colour default_background_colour (boarder * board) = 0;
 	boarder_token * hit_test (rect area);
 	boarder_token * hit_test_next (rect area);
+	void apply_colour_to_selection (int red, int green, int blue, bool foreground);
 	void save (boarder * board, FILE * tc);
 	boarder_token (PrologAtom * atom);
 	virtual ~ boarder_token (void);
