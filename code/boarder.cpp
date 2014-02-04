@@ -591,20 +591,23 @@ colour circle_token :: default_background_colour (boarder * board) {return board
 picture_token :: picture_token (PrologAtom * atom, char * picture_location, int sides) : boarder_token (atom) {
 	this -> picture_location = create_text (picture_location);
 	surface = cairo_image_surface_create_from_png (picture_location);
-	int width = cairo_image_surface_get_width (surface);
-	int height = cairo_image_surface_get_height (surface);
-	if (sides < 1) sides = 1;
-	if (sides > height) sides = height;
-	this -> sides = sides;
-	location . size = point (width, height / sides);
+	picture_size = point (cairo_image_surface_get_width (surface), cairo_image_surface_get_height (surface));
+	resize ();
 }
+
 picture_token :: ~ picture_token (void) {
 	printf ("	DELETING PICTURE\n");
 	delete_text (picture_location);
 	cairo_surface_destroy (surface);
 }
 
-bool picture_token :: set_sides (int sides) {this -> sides = sides < 1 ? 1 : sides; return true;}
+void picture_token :: resize (void) {
+	if (sides < 1) sides = 1;
+	if (sides > picture_size . y) sides = picture_size . y;
+	location . size = point (picture_size . x, picture_size . y / sides);
+}
+
+bool picture_token :: set_sides (int sides) {this -> sides = sides; resize (); return true;}
 int picture_token :: get_sides (void) {return this -> sides;}
 
 void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
@@ -651,7 +654,7 @@ bool text_token :: set_text (char * text) {
 	return true;
 }
 
-char * text_token :: get_text (void) {return this -> text != 0 ? this -> text : "";}
+char * text_token :: get_text (void) {if (text == 0) return ""; return text;}
 
 void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_identity_matrix (cr);
@@ -708,7 +711,7 @@ bool deck_token :: set_text (char * text) {
 	return true;
 }
 
-char * deck_token :: get_text (void) {return this -> text != 0 ? this -> text : "";}
+char * deck_token :: get_text (void) {if (text == 0) return ""; return text;}
 
 void deck_token :: creation_call (boarder * board, FILE * tc) {
 	if (text == 0) fprintf (tc, "[%s %s]\n", CREATE_DECK, atom -> name ());

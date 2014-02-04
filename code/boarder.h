@@ -205,7 +205,7 @@ public:
 		create_tetrahedron, create_cube, create_dice,
 		create_octahedron, create_deltahedron, create_deltahedron_10,
 		create_dodecahedron, create_icosahedron,
-		create_text, creage_grid, create_deck,
+		create_text, create_grid, create_deck,
 		edit_size, edit_indexing, edit_rotation, edit_side, edit_scaling, edit_ordering,
 		edit
 	};
@@ -256,7 +256,7 @@ public:
 	virtual rect get_bounding_box (void);
 	virtual int randomize_side (void);
 	virtual bool set_text (char * text);
-	char * get_text (void);
+	virtual char * get_text (void);
 	virtual bool set_sides (int sides);
 	virtual int get_sides (void);
 	virtual bool can_insert (void);
@@ -287,7 +287,7 @@ public:
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
 	virtual bool set_text (char * text);
-	char * get_text (void);
+	virtual char * get_text (void);
 	text_token (PrologAtom * atom, char * text);
 	virtual ~ text_token (void);
 };
@@ -309,7 +309,7 @@ public:
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
 	virtual bool set_text (char * text);
-	char * get_text (void);
+	virtual char * get_text (void);
 	deck_token (PrologAtom * atom, char * text);
 	virtual ~ deck_token (void);
 };
@@ -339,6 +339,8 @@ public:
 class picture_token : public boarder_token {
 private:
 	int sides;
+	point picture_size;
+	void resize (void);
 protected:
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
