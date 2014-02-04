@@ -38,7 +38,7 @@ Applicable to: rectangle, circle, picture, dice, grid, text and deck.
 [token Location : *x]                               => returns location and dimension
 [token Position x y]                                => location on the board
 [token Position : *x]                               => returns location
-[token Size width height]                           => dimension
+[token Size width (height)]                         => dimension; heigh can be omitted for squares and circles
 [token Size : *x]                                   => returns dimension
 [token BackgroundColour red green blue (alpha)]     => background colour (alpha optional default = 255)
 [token BackgroundColour : *x]                       => returns background colour (including alpha)
@@ -50,6 +50,10 @@ Applicable to: rectangle, circle, picture, dice, grid, text and deck.
 [token Rotation : *x]                               => returns rotation
 [token Side side]                                   => selects side of multi-sided tokens (dices, pictures)
 [token Side : *x]                                   => return side
+[token Text "text"]                                 => sets text or fails if impossible
+[token Text (:) *x]                                 => gets text
+[token Sides sides]                                 => sets sides or fails if impossible
+[token Sides (:) *x]                                => gets sides
 [token Indexing x y rows columns]                   => indexing
 [token Indexing : *x]                               => return indexing
 [token NoIndexing]                                  => cancels indexing

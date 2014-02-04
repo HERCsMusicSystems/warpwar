@@ -123,7 +123,14 @@ static void save_colour (FILE *tc, char * command, colour c, colour default_c) {
 void boarder :: erase (void) {if (tokens != 0) delete tokens; tokens = 0;}
 
 void boarder :: apply_colour_to_selection (int red, int green, int blue, bool foreground) {
-	if (tokens != 0) tokens -> apply_colour_to_selection (red, green, blue, foreground);
+	boarder_token * token = tokens;
+	while (token != 0) {
+		if (token -> selected) {
+			if (foreground) token -> foreground_colour = colour (red, green, blue, colour_to_int (token -> foreground_colour . alpha));
+			else token -> background_colour = colour (red, green, blue, colour_to_int (token -> background_colour . alpha));
+		}
+		token = token -> next;
+	}
 }
 
 bool boarder :: save (char * location) {
@@ -262,6 +269,60 @@ void boarder :: move_selection (point delta) {
 	}
 }
 
+void boarder :: resize_selection (point delta, bool minimise, bool maximise) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		if (token -> selected) {
+			point size = token -> get_location () . size;
+			size += delta;
+			if (maximise) size . maximise ();
+			if (minimise) size . minimise ();
+			token -> set_size (size);
+		}
+		token = token -> next;
+	}
+}
+
+void boarder :: reindex_selection (void) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		if (token -> selected) token -> no_indexing = ! token -> no_indexing;
+		token = token -> next;
+	}
+}
+
+void boarder :: reindex_selection (rect reindex) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		if (token -> selected) {
+			token -> indexing . position += reindex . position;
+			token -> indexing . size += reindex . size;
+		}
+		token = token -> next;
+	}
+}
+
+void boarder :: rotate_selection (double step, bool free_rotation) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		if (token -> selected) {
+			token -> rotation += step;
+			if (! free_rotation) token -> rotation = (double) ((int) token -> rotation);
+		}
+		token = token -> next;
+	}
+}
+
+void boarder :: reside_selection (int step) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		if (token -> selected) {
+			token -> side += step;
+		}
+		token = token -> next;
+	}
+}
+
 bool boarder :: transfer_token_to_deck (boarder_token * deck, boarder_token * token) {
 	if (! deck -> can_insert ()) return false;
 	boarder_token * btp = tokens;
@@ -391,14 +452,6 @@ boarder_token * boarder_token :: release (void) {return 0;}
 boarder_token * boarder_token :: release_random (void) {return 0;}
 bool boarder_token :: shuffle (void) {return false;}
 
-void boarder_token :: apply_colour_to_selection (int red, int green, int blue, bool foreground) {
-	if (selected) {
-		if (foreground) foreground_colour = colour (red, green, blue, colour_to_int (foreground_colour . alpha));
-		else background_colour = colour (red, green, blue, colour_to_int (background_colour . alpha));
-	}
-	if (next != 0) next -> apply_colour_to_selection (red, green, blue, foreground);
-}
-
 void boarder_token :: save (boarder * board, FILE * tc) {
 	if (next) next -> save (board, tc);
 	creation_call (board, tc);
@@ -467,6 +520,10 @@ boarder_token * boarder_token :: hit_test_next (rect area) {
 }
 
 int boarder_token :: randomize_side (void) {return side;}
+bool boarder_token :: set_text (char * text) {return false;}
+char * boarder_token :: get_text (void) {return "";}
+bool boarder_token :: set_sides (int sides) {return false;}
+int boarder_token :: get_sides (void) {return 0;}
 
 colour boarder_token :: default_foreground (void) {return colour (255, 255, 0);}
 colour boarder_token :: default_background (void) {return colour (0, 0, 255);}
@@ -547,6 +604,9 @@ picture_token :: ~ picture_token (void) {
 	cairo_surface_destroy (surface);
 }
 
+bool picture_token :: set_sides (int sides) {this -> sides = sides < 1 ? 1 : sides; return true;}
+int picture_token :: get_sides (void) {return this -> sides;}
+
 void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	point half = - location . size . half ();
 	point centre = (location . centre (scaling) - viewport -> board_position) * viewport -> scaling;
@@ -584,6 +644,14 @@ text_token :: ~ text_token (void) {
 	printf ("	DELETING TEXT [%s]\n", text);
 	delete_text (text);
 }
+
+bool text_token :: set_text (char * text) {
+	if (this -> text != 0) delete this -> text;
+	this -> text = create_text (text);
+	return true;
+}
+
+char * text_token :: get_text (void) {return this -> text != 0 ? this -> text : "";}
 
 void text_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 	cairo_identity_matrix (cr);
@@ -633,6 +701,14 @@ deck_token :: ~ deck_token (void) {
 	if (text) delete_text (text); text = 0;
 	if (tokens) delete tokens; tokens = 0;
 }
+
+bool deck_token :: set_text (char * text) {
+	if (this -> text != 0) delete this -> text;
+	this -> text = create_text (text);
+	return true;
+}
+
+char * deck_token :: get_text (void) {return this -> text != 0 ? this -> text : "";}
 
 void deck_token :: creation_call (boarder * board, FILE * tc) {
 	if (text == 0) fprintf (tc, "[%s %s]\n", CREATE_DECK, atom -> name ());

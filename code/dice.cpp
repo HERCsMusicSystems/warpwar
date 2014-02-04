@@ -11,6 +11,9 @@ dice_token :: dice_token (PrologAtom * atom, int sides, int shift) : boarder_tok
 dice_token :: dice_token (PrologAtom * atom, int sides, int shift, int multiplier) : boarder_token (atom) {this -> sides = sides; side = this -> shift = shift; this -> multiplier = multiplier; scaling = default_scaling ();}
 dice_token :: ~ dice_token (void) {printf ("	DELETING DICE [%i]\n", sides);}
 
+bool dice_token :: set_sides (int sides) {this -> sides = sides; return true;}
+int dice_token :: get_sides (void) {return this -> sides;}
+
 bool dice_token :: should_save_size (void) {return false;}
 double dice_token :: default_scaling (void) {return 64.0;}
 void dice_token :: creation_call (boarder * board, FILE * tc) {

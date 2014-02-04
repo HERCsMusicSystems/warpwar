@@ -44,6 +44,11 @@ static void ChangeViewportName (boarder_viewport * viewport) {
 	case boarder_viewport :: create_deltahedron_10: mode = "Create Deltahedron 10"; break;
 	case boarder_viewport :: create_dodecahedron: mode = "Create Dodecahedron"; break;
 	case boarder_viewport :: create_icosahedron: mode = "Create Icosahedron"; break;
+	case boarder_viewport :: edit_size: mode = "Edit Size"; break;
+	case boarder_viewport :: edit_indexing: mode = "Edit Indexing"; break;
+	case boarder_viewport :: edit_rotation: mode = "Edit Rotation"; break;
+	case boarder_viewport :: edit_side: mode = "Edit Side"; break;
+	case boarder_viewport :: edit_scaling: mode = "Edit Scaling"; break;
 	default: mode = "None"; break;
 	}
 	char command [256];
@@ -219,6 +224,13 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 	case 91: viewport -> edit_mode = boarder_viewport :: create_deltahedron_10; ChangeViewportName (viewport); break;
 	case 93: viewport -> edit_mode = boarder_viewport :: create_dodecahedron; ChangeViewportName (viewport); break;
 	case 92: viewport -> edit_mode = boarder_viewport :: create_icosahedron; ChangeViewportName (viewport); break;
+	case 'z': viewport -> edit_mode = boarder_viewport :: edit_size; ChangeViewportName (viewport); break;
+	case 'x': viewport -> edit_mode = boarder_viewport :: edit_indexing; ChangeViewportName (viewport); break;
+	case 'c': viewport -> edit_mode = boarder_viewport :: edit_rotation; ChangeViewportName (viewport); break;
+	case 'v': viewport -> edit_mode = boarder_viewport :: edit_side; ChangeViewportName (viewport); break;
+	case 32:
+		if (viewport -> edit_mode == boarder_viewport :: edit_indexing) {board -> reindex_selection (); board -> repaint ();}
+		break;
 	case 65505: maximise_square_area = true; break;
 	case 65506: minimise_square_area = true; break;
 	case 65361: case 65362: case 65363: case 65364:
@@ -233,6 +245,28 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 				viewport -> board_position -= delta;
 				gtk_widget_queue_draw (viewport -> window);
 			}
+		} else if (viewport -> edit_mode == boarder_viewport :: edit_size) {
+			boarder_clean = false;
+			int step = 1;
+			point delta (key == 65363 ? step : key == 65361 ? -step : 0, key == 65362 ? -step : key == 65364 ? step : 0);
+			board -> resize_selection (delta, minimise_square_area, maximise_square_area);
+			board -> repaint ();
+		} else if (viewport -> edit_mode == boarder_viewport :: edit_indexing) {
+			boarder_clean = false;
+			int step = 1;
+			point delta (key == 65363 ? step : key == 65361 ? -step : 0, key == 65362 ? -step : key == 65364 ? step : 0);
+			board -> reindex_selection (minimise_square_area | maximise_square_area ? rect (delta, point (0, 0)) : rect (point (0, 0), delta));
+			board -> repaint ();
+		} else if (viewport -> edit_mode == boarder_viewport :: edit_rotation) {
+			boarder_clean = false;
+			double step = (key == 65362 || key == 65363) ? 1.0 : -1.0;
+			board -> rotate_selection (step, minimise_square_area || maximise_square_area);
+			board -> repaint ();
+		} else if (viewport -> edit_mode == boarder_viewport :: edit_side) {
+			boarder_clean = false;
+			int step = (key == 65362 || key == 65363) ? 1 : -1;
+			board -> reside_selection (step);
+			board -> repaint ();
 		}
 		break;
 	default: break;
@@ -690,6 +724,7 @@ public:
 	PrologAtom * side_atom, * roll_atom;
 	PrologAtom * indexing_atom, * no_indexing_atom, * indexed_atom;
 	PrologAtom * shuffle_atom, * insert_atom, * release_atom, *release_random_atom, * select_deck_atom, * is_deck_atom;
+	PrologAtom * sides_atom, * text_atom;
 	boarder_token * token;
 	static char * name (void) {return token_action_code;}
 	char * codeName (void) {return token_action_code;}
@@ -882,6 +917,18 @@ public:
 			if (parameters -> isVar ()) parameters -> setAtom (btp -> atom);
 			return true;
 		}
+		if (atom -> getAtom () == sides_atom) {
+			if (parameters -> isPair ()) parameters = parameters -> getLeft ();
+			if (parameters -> isVar ()) {parameters -> setInteger (token -> get_sides ()); return true;}
+			if (! parameters -> isInteger ()) return false;
+			return token -> set_sides (parameters -> getInteger ());
+		}
+		if (atom -> getAtom () == text_atom) {
+			if (parameters -> isPair ()) parameters = parameters -> getLeft ();
+			if (parameters -> isVar ()) {parameters -> setText (token -> get_text ()); return true;}
+			if (! parameters -> isText ()) return false;
+			return token -> set_text (parameters -> getText ());
+		}
 		if (atom -> getAtom () == is_deck_atom) {return token -> can_insert ();}
 		return false;
 	}
@@ -893,6 +940,7 @@ public:
 		side_atom = roll_atom = 0;
 		indexing_atom = no_indexing_atom = indexed_atom = 0;
 		shuffle_atom = insert_atom = release_atom = release_random_atom = select_deck_atom = is_deck_atom = 0;
+		sides_atom = text_atom = 0;
 		token = 0;
 		if (directory) {
 			location_atom = directory -> searchAtom (LOCATION);
@@ -919,6 +967,8 @@ public:
 			release_random_atom = directory -> searchAtom (RELEASE_RANDOM);
 			select_deck_atom = directory -> searchAtom (SELECT_DECK);
 			is_deck_atom = directory -> searchAtom (IS_DECK);
+			sides_atom = directory -> searchAtom (SIDES);
+			text_atom = directory -> searchAtom (TEXT_ATOM);
 		}
 	}
 };

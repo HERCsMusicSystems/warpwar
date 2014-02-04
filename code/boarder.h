@@ -43,6 +43,7 @@
 #define SCALING "Scaling"
 #define ROTATION "Rotation"
 #define SIDES "Sides"
+#define TEXT_ATOM "Text"
 #define SIDE "Side"
 #define ROLL "Roll"
 #define BACKGROUND_COLOUR "BackgroundColour"
@@ -186,6 +187,11 @@ public:
 	boarder_token * hit_test (rect area);
 	void repaint (void);
 	void move_selection (point delta);
+	void resize_selection (point delta, bool minimise, bool maximise);
+	void reindex_selection (void);
+	void reindex_selection (rect reindexing);
+	void rotate_selection (double step, bool free_rotation);
+	void reside_selection (int step);
 	void apply_colour_to_selection (int red, int green, int blue, bool foreground);
 	boarder (PrologRoot * root);
 	~ boarder (void);
@@ -200,6 +206,7 @@ public:
 		create_octahedron, create_deltahedron, create_deltahedron_10,
 		create_dodecahedron, create_icosahedron,
 		create_text, creage_grid, create_deck,
+		edit_size, edit_indexing, edit_rotation, edit_side, edit_scaling, edit_ordering,
 		edit
 	};
 public:
@@ -248,6 +255,10 @@ public:
 	virtual rect get_location (void);
 	virtual rect get_bounding_box (void);
 	virtual int randomize_side (void);
+	virtual bool set_text (char * text);
+	char * get_text (void);
+	virtual bool set_sides (int sides);
+	virtual int get_sides (void);
 	virtual bool can_insert (void);
 	virtual boarder_token * insert (boarder_token * token);
 	virtual boarder_token * release (void);
@@ -259,7 +270,6 @@ public:
 	virtual colour default_background_colour (boarder * board) = 0;
 	boarder_token * hit_test (rect area);
 	boarder_token * hit_test_next (rect area);
-	void apply_colour_to_selection (int red, int green, int blue, bool foreground);
 	void save (boarder * board, FILE * tc);
 	boarder_token (PrologAtom * atom);
 	virtual ~ boarder_token (void);
@@ -276,6 +286,8 @@ public:
 	virtual rect get_bounding_box (void);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
+	virtual bool set_text (char * text);
+	char * get_text (void);
 	text_token (PrologAtom * atom, char * text);
 	virtual ~ text_token (void);
 };
@@ -296,6 +308,8 @@ public:
 	virtual bool shuffle (void);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
+	virtual bool set_text (char * text);
+	char * get_text (void);
 	deck_token (PrologAtom * atom, char * text);
 	virtual ~ deck_token (void);
 };
@@ -336,6 +350,8 @@ public:
 	virtual void set_location (rect size);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
+	virtual bool set_sides (int sides);
+	virtual int get_sides (void);
 	picture_token (PrologAtom * atom, char * picture_location, int sides = 1);
 	virtual ~ picture_token (void);
 };
@@ -360,6 +376,8 @@ public:
 	virtual int randomize_side (void);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
+	virtual bool set_sides (int sides);
+	virtual int get_sides (void);
 	dice_token (PrologAtom * atom);
 	dice_token (PrologAtom * atom, int sides);
 	dice_token (PrologAtom * atom, int sides, int shift);
