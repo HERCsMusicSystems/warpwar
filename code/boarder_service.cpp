@@ -44,6 +44,8 @@ static void ChangeViewportName (boarder_viewport * viewport) {
 	case boarder_viewport :: create_deltahedron_10: mode = "Create Deltahedron 10"; break;
 	case boarder_viewport :: create_dodecahedron: mode = "Create Dodecahedron"; break;
 	case boarder_viewport :: create_icosahedron: mode = "Create Icosahedron"; break;
+	case boarder_viewport :: create_grid: mode = "Create Grid"; break;
+	case boarder_viewport :: create_deck: mode = "Create Deck"; break;
 	case boarder_viewport :: edit_size: mode = "Edit Size"; break;
 	case boarder_viewport :: edit_indexing: mode = "Edit Indexing"; break;
 	case boarder_viewport :: edit_rotation: mode = "Edit Rotation"; break;
@@ -216,6 +218,8 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 		break;
 	case 51: viewport -> edit_mode = boarder_viewport :: create_rectangle; ChangeViewportName (viewport); break;
 	case 52: viewport -> edit_mode = boarder_viewport :: create_circle; ChangeViewportName (viewport); break;
+	case 53: viewport -> edit_mode = boarder_viewport :: create_grid; ChangeViewportName (viewport); break;
+	case 54: viewport -> edit_mode = boarder_viewport :: create_deck; ChangeViewportName (viewport); break;
 	case 121: viewport -> edit_mode = boarder_viewport :: create_tetrahedron; ChangeViewportName (viewport); break;
 	case 117: viewport -> edit_mode = boarder_viewport :: create_dice; ChangeViewportName (viewport); break;
 	case 105: viewport -> edit_mode = boarder_viewport :: create_cube; ChangeViewportName (viewport); break;
@@ -336,7 +340,7 @@ static void CreateDiceCommand (int order, bool extended = false) {
 	board -> repaint ();
 }
 
-static void CreateFigureCommand (char * figure);
+static void CreateFigureCommand (char * figure, bool zero_size = true);
 
 /*
 static void create_response (char * command) {
@@ -445,6 +449,10 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 	case boarder_viewport :: create_dodecahedron: CreateDiceCommand (12);
 		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
 	case boarder_viewport :: create_icosahedron: CreateDiceCommand (20);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_grid: CreateFigureCommand ("CreateGrid", false);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+	case boarder_viewport :: create_deck: CreateFigureCommand ("CreateDeck", false);
 		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
 	default: break;
 	}
@@ -973,17 +981,26 @@ public:
 	}
 };
 
-static void CreateFigureCommand (char * figure) {
+static void CreateFigureCommand (char * figure, bool zero_size) {
 	if (board == 0) return;
 	PrologRoot * root = board -> root;
 	if (root == 0) return;
-	PrologElement * location_query = root -> pair (root -> var (0),
-		root -> pair (root -> atom ("boarder", "Location"),
-		root -> pair (root -> integer ((int) edit_area . position . x),
-		root -> pair (root -> integer ((int) edit_area . position . y),
-		root -> pair (root -> integer (0),
-		root -> pair (root -> integer (0),
-		root -> earth ()))))));
+	PrologElement * location_query = 0;
+	if (zero_size) {
+		root -> pair (root -> var (0),
+			root -> pair (root -> atom ("boarder", "Location"),
+			root -> pair (root -> integer ((int) edit_area . position . x),
+			root -> pair (root -> integer ((int) edit_area . position . y),
+			root -> pair (root -> integer (0),
+			root -> pair (root -> integer (0),
+			root -> earth ()))))));
+	} else {
+		root -> pair (root -> var (0),
+			root -> pair (root -> atom ("boarder", "Position"),
+			root -> pair (root -> integer ((int) edit_area . position . x),
+			root -> pair (root -> integer ((int) edit_area . position . y),
+			root -> earth ()))));
+	}
 	PrologElement * creation_query = root -> pair (root -> atom ("boarder", figure),
 		root -> pair (root -> var (0),
 		root -> earth ()));

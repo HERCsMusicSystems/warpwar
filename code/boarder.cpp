@@ -603,7 +603,7 @@ picture_token :: ~ picture_token (void) {
 
 void picture_token :: resize (void) {
 	if (sides < 1) sides = 1;
-	if (sides > picture_size . y) sides = picture_size . y;
+	if (sides > (int) picture_size . y) sides = (int) picture_size . y;
 	location . size = point (picture_size . x, picture_size . y / sides);
 }
 
