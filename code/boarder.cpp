@@ -591,14 +591,15 @@ colour circle_token :: default_background_colour (boarder * board) {return board
 picture_token :: picture_token (PrologAtom * atom, char * picture_location, int sides) : boarder_token (atom) {
 	this -> picture_location = create_text (picture_location);
 	surface = cairo_image_surface_create_from_png (picture_location);
-	picture_size = point (cairo_image_surface_get_width (surface), cairo_image_surface_get_height (surface));
+	if (surface == 0) picture_size = point (16, 16);
+	else picture_size = point (cairo_image_surface_get_width (surface), cairo_image_surface_get_height (surface));
 	resize ();
 }
 
 picture_token :: ~ picture_token (void) {
 	printf ("	DELETING PICTURE\n");
 	delete_text (picture_location);
-	cairo_surface_destroy (surface);
+	if (surface != 0) cairo_surface_destroy (surface);
 }
 
 void picture_token :: resize (void) {
@@ -611,6 +612,13 @@ bool picture_token :: set_sides (int sides) {this -> sides = sides; resize (); r
 int picture_token :: get_sides (void) {return this -> sides;}
 
 void picture_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
+	if (surface == 0) {
+		point beginning = (location . position - viewport -> board_position) * viewport -> scaling;
+		cairo_rectangle (cr, POINT (beginning), POINT (location . size));
+		cairo_set_source_rgba (cr, 1.0, 0.0, 0.0, 1.0);
+		cairo_stroke (cr);
+		return;
+	}
 	point half = - location . size . half ();
 	point centre = (location . centre (scaling) - viewport -> board_position) * viewport -> scaling;
 	cairo_translate (cr, POINT (centre));

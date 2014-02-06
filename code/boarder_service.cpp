@@ -598,7 +598,7 @@ void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y,
 	}
 	query = root -> pair (root -> integer ((int) y), query);
 	query = root -> pair (root -> integer ((int) x), query);
-	query = root -> pair (root -> atom ("DragAndDrop"), query);
+	query = root -> pair (root -> atom ("boarder", "DragAndDrop"), query);
 	query = root -> pair (root -> earth (), root -> pair (query, root -> earth ()));
 	root -> resolution (query);
 	delete query;
