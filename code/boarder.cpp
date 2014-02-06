@@ -591,7 +591,7 @@ colour circle_token :: default_background_colour (boarder * board) {return board
 picture_token :: picture_token (PrologAtom * atom, char * picture_location, int sides) : boarder_token (atom) {
 	this -> picture_location = create_text (picture_location);
 	surface = cairo_image_surface_create_from_png (picture_location);
-	if (surface == 0) picture_size = point (16, 16);
+	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {picture_size = point (16, 16); cairo_surface_destroy (surface);}
 	else picture_size = point (cairo_image_surface_get_width (surface), cairo_image_surface_get_height (surface));
 	resize ();
 }
