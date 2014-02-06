@@ -987,7 +987,7 @@ static void CreateFigureCommand (char * figure, bool zero_size) {
 	if (root == 0) return;
 	PrologElement * location_query = 0;
 	if (zero_size) {
-		root -> pair (root -> var (0),
+		location_query = root -> pair (root -> var (0),
 			root -> pair (root -> atom ("boarder", "Location"),
 			root -> pair (root -> integer ((int) edit_area . position . x),
 			root -> pair (root -> integer ((int) edit_area . position . y),
@@ -995,7 +995,7 @@ static void CreateFigureCommand (char * figure, bool zero_size) {
 			root -> pair (root -> integer (0),
 			root -> earth ()))))));
 	} else {
-		root -> pair (root -> var (0),
+		location_query = root -> pair (root -> var (0),
 			root -> pair (root -> atom ("boarder", "Position"),
 			root -> pair (root -> integer ((int) edit_area . position . x),
 			root -> pair (root -> integer ((int) edit_area . position . y),

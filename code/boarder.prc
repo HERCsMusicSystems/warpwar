@@ -81,7 +81,7 @@ program boarder #machine := "boarder" [
 
 #machine diagnostics := "diagnostics"
 
-[[DragAndDrop *x *y]]
+[[DragAndDrop *x *y] [Repaint]]
 [[DragAndDrop *x *y *file : *command]
 	[relativise_path *file *relative]
 	[show "action => " [*x *y *file *relative]]
