@@ -313,14 +313,89 @@ void boarder :: rotate_selection (double step, bool free_rotation) {
 	}
 }
 
-void boarder :: reside_selection (int step) {
+void boarder :: reside_selection (int step, bool sides) {
 	boarder_token * token = tokens;
 	while (token != 0) {
 		if (token -> selected) {
-			token -> side += step;
+			if (sides) token -> set_sides (token -> get_sides () + step);
+			else token -> side += step;
 		}
 		token = token -> next;
 	}
+}
+
+void boarder :: rescale_selection (double step) {
+	boarder_token * token = tokens;
+	while (token != 0) {
+		if (token -> selected) token -> scaling *= step;
+		token = token -> next;
+	}
+}
+
+void boarder :: reorder_selection_to_front (void) {
+	if (tokens == 0) return;
+	if (tokens -> next == 0) return;
+	if (tokens -> selected) {
+		boarder_token * selected = tokens;
+		tokens = selected -> next;
+		selected -> next = tokens -> next;
+		tokens -> next = selected;
+		return;
+	}
+	boarder_token * token = tokens;
+	while (token -> next != 0 && ! token -> next -> selected) token = token -> next;
+	boarder_token * selected = token -> next;
+	if (selected == 0) return;
+	if (selected -> next == 0) return;
+	token = selected -> next;
+	selected -> next = token -> next;
+	token -> next = selected;
+}
+
+void boarder :: reorder_selection_to_back (void) {
+	if (tokens == 0) return;
+	if (tokens -> selected) return;
+	if (tokens -> next == 0) return;
+	if (tokens -> next -> selected) {
+		boarder_token * selected = tokens -> next;
+		tokens -> next = selected -> next;
+		selected -> next = tokens;
+		tokens = selected;
+		return;
+	}
+	boarder_token * token = tokens;
+	while (token -> next != 0 && token -> next -> next != 0 && ! token -> next -> next -> selected) token = token -> next;
+	boarder_token * selected = token -> next;
+	if (selected == 0) return;
+	selected = selected -> next;
+	if (selected == 0) return;
+	token -> next -> next = selected -> next;
+	selected -> next = token -> next;
+	token -> next = selected;
+}
+
+void boarder :: reorder_selection_to_very_front (void) {
+	if (tokens == 0) return;
+	boarder_token * token = tokens;
+	while (token -> next != 0 && ! token -> next -> selected) token = token -> next;
+	boarder_token * selected = token -> next;
+	if (selected == 0) return;
+	if (selected -> next == 0) return;
+	token -> next = selected -> next;
+	while (token -> next != 0) token = token -> next;
+	token -> next = selected;
+	selected -> next = 0;
+}
+
+void boarder :: reorder_selection_to_very_back (void) {
+	if (tokens == 0) return;
+	boarder_token * token = tokens;
+	while (token -> next != 0 && ! token -> next -> selected) token = token -> next;
+	boarder_token * selected = token -> next;
+	if (selected == 0) return;
+	token -> next = selected -> next;
+	selected -> next = tokens;
+	tokens = selected;
 }
 
 bool boarder :: transfer_token_to_deck (boarder_token * deck, boarder_token * token) {

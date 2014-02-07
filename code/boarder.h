@@ -191,7 +191,12 @@ public:
 	void reindex_selection (void);
 	void reindex_selection (rect reindexing);
 	void rotate_selection (double step, bool free_rotation);
-	void reside_selection (int step);
+	void reside_selection (int step, bool sides = false);
+	void rescale_selection (double step);
+	void reorder_selection_to_front (void);
+	void reorder_selection_to_back (void);
+	void reorder_selection_to_very_front (void);
+	void reorder_selection_to_very_back (void);
 	void apply_colour_to_selection (int red, int green, int blue, bool foreground);
 	boarder (PrologRoot * root);
 	~ boarder (void);

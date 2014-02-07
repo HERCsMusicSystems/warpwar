@@ -51,6 +51,7 @@ static void ChangeViewportName (boarder_viewport * viewport) {
 	case boarder_viewport :: edit_rotation: mode = "Edit Rotation"; break;
 	case boarder_viewport :: edit_side: mode = "Edit Side"; break;
 	case boarder_viewport :: edit_scaling: mode = "Edit Scaling"; break;
+	case boarder_viewport :: edit_ordering: mode = "Edit Ordering"; break;
 	default: mode = "None"; break;
 	}
 	char command [256];
@@ -232,6 +233,8 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 	case 'x': viewport -> edit_mode = boarder_viewport :: edit_indexing; ChangeViewportName (viewport); break;
 	case 'c': viewport -> edit_mode = boarder_viewport :: edit_rotation; ChangeViewportName (viewport); break;
 	case 'v': viewport -> edit_mode = boarder_viewport :: edit_side; ChangeViewportName (viewport); break;
+	case 'b': viewport -> edit_mode = boarder_viewport :: edit_scaling; ChangeViewportName (viewport); break;
+	case 'n': viewport -> edit_mode = boarder_viewport :: edit_ordering; ChangeViewportName (viewport); break;
 	case 32:
 		if (viewport -> edit_mode == boarder_viewport :: edit_indexing) {board -> reindex_selection (); board -> repaint ();}
 		break;
@@ -269,7 +272,23 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 		} else if (viewport -> edit_mode == boarder_viewport :: edit_side) {
 			boarder_clean = false;
 			int step = (key == 65362 || key == 65363) ? 1 : -1;
-			board -> reside_selection (step);
+			board -> reside_selection (step, minimise_square_area || maximise_square_area);
+			board -> repaint ();
+		} else if (viewport -> edit_mode == boarder_viewport :: edit_scaling) {
+			boarder_clean = false;
+			double step = (key == 65362 || key == 65363) ? 2.0 : 0.5;
+			board -> rescale_selection (step);
+			board -> repaint ();
+		} else if (viewport -> edit_mode == boarder_viewport :: edit_ordering) {
+			boarder_clean = false;
+			int step = (key == 65362 || key == 65363) ? 1 : -1;
+			if (key == 65362 || key == 65363) {
+				if (minimise_square_area || maximise_square_area) board -> reorder_selection_to_very_front ();
+				else board -> reorder_selection_to_front ();
+			} else {
+				if (minimise_square_area || maximise_square_area) board -> reorder_selection_to_very_back ();
+				else board -> reorder_selection_to_back ();
+			}
 			board -> repaint ();
 		}
 		break;
