@@ -179,7 +179,9 @@ public:
 	bool transfer_token_to_deck (boarder_token * deck, boarder_token * token);
 	void transfer_selection_to_deck (boarder_token * deck);
 	boarder_token * release_token_from_deck (boarder_token * deck);
+	boarder_token * release_token_from_selection (void);
 	boarder_token * release_random_token_from_deck (boarder_token * deck);
+	bool randomise_selected_dices (void);
 	void erase (void);
 	bool save (char * location);
 	void draw (cairo_t * cr, boarder_viewport * viewport);
@@ -259,7 +261,7 @@ public:
 	virtual void set_location (rect location);
 	virtual rect get_location (void);
 	virtual rect get_bounding_box (void);
-	virtual int randomize_side (void);
+	virtual int randomise_side (void);
 	virtual bool set_text (char * text);
 	virtual char * get_text (void);
 	virtual bool set_sides (int sides);
@@ -380,7 +382,7 @@ public:
 	virtual bool should_save_size (void);
 	virtual double default_scaling (void);
 	virtual rect get_bounding_box (void);
-	virtual int randomize_side (void);
+	virtual int randomise_side (void);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
 	virtual bool set_sides (int sides);

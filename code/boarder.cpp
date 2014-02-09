@@ -332,7 +332,7 @@ void boarder :: rescale_selection (double step) {
 	}
 }
 
-void boarder :: reorder_selection_to_front (void) {
+void boarder :: reorder_selection_to_back (void) {
 	if (tokens == 0) return;
 	if (tokens -> next == 0) return;
 	if (tokens -> selected) {
@@ -347,12 +347,12 @@ void boarder :: reorder_selection_to_front (void) {
 	boarder_token * selected = token -> next;
 	if (selected == 0) return;
 	if (selected -> next == 0) return;
-	token = selected -> next;
-	selected -> next = token -> next;
-	token -> next = selected;
+	token -> next = selected -> next;
+	selected -> next = selected -> next -> next;
+	token -> next -> next = selected;
 }
 
-void boarder :: reorder_selection_to_back (void) {
+void boarder :: reorder_selection_to_front (void) {
 	if (tokens == 0) return;
 	if (tokens -> selected) return;
 	if (tokens -> next == 0) return;
@@ -374,20 +374,27 @@ void boarder :: reorder_selection_to_back (void) {
 	token -> next = selected;
 }
 
-void boarder :: reorder_selection_to_very_front (void) {
+void boarder :: reorder_selection_to_very_back (void) {
 	if (tokens == 0) return;
 	boarder_token * token = tokens;
+	if (token -> selected) {
+		while (token -> next != 0) token = token -> next;
+		boarder_token * selected = tokens;
+		tokens = selected -> next;
+		selected -> next = 0;
+		token -> next = selected;
+		return;
+	}
 	while (token -> next != 0 && ! token -> next -> selected) token = token -> next;
 	boarder_token * selected = token -> next;
 	if (selected == 0) return;
-	if (selected -> next == 0) return;
 	token -> next = selected -> next;
 	while (token -> next != 0) token = token -> next;
 	token -> next = selected;
 	selected -> next = 0;
 }
 
-void boarder :: reorder_selection_to_very_back (void) {
+void boarder :: reorder_selection_to_very_front (void) {
 	if (tokens == 0) return;
 	boarder_token * token = tokens;
 	while (token -> next != 0 && ! token -> next -> selected) token = token -> next;
@@ -426,6 +433,24 @@ boarder_token * boarder :: release_token_from_deck (boarder_token * deck) {
 	tokens = btp;
 	btp -> set_position (deck -> get_location () . position);
 	return btp;
+}
+
+boarder_token * boarder :: release_token_from_selection (void) {
+	if (tokens == 0) return 0;
+	boarder_token * token = tokens;
+	while (token != 0 && ! token -> selected && ! token -> can_insert ()) token = token -> next;
+	if (token == 0) return 0;
+	return release_token_from_deck (token);
+}
+
+bool boarder :: randomise_selected_dices (void) {
+	boarder_token * token = tokens;
+	bool randomised = false;
+	while (token != 0) {
+		if (token -> selected) {token -> randomise_side (); randomised = true;}
+		token = token -> next;
+	}
+	return randomised;
 }
 
 boarder_token * boarder :: release_random_token_from_deck (boarder_token * deck) {
@@ -594,7 +619,7 @@ boarder_token * boarder_token :: hit_test_next (rect area) {
 	return next -> hit_test (area);
 }
 
-int boarder_token :: randomize_side (void) {return side;}
+int boarder_token :: randomise_side (void) {return side;}
 bool boarder_token :: set_text (char * text) {return false;}
 char * boarder_token :: get_text (void) {return "";}
 bool boarder_token :: set_sides (int sides) {return false;}

@@ -314,7 +314,7 @@ rect dice_token :: get_bounding_box (void) {
 	return ret;
 }
 
-int dice_token :: randomize_side (void) {if (sides > 0) return side = multiplier * (rand () % sides + shift); return side = rand () % 6 + 1;}
+int dice_token :: randomise_side (void) {if (sides > 0) return side = multiplier * (rand () % sides + shift); return side = rand () % 6 + 1;}
 
 colour dice_token :: default_foreground_colour (boarder * board) {
 	if (board == 0) return default_foreground ();

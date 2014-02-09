@@ -237,6 +237,9 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 	case 'n': viewport -> edit_mode = boarder_viewport :: edit_ordering; ChangeViewportName (viewport); break;
 	case 32:
 		if (viewport -> edit_mode == boarder_viewport :: edit_indexing) {board -> reindex_selection (); board -> repaint ();}
+		if (viewport -> edit_mode > boarder_viewport :: select) break;
+		if (board -> release_token_from_selection () != 0) {board -> repaint (); break;}
+		if (board -> randomise_selected_dices ()) {board -> repaint (); break;}
 		break;
 	case 65505: maximise_square_area = true; break;
 	case 65506: minimise_square_area = true; break;
@@ -420,11 +423,17 @@ static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, 
 	edited_token = 0;
 	dragging = false;
 	if (board == 0) return TRUE;
-	edit_area . size = BoardPoint (viewport, event) - edit_area . position;
+	point board_point = BoardPoint (viewport, event);
+	edit_area . size = board_point - edit_area . position;
 	if (minimise_square_area) edit_area . minimise ();
 	if (maximise_square_area) edit_area . maximise ();
 	boarder_token * token = 0;
 	switch (viewport -> edit_mode) {
+	case boarder_viewport :: move:
+		token = board -> hit_test (rect (board_point, point (0, 0)));
+		while (token != 0 && ! token -> can_insert ()) token = token -> hit_test_next (rect (board_point, point (0, 0)));
+		if (token != 0) {board -> transfer_selection_to_deck (token); board -> repaint ();}
+		break;
 	case boarder_viewport :: select:
 		token = board -> hit_test (edit_area);
 		has_selection |= token != 0;
@@ -470,9 +479,11 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 	case boarder_viewport :: create_icosahedron: CreateDiceCommand (20);
 		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
 	case boarder_viewport :: create_grid: CreateFigureCommand ("CreateGrid", false);
-		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
+		board -> repaint (); break;
 	case boarder_viewport :: create_deck: CreateFigureCommand ("CreateDeck", false);
-		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport); break;
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
+		board -> repaint (); break;
 	default: break;
 	}
 	return TRUE;
@@ -900,7 +911,7 @@ public:
 		if (atom -> getAtom () == no_indexing_atom) {token -> no_indexing = true; boarder_clean = false; return true;}
 		if (atom -> getAtom () == indexed_atom) return ! token -> no_indexing;
 		if (atom -> getAtom () == roll_atom) {
-			int ret = token -> randomize_side ();
+			int ret = token -> randomise_side ();
 			boarder_clean = false;
 			if (parameters -> isEarth ()) return true;
 			if (parameters -> isPair ()) parameters = parameters -> getLeft ();
