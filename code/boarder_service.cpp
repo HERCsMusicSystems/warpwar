@@ -36,6 +36,7 @@ static void ChangeViewportName (boarder_viewport * viewport) {
 	case boarder_viewport :: select: mode = "Select"; break;
 	case boarder_viewport :: create_rectangle: mode = "Create Rectangle"; break;
 	case boarder_viewport :: create_circle: mode = "Create Circle"; break;
+	case boarder_viewport :: create_text: mode = "Create Text"; break;
 	case boarder_viewport :: create_tetrahedron: mode = "Create Tetrahedron"; break;
 	case boarder_viewport :: create_dice: mode = "Create Dice"; break;
 	case boarder_viewport :: create_cube: mode = "Create Cube"; break;
@@ -221,6 +222,7 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 	case 52: viewport -> edit_mode = boarder_viewport :: create_circle; ChangeViewportName (viewport); break;
 	case 53: viewport -> edit_mode = boarder_viewport :: create_grid; ChangeViewportName (viewport); break;
 	case 54: viewport -> edit_mode = boarder_viewport :: create_deck; ChangeViewportName (viewport); break;
+	case 55: viewport -> edit_mode = boarder_viewport :: create_text; ChangeViewportName (viewport); break;
 	case 121: viewport -> edit_mode = boarder_viewport :: create_tetrahedron; ChangeViewportName (viewport); break;
 	case 117: viewport -> edit_mode = boarder_viewport :: create_dice; ChangeViewportName (viewport); break;
 	case 105: viewport -> edit_mode = boarder_viewport :: create_cube; ChangeViewportName (viewport); break;
@@ -364,6 +366,8 @@ static void CreateDiceCommand (int order, bool extended = false) {
 
 static void CreateFigureCommand (char * figure, bool zero_size = true);
 
+static void CreateTextCommand (void);
+
 /*
 static void create_response (char * command) {
 	printf ("action [%s]\n", command);
@@ -482,6 +486,9 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
 		board -> repaint (); break;
 	case boarder_viewport :: create_deck: CreateFigureCommand ("CreateDeck", false);
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
+		board -> repaint (); break;
+	case boarder_viewport :: create_text: CreateTextCommand ();
 		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
 		board -> repaint (); break;
 	default: break;
@@ -1010,6 +1017,69 @@ public:
 		}
 	}
 };
+
+bool show_entry_dialog(char * area)
+{
+    GtkWidget *dialog;
+    GtkWidget *entry;
+    GtkWidget *content_area;
+
+    dialog = gtk_dialog_new();
+    gtk_dialog_add_button(GTK_DIALOG(dialog), "OK", 0);
+    gtk_dialog_add_button(GTK_DIALOG(dialog), "CANCEL", 1);
+
+    content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    entry = gtk_entry_new();
+    gtk_container_add(GTK_CONTAINER(content_area), entry);
+
+    gtk_widget_show_all(dialog);
+    gint result = gtk_dialog_run(GTK_DIALOG(dialog));
+	strcpy (area, "");
+    switch(result)
+    {
+    case 0:
+        printf ("OK was clicked\n");
+        strcpy (area, (char *) gtk_entry_get_text(GTK_ENTRY(entry)));
+        printf ("Contact dialog passed text from entry: [%s]\n", area);
+		gtk_widget_destroy (dialog);
+		return true;
+        break;
+
+    case 1:
+        printf ("CANCEL was clicked\n");
+		gtk_widget_destroy (dialog);
+		return false;
+		break;
+    default:
+        printf ("Undefined. Perhaps dialog was closed\n");
+		gtk_widget_destroy (dialog);
+		return false;
+		break;
+    }
+	gtk_widget_destroy (dialog);
+	return false;
+}
+
+static void CreateTextCommand (void) {
+	if (board == 0) return;
+	PrologRoot * root = board -> root;
+	if (root == 0) return;
+	AREA area;
+	if (! show_entry_dialog (area)) return;
+	PrologElement * location_query = root -> pair (root -> var (0),
+		root -> pair (root -> atom ("boarder", "Position"),
+		root -> pair (root -> integer ((int) edit_area . position . x),
+		root -> pair (root -> integer ((int) edit_area . position . y),
+		root -> earth ()))));
+	PrologElement * creation_query = root -> pair (root -> atom ("boarder", "CreateText"),
+		root -> pair (root -> var (0),
+		root -> pair (root -> text (area),
+		root -> earth ())));
+	PrologElement * query = root -> pair (root -> earth (),
+		root -> pair (creation_query, root -> pair (location_query, root -> earth ())));
+	root -> resolution (query);
+	delete query;
+}
 
 static void CreateFigureCommand (char * figure, bool zero_size) {
 	if (board == 0) return;
