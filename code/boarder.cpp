@@ -482,8 +482,8 @@ boarder_viewport :: boarder_viewport (boarder * board, PrologAtom * atom, char *
 }
 
 boarder_viewport :: ~ boarder_viewport (void) {
+	printf ("DELETING VIEWPORT [%s %s] <%i %i>\n", atom -> name (), name, (int) board_position . x, (int) board_position . y);
 	if (atom) atom -> removeAtom ();
-	printf ("DELETING VIEWPORT [%s] <%i %i>\n", name, (int) board_position . x, (int) board_position . y);
 	if (next) delete next; next = 0;
 	token_counter--;
 }
@@ -532,6 +532,7 @@ boarder_token :: boarder_token (PrologAtom * atom) {
 	token_counter++;
 }
 boarder_token :: ~ boarder_token (void) {
+	//printf ("DELETING TOKEN [%s]\n", atom -> name ());
 	if (atom) {
 		PrologNativeCode * code = atom -> getMachine ();
 		if (code) delete code;
@@ -541,7 +542,6 @@ boarder_token :: ~ boarder_token (void) {
 		atom -> removeAtom ();
 	}
 	atom = 0;
-	printf ("DELETING TOKEN\n");
 	if (next) delete next; next = 0;
 	token_counter--;
 }
@@ -636,7 +636,7 @@ colour boarder_token :: default_background (void) {return colour (0, 0, 255);}
 
 rectangle_token :: rectangle_token (PrologAtom * atom) : boarder_token (atom) {}
 rectangle_token :: ~ rectangle_token (void) {
-	printf ("	DELEING RECTANGLE\n");
+	printf ("	DELETING RECTANGLE [%s]\n", atom -> name ());
 }
 
 void rectangle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
@@ -663,7 +663,7 @@ colour rectangle_token :: default_background_colour (boarder * board) {return bo
 
 circle_token :: circle_token (PrologAtom * atom) : boarder_token (atom) {}
 circle_token :: ~ circle_token (void) {
-	printf ("	DELETING CIRCLE\n");
+	printf ("	DELETING CIRCLE [%s]\n", atom -> name ());
 }
 
 void circle_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
@@ -698,7 +698,7 @@ picture_token :: picture_token (PrologAtom * atom, char * picture_location, int 
 }
 
 picture_token :: ~ picture_token (void) {
-	printf ("	DELETING PICTURE\n");
+	printf ("	DELETING PICTURE [%s %s]\n", atom -> name (), picture_location);
 	delete_text (picture_location);
 	if (surface != 0) cairo_surface_destroy (surface);
 }
@@ -753,7 +753,7 @@ text_token :: text_token (PrologAtom * atom, char * text) : boarder_token (atom)
 }
 
 text_token :: ~ text_token (void) {
-	printf ("	DELETING TEXT [%s]\n", text);
+	printf ("	DELETING TEXT [%s %s]\n", atom -> name (), text);
 	delete_text (text);
 }
 
@@ -809,7 +809,7 @@ deck_token :: deck_token (PrologAtom * atom, char * text) : boarder_token (atom)
 }
 
 deck_token :: ~ deck_token (void) {
-	printf ("	DELETING DECK [%s]\n", text);
+	printf ("	DELETING DECK [%s %s]\n", atom -> name (), text);
 	if (text) delete_text (text); text = 0;
 	if (tokens) delete tokens; tokens = 0;
 }

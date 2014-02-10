@@ -444,6 +444,9 @@ static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, 
 		while (token != 0) {token -> selected = true; token = token -> hit_test_next (edit_area);}
 		board -> repaint ();
 		break;
+	case boarder_viewport :: create_text: CreateTextCommand ();
+		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
+		board -> repaint (); break;
 	default: break;
 	}
 	return TRUE;
@@ -486,9 +489,6 @@ static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event
 		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
 		board -> repaint (); break;
 	case boarder_viewport :: create_deck: CreateFigureCommand ("CreateDeck", false);
-		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
-		board -> repaint (); break;
-	case boarder_viewport :: create_text: CreateTextCommand ();
 		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
 		board -> repaint (); break;
 	default: break;

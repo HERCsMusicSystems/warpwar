@@ -9,7 +9,7 @@ dice_token :: dice_token (PrologAtom * atom) : boarder_token (atom) {sides = 0; 
 dice_token :: dice_token (PrologAtom * atom, int sides) : boarder_token (atom) {this -> sides = sides; side = shift = 1; multiplier = 1; scaling = default_scaling ();}
 dice_token :: dice_token (PrologAtom * atom, int sides, int shift) : boarder_token (atom) {this -> sides = sides; side = this -> shift = shift; multiplier = 1; scaling = default_scaling ();}
 dice_token :: dice_token (PrologAtom * atom, int sides, int shift, int multiplier) : boarder_token (atom) {this -> sides = sides; side = this -> shift = shift; this -> multiplier = multiplier; scaling = default_scaling ();}
-dice_token :: ~ dice_token (void) {printf ("	DELETING DICE [%i]\n", sides);}
+dice_token :: ~ dice_token (void) {printf ("	DELETING DICE [%s %i]\n", atom -> name (), sides);}
 
 bool dice_token :: set_sides (int sides) {this -> sides = sides; return true;}
 int dice_token :: get_sides (void) {return this -> sides;}

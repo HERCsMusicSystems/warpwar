@@ -8,7 +8,7 @@ grid_token :: grid_token (PrologAtom * atom) : boarder_token (atom) {
 }
 
 grid_token :: ~ grid_token (void) {
-	printf ("	DELETE GRID\n");
+	printf ("	DELETING GRID [%s]\n", atom -> name ());
 }
 
 void grid_token :: creation_call (boarder * board, FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_GRID, atom -> name ());}
