@@ -366,7 +366,7 @@ static void CreateDiceCommand (int order, bool extended = false) {
 
 static void CreateFigureCommand (char * figure, bool zero_size = true);
 
-static void CreateTextCommand (void);
+static void CreateTextCommand (point display_location);
 
 /*
 static void create_response (char * command) {
@@ -444,7 +444,7 @@ static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, 
 		while (token != 0) {token -> selected = true; token = token -> hit_test_next (edit_area);}
 		board -> repaint ();
 		break;
-	case boarder_viewport :: create_text: CreateTextCommand ();
+	case boarder_viewport :: create_text: CreateTextCommand (viewport -> location . position + point (event -> x, event -> y));
 		viewport -> edit_mode = boarder_viewport :: move; boarder_clean = false; ChangeViewportName (viewport);
 		board -> repaint (); break;
 	default: break;
@@ -1018,7 +1018,7 @@ public:
 	}
 };
 
-bool show_entry_dialog (char * area) {
+bool show_entry_dialog (char * area, point display_location) {
 	strcpy (area, "");
 	GtkWidget * dialog = gtk_dialog_new ();
 	gtk_dialog_add_button (GTK_DIALOG (dialog), "OK", 0);
@@ -1026,6 +1026,8 @@ bool show_entry_dialog (char * area) {
 	GtkWidget * entry = gtk_entry_new ();
 	GtkWidget * content = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
 	gtk_container_add (GTK_CONTAINER (content), entry);
+	gtk_window_set_title (GTK_WINDOW (dialog), "Enter Text");
+	gtk_window_move (GTK_WINDOW (dialog), (int) display_location . x, (int) display_location . y);
 	gtk_widget_show_all (dialog);
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) != 0) {gtk_widget_destroy (dialog); return false;}
 	area_cat (area, 0, (char *) gtk_entry_get_text (GTK_ENTRY (entry)));
@@ -1033,12 +1035,12 @@ bool show_entry_dialog (char * area) {
 	return true;
 }
 
-static void CreateTextCommand (void) {
+static void CreateTextCommand (point display_location) {
 	if (board == 0) return;
 	PrologRoot * root = board -> root;
 	if (root == 0) return;
 	AREA area;
-	if (! show_entry_dialog (area)) return;
+	if (! show_entry_dialog (area, display_location)) return;
 	PrologElement * location_query = root -> pair (root -> var (0),
 		root -> pair (root -> atom ("boarder", "Position"),
 		root -> pair (root -> integer ((int) edit_area . position . x),
