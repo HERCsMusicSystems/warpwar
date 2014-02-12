@@ -1018,46 +1018,19 @@ public:
 	}
 };
 
-bool show_entry_dialog(char * area)
-{
-    GtkWidget *dialog;
-    GtkWidget *entry;
-    GtkWidget *content_area;
-
-    dialog = gtk_dialog_new();
-    gtk_dialog_add_button(GTK_DIALOG(dialog), "OK", 0);
-    gtk_dialog_add_button(GTK_DIALOG(dialog), "CANCEL", 1);
-
-    content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-    entry = gtk_entry_new();
-    gtk_container_add(GTK_CONTAINER(content_area), entry);
-
-    gtk_widget_show_all(dialog);
-    gint result = gtk_dialog_run(GTK_DIALOG(dialog));
+bool show_entry_dialog (char * area) {
 	strcpy (area, "");
-    switch(result)
-    {
-    case 0:
-        printf ("OK was clicked\n");
-        strcpy (area, (char *) gtk_entry_get_text(GTK_ENTRY(entry)));
-        printf ("Contact dialog passed text from entry: [%s]\n", area);
-		gtk_widget_destroy (dialog);
-		return true;
-        break;
-
-    case 1:
-        printf ("CANCEL was clicked\n");
-		gtk_widget_destroy (dialog);
-		return false;
-		break;
-    default:
-        printf ("Undefined. Perhaps dialog was closed\n");
-		gtk_widget_destroy (dialog);
-		return false;
-		break;
-    }
+	GtkWidget * dialog = gtk_dialog_new ();
+	gtk_dialog_add_button (GTK_DIALOG (dialog), "OK", 0);
+	gtk_dialog_add_button (GTK_DIALOG (dialog), "CANCEL", 1);
+	GtkWidget * entry = gtk_entry_new ();
+	GtkWidget * content = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+	gtk_container_add (GTK_CONTAINER (content), entry);
+	gtk_widget_show_all (dialog);
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) != 0) {gtk_widget_destroy (dialog); return false;}
+	area_cat (area, 0, (char *) gtk_entry_get_text (GTK_ENTRY (entry)));
 	gtk_widget_destroy (dialog);
-	return false;
+	return true;
 }
 
 static void CreateTextCommand (void) {
