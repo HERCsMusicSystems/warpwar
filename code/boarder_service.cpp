@@ -773,6 +773,11 @@ public:
 	boarder_token * token;
 	static char * name (void) {return token_action_code;}
 	char * codeName (void) {return token_action_code;}
+	bool isTypeOf (PrologNativeCode * code) {
+		if (code == 0) return false;
+		char * code_type = code -> codeName ();
+		return code_type == codeName () ? true : code_type == PrologNativeCode :: codeName ();
+	}
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
 		if (token == 0) return false;
