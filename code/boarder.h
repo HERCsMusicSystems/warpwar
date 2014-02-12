@@ -37,6 +37,7 @@
 #define DEFAULT_ICOSAHEDRON_FOREGROUND "DefaultIcosahedronForeground"
 #define DEFAULT_ICOSAHEDRON_BACKGROUND "DefaultIcosahedronBackground"
 
+#define TOKEN_TYPE "TokenType"
 #define LOCATION "Location"
 #define SIZE "Size"
 #define POSITION "Position"

@@ -773,11 +773,7 @@ public:
 	boarder_token * token;
 	static char * name (void) {return token_action_code;}
 	char * codeName (void) {return token_action_code;}
-	bool isTypeOf (PrologNativeCode * code) {
-		if (code == 0) return false;
-		char * code_type = code -> codeName ();
-		return code_type == codeName () ? true : code_type == PrologNativeCode :: codeName ();
-	}
+	bool isTypeOf (char * code_name) {return name () == code_name ? true : PrologNativeCode :: isTypeOf (code_name);}
 	bool code (PrologElement * parameters, PrologResolution * resolution) {
 		if (board == 0) return false;
 		if (token == 0) return false;
@@ -947,7 +943,7 @@ public:
 			PrologElement * deck_element = parameters -> getLeft (); if (! deck_element -> isAtom ()) return false;
 			PrologAtom * deck_atom = deck_element -> getAtom (); if (deck_atom == 0) return false;
 			PrologNativeCode * deck_machine = deck_atom -> getMachine (); if (deck_machine == 0) return false;
-			if (deck_machine -> codeName () != token_actions :: name ()) return false;
+			if (! deck_machine -> isTypeOf (token_actions :: name ())) return false;
 			boarder_token * deck_token = ((token_actions *) deck_machine) -> token; if (deck_token == 0) return false;
 			if (deck_token -> can_insert ()) return board -> transfer_token_to_deck (deck_token, token);
 			if (token -> can_insert ()) return board -> transfer_token_to_deck (token, deck_token);
@@ -1023,6 +1019,8 @@ public:
 	}
 };
 
+class TokenTypeClass : public PrologNativeCode {public: virtual char * codeName (void) {return token_actions :: name ();}};
+
 bool show_entry_dialog (char * area, point display_location) {
 	strcpy (area, "");
 	GtkWidget * dialog = gtk_dialog_new ();
@@ -1097,7 +1095,7 @@ static void CreateFigureCommand (char * figure, bool zero_size) {
 		printf ("atom => %s\n", return_atom -> getAtom () -> name ());
 		PrologNativeCode * machine = return_atom -> getAtom () -> getMachine ();
 		if (machine != 0) {
-			if (machine -> codeName () == token_actions :: name ()) {
+			if (machine -> isTypeOf (token_actions :: name ())) {
 				edited_token = ((token_actions *) machine) -> token;
 			}
 		}
@@ -1370,7 +1368,7 @@ public:
 		if (atom == 0) return false;
 		PrologNativeCode * machine = atom -> getMachine ();
 		if (machine == 0) return false;
-		if (machine -> codeName () != token_actions :: name ()) return false;
+		if (! machine -> isTypeOf (token_actions :: name ())) return false;
 		boarder_token * token = ((token_actions *) machine) -> token;
 		if (token == 0) return false;
 		if (token -> can_insert ()) return true;
@@ -1459,6 +1457,7 @@ void boarder_service_class :: init (PrologRoot * root) {
 
 PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	PrologDirectory * dir = root -> searchDirectory ("boarder");
+	if (strcmp (name, TOKEN_TYPE) == 0) return new TokenTypeClass ();
 	if (strcmp (name, VIEWPORT) == 0) return new viewport (dir);
 	if (strcmp (name, BACKGROUND_COLOUR) == 0) return new default_colour (& board -> background_colour);
 	if (strcmp (name, REPAINT) == 0) return new repaint ();
