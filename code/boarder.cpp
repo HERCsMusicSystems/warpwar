@@ -551,6 +551,7 @@ boarder_token * boarder_token :: insert (boarder_token * token) {return 0;}
 boarder_token * boarder_token :: release (void) {return 0;}
 boarder_token * boarder_token :: release_random (void) {return 0;}
 bool boarder_token :: shuffle (void) {return false;}
+bool boarder_token :: moveOnGrid (boarder_token * token, point position) {return false;}
 
 void boarder_token :: save (boarder * board, FILE * tc) {
 	if (next) next -> save (board, tc);

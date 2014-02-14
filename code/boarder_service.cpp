@@ -816,7 +816,17 @@ public:
 				parameters -> getLeft () -> setInteger ((int) token_location . position . y);
 				return true;
 			}
-			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
+			if (! parameters -> isPair ()) return false; PrologElement * x = parameters -> getLeft ();
+			if (x -> isAtom ()) {
+				PrologNativeCode * machine = x -> getAtom () -> getMachine ();
+				if (machine == 0) return false;
+				if (! machine -> isTypeOf (token_actions :: name ())) return false;
+				parameters = parameters -> getRight ();
+				if (! parameters -> isPair ()) return false; x = parameters -> getLeft (); if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
+				if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false;
+				return token -> moveOnGrid (((token_actions *) machine) -> token, point (x -> getInteger (), y -> getInteger ()));
+			}
+			if (! x -> isInteger ()) return false; parameters = parameters -> getRight ();
 			if (! parameters -> isPair ()) return false; PrologElement * y = parameters -> getLeft (); if (! y -> isInteger ()) return false; parameters = parameters -> getRight ();
 			token -> set_position (point (x -> getInteger (), y -> getInteger ()));
 			boarder_clean = false;

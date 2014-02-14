@@ -168,6 +168,12 @@ rect grid_token :: get_bounding_box (void) {
 colour grid_token :: default_foreground_colour (boarder * board) {return board ? board -> default_grid_foreground_colour : default_foreground ();}
 colour grid_token :: default_background_colour (boarder * board) {return board ? board -> default_grid_background_colour : default_background ();}
 
+bool grid_token :: moveOnGrid (boarder_token * token, point position) {
+	if (token == 0) return false;
+	token -> set_position (get_location () . position);
+	return true;
+}
+
 
 
 

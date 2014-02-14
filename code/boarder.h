@@ -272,6 +272,7 @@ public:
 	virtual boarder_token * release (void);
 	virtual boarder_token * release_random (void);
 	virtual bool shuffle (void);
+	virtual bool moveOnGrid (boarder_token * token, point position);
 	colour default_foreground (void);
 	colour default_background (void);
 	virtual colour default_foreground_colour (boarder * board) = 0;
@@ -408,6 +409,7 @@ public:
 	virtual rect get_bounding_box (void);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);
+	virtual bool moveOnGrid (boarder_token * token, point position);
 	grid_token (PrologAtom * atom);
 	virtual ~ grid_token (void);
 };

@@ -38,6 +38,7 @@ Applicable to: rectangle, circle, picture, dice, grid, text and deck.
 [token Location : *x]                               => returns location and dimension
 [token Position x y]                                => location on the board
 [token Position : *x]                               => returns location
+[grid  Position token x y]                          => move token to a location on the grid
 [token Size width (height)]                         => dimension; heigh can be omitted for squares and circles
 [token Size : *x]                                   => returns dimension
 [token BackgroundColour red green blue (alpha)]     => background colour (alpha optional default = 255)
