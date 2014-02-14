@@ -78,3 +78,7 @@ CREATING TOKENS:
 [CreateGrid (*)atom]                                => creates a grid
 [CreateText (*)atom "text"]                         => creates a text
 [CreateDeck (*)atom ("text")]                       => creates a deck
+
+MACHINE CHECK: TokenType
+
+[machine_type token TokenType]                      => checks if tokens is of TokenType type

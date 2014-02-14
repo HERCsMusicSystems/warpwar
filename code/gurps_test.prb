@@ -1,0 +1,106 @@
+[import "studio"]
+[import "test"]
+[import "gurps_core"]
+
+[list]
+
+[TestEq "on 3 with 2" [CRITICAL_SUCCESS -1] *x [roll_result 3 2 : *x]]
+[TestEq "on 3 with 3" [CRITICAL_SUCCESS 0] *x [roll_result 3 3 : *x]]
+[TestEq "on 3 with 4" [CRITICAL_SUCCESS 1] *x [roll_result 3 4 : *x]]
+[TestEq "on 3 with 5" [CRITICAL_SUCCESS 2] *x [roll_result 3 5 : *x]]
+[TestEq "on 4 with 3" [CRITICAL_SUCCESS -1] *x [roll_result 4 3 : *x]]
+[TestEq "on 4 with 4" [CRITICAL_SUCCESS 0] *x [roll_result 4 4 : *x]]
+[TestEq "on 4 with 5" [CRITICAL_SUCCESS 1] *x [roll_result 4 5 : *x]]
+[TestEq "on 4 with 6" [CRITICAL_SUCCESS 2] *x [roll_result 4 6 : *x]]
+[TestEq "on 5 with 4" [FAILURE -1] *x [roll_result 5 4 : *x]]
+[TestEq "on 5 with 5" [SUCCESS 0] *x [roll_result 5 5 : *x]]
+[TestEq "on 5 with 6" [SUCCESS 1] *x [roll_result 5 6 : *x]]
+[TestEq "on 5 with 10" [SUCCESS 5] *x [roll_result 5 10 : *x]]
+[TestEq "on 5 with 14" [SUCCESS 9] *x [roll_result 5 14 : *x]]
+[TestEq "on 5 with 15" [CRITICAL_SUCCESS 10] *x [roll_result 5 15 : *x]]
+[TestEq "on 5 with 16" [CRITICAL_SUCCESS 11] *x [roll_result 5 16 : *x]]
+[TestEq "on 6 with -5" [CRITICAL_FAILURE -11] *x [roll_result 6 -5 : *x]]
+[TestEq "on 6 with -4" [CRITICAL_FAILURE -10] *x [roll_result 6 -4 : *x]]
+[TestEq "on 6 with -3" [FAILURE -9] *x [roll_result 6 -3 : *x]]
+[TestEq "on 6 with 5" [FAILURE -1] *x [roll_result 6 5 : *x]]
+[TestEq "on 6 with 6" [SUCCESS 0] *x [roll_result 6 6 : *x]]
+[TestEq "on 6 with 7" [SUCCESS 1] *x [roll_result 6 7 : *x]]
+[TestEq "on 6 with 10" [SUCCESS 4] *x [roll_result 6 10 : *x]]
+[TestEq "on 6 with 15" [SUCCESS 9] *x [roll_result 6 15 : *x]]
+[TestEq "on 6 with 16" [CRITICAL_SUCCESS 10] *x [roll_result 6 16 : *x]]
+[TestEq "on 6 with 17" [CRITICAL_SUCCESS 11] *x [roll_result 6 17 : *x]]
+[TestEq "on 7 with -3" [CRITICAL_FAILURE -10] *x [roll_result 7 -3 : *x]]
+[TestEq "on 7 with -2" [FAILURE -9] *x [roll_result 7 -2 : *x]]
+[TestEq "on 7 with 6" [FAILURE -1] *x [roll_result 7 6 : *x]]
+[TestEq "on 7 with 7" [SUCCESS 0] *x [roll_result 7 7 : *x]]
+[TestEq "on 16 with 6" [CRITICAL_FAILURE -10] *x [roll_result 16 6 : *x]]
+[TestEq "on 16 with 7" [FAILURE -9] *x [roll_result 16 7 : *x]]
+[TestEq "on 16 with 15" [FAILURE -1] *x [roll_result 7 6 : *x]]
+[TestEq "on 16 with 16" [SUCCESS 0] *x [roll_result 7 7 : *x]]
+[TestEq "on 17 with 15" [CRITICAL_FAILURE -2] *x [roll_result 17 15 : *x]]
+[TestEq "on 17 with 17" [FAILURE 0] *x [roll_result 17 17 : *x]]
+[TestEq "on 17 with 18" [FAILURE 1] *x [roll_result 17 18 : *x]]
+[TestEq "on 18 with 17" [CRITICAL_FAILURE -1] *x [roll_result 18 17 : *x]]
+[TestEq "on 18 with 18" [CRITICAL_FAILURE 0] *x [roll_result 18 18 : *x]]
+[TestEq "on 18 with 19" [CRITICAL_FAILURE 1] *x [roll_result 18 19 : *x]]
+
+[TestEq "QC mariner wins" [SUCCESS 4 [mariner CRITICAL_SUCCESS] [voyager CRITICAL_SUCCESS]] *x [quick_contest_result mariner [CRITICAL_SUCCESS 8] voyager [CRITICAL_SUCCESS 4] : *x]]
+[TestEq "QC voyager wins" [SUCCESS 4 [voyager CRITICAL_SUCCESS] [mariner CRITICAL_SUCCESS]] *x [quick_contest_result mariner [CRITICAL_SUCCESS 8] voyager [CRITICAL_SUCCESS 12] : *x]]
+[TestEq "QC tie" [TIE 0 [mariner CRITICAL_SUCCESS] [voyager CRITICAL_SUCCESS]] *x [quick_contest_result mariner [CRITICAL_SUCCESS 12] voyager [CRITICAL_SUCCESS 12] : *x]]
+[TestEq "QC mariner wins" [SUCCESS -4 [mariner CRITICAL_SUCCESS] [voyager SUCCESS]] *x [quick_contest_result mariner [CRITICAL_SUCCESS 2] voyager [SUCCESS 6] : *x]]
+[TestEq "QC voyager wins" [SUCCESS 4  [voyager CRITICAL_SUCCESS] [mariner SUCCESS]] *x [quick_contest_result mariner [SUCCESS 2] voyager [CRITICAL_SUCCESS 6] : *x]]
+[TestEq "QC mariner wins" [SUCCESS 8 [mariner CRITICAL_SUCCESS] [voyager FAILURE]] *x [quick_contest_result mariner [CRITICAL_SUCCESS 2] voyager [FAILURE -6] : *x]]
+[TestEq "QC voyager wins" [SUCCESS -8  [voyager CRITICAL_SUCCESS] [mariner FAILURE]] *x [quick_contest_result mariner [FAILURE 2] voyager [CRITICAL_SUCCESS -6] : *x]]
+[TestEq "QC mariner wins" [SUCCESS 8 [mariner CRITICAL_SUCCESS] [voyager CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_SUCCESS 2] voyager [CRITICAL_FAILURE -6] : *x]]
+[TestEq "QC voyager wins" [SUCCESS -8  [voyager CRITICAL_SUCCESS] [mariner CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_FAILURE 2] voyager [CRITICAL_SUCCESS -6] : *x]]
+
+[TestEq "QC mariner wins" [SUCCESS 4 [mariner SUCCESS] [voyager SUCCESS]] *x [quick_contest_result mariner [SUCCESS 8] voyager [SUCCESS 4] : *x]]
+[TestEq "QC voyager wins" [SUCCESS 4 [voyager SUCCESS] [mariner SUCCESS]] *x [quick_contest_result mariner [SUCCESS 8] voyager [SUCCESS 12] : *x]]
+[TestEq "QC tie" [TIE 0 [mariner SUCCESS] [voyager SUCCESS]] *x [quick_contest_result mariner [SUCCESS 12] voyager [SUCCESS 12] : *x]]
+[TestEq "QC mariner wins" [SUCCESS 8 [mariner SUCCESS] [voyager FAILURE]] *x [quick_contest_result mariner [SUCCESS 2] voyager [FAILURE -6] : *x]]
+[TestEq "QC voyager wins" [SUCCESS -8  [voyager SUCCESS] [mariner FAILURE]] *x [quick_contest_result mariner [FAILURE 2] voyager [SUCCESS -6] : *x]]
+[TestEq "QC mariner wins" [SUCCESS 8 [mariner SUCCESS] [voyager CRITICAL_FAILURE]] *x [quick_contest_result mariner [SUCCESS 2] voyager [CRITICAL_FAILURE -6] : *x]]
+[TestEq "QC voyager wins" [SUCCESS -8  [voyager SUCCESS] [mariner CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_FAILURE 2] voyager [SUCCESS -6] : *x]]
+
+[TestEq "QC mariner wins" [SUCCESS 4 [mariner FAILURE] [voyager FAILURE]] *x [quick_contest_result mariner [FAILURE 8] voyager [FAILURE 4] : *x]]
+[TestEq "QC voyager wins" [SUCCESS 4 [voyager FAILURE] [mariner FAILURE]] *x [quick_contest_result mariner [FAILURE 8] voyager [FAILURE 12] : *x]]
+[TestEq "QC tie" [TIE 0 [mariner FAILURE] [voyager FAILURE]] *x [quick_contest_result mariner [FAILURE 12] voyager [FAILURE 12] : *x]]
+[TestEq "QC mariner wins" [SUCCESS 8 [mariner FAILURE] [voyager CRITICAL_FAILURE]] *x [quick_contest_result mariner [FAILURE 2] voyager [CRITICAL_FAILURE -6] : *x]]
+[TestEq "QC voyager wins" [SUCCESS -8  [voyager FAILURE] [mariner CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_FAILURE 2] voyager [FAILURE -6] : *x]]
+
+[TestEq "QC mariner wins" [SUCCESS 4 [mariner CRITICAL_FAILURE] [voyager CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_FAILURE 8] voyager [CRITICAL_FAILURE 4] : *x]]
+[TestEq "QC voyager wins" [SUCCESS 4 [voyager CRITICAL_FAILURE] [mariner CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_FAILURE 8] voyager [CRITICAL_FAILURE 12] : *x]]
+[TestEq "QC tie" [TIE 0 [mariner CRITICAL_FAILURE] [voyager CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_FAILURE 12] voyager [CRITICAL_FAILURE 12] : *x]]
+
+[nl]
+[FailedTestSummary]
+[foreground 0xffff00]
+
+[exit]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
