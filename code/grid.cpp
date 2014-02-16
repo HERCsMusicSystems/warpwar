@@ -170,7 +170,10 @@ colour grid_token :: default_background_colour (boarder * board) {return board ?
 
 bool grid_token :: moveOnGrid (boarder_token * token, point position) {
 	if (token == 0) return false;
-	token -> set_position (get_location () . position);
+	position -= indexing . position;
+	position *= scaling;
+	position += get_location () . position;
+	token -> set_position (position);
 	return true;
 }
 
