@@ -110,6 +110,7 @@ public:
 	point operator *= (const double & d);
 	point operator *= (const point & p);
 	point half (void);
+	point rotate (double angle);
 	void round (void);
 	void minimise (void);
 	void maximise (void);

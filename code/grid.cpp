@@ -148,8 +148,14 @@ rect grid_token :: get_bounding_box (void) {
 	rect ret = location;
 	point factor (1, 1);
 	switch (side) {
-	case 1: case 2: if (indexing . size . x > 1) factor . x = (0.75 * (indexing . size . x - 1) + 1.0) / indexing . size . x; break;
-	case 3: case 4: if (indexing . size . y > 1) factor . y = (0.75 * (indexing . size . y - 1) + 1.0) / indexing . size . y; break;
+	case 1: case 2:
+		if (indexing . size . x > 1) factor . x = (0.75 * (indexing . size . x - 1) + 1.0) / indexing . size . x;
+		factor . y *= 0.866025404;
+		break;
+	case 3: case 4:
+		if (indexing . size . y > 1) factor . y = (0.75 * (indexing . size . y - 1) + 1.0) / indexing . size . y;
+		factor . x *= 0.866025404;
+		break;
 	default: break;
 	}
 	double angle = rotation * M_PI / 12.0;
@@ -171,8 +177,24 @@ colour grid_token :: default_background_colour (boarder * board) {return board ?
 bool grid_token :: moveOnGrid (boarder_token * token, point position) {
 	if (token == 0) return false;
 	position -= indexing . position;
-	position *= scaling;
-	position += get_location () . position;
+	switch (side) {
+	case 0:
+		position *= scaling;
+		position += (point (scaling, scaling) - token -> get_bounding_box () . size) . half ();
+		break;
+	case 1: case 2:
+		if ((int) position . x % 2 != 0) position . y += 0.866025404 * (side == 1 ? -0.5 : 0.5);
+		position *= point (0.75, 0.866025404) * scaling;
+		position += (point (1.0, 0.866025404) - token -> get_bounding_box () . size) . half ();
+		break;
+	case 3: case 4:
+		if ((int) position . y % 2 != 0) position . x += 0.866025404 * (side == 3 ? -0.5 : 0.5);
+		position *= point (0.866025404, 0.75) * scaling;
+		position += (point (0.866025404, 1.0) - token -> get_bounding_box () . size) . half ();
+		break;
+	default: break;
+	}
+	position = position . rotate (rotation * M_PI / 12.0) + get_location () . position;
 	token -> set_position (position);
 	return true;
 }

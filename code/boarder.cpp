@@ -40,6 +40,7 @@ point point :: operator -= (const point & p) {x -= p . x; y -= p . y; return * t
 point point :: operator *= (const double & d) {x *= d; y *= d; return * this;}
 point point :: operator *= (const point & p) {x *= p . x; y *= p . y; return * this;}
 point point :: half (void) {return * this * 0.5;}
+point point :: rotate (double angle) {double sn = sin (angle); double cn = cos (angle); return point (x * cn - y * sn, y * cn + y * sn);}
 void point :: round (void) {x = (double) ((int) (x + 0.5)); y = (double) ((int) (y + 0.5));}
 void point :: minimise (void) {if (x > y) x = y; else if (y > x) y = x;}
 void point :: maximise (void) {if (x < y) x = y; else if (y < x) y = x;}
