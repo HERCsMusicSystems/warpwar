@@ -72,6 +72,19 @@
 [TestEq "QC voyager wins" [SUCCESS 4 [voyager CRITICAL_FAILURE] [mariner CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_FAILURE 8] voyager [CRITICAL_FAILURE 12] : *x]]
 [TestEq "QC tie" [TIE 0 [mariner CRITICAL_FAILURE] [voyager CRITICAL_FAILURE]] *x [quick_contest_result mariner [CRITICAL_FAILURE 12] voyager [CRITICAL_FAILURE 12] : *x]]
 
+[TestEq "RGC continues...." [TIE 4 [voyager CRITICAL_SUCCESS] [mariner CRITICAL_SUCCESS]] *x [regular_contest_result mariner [CRITICAL_SUCCESS 5] voyager [CRITICAL_SUCCESS 9] : *x]]
+[TestEq "RGC continues...." [TIE 4 [mariner SUCCESS] [voyager SUCCESS]] *x [regular_contest_result mariner [SUCCESS 9] voyager [SUCCESS 5] : *x]]
+[TestEq "RGC continues...." [TIE 0 [mariner FAILURE] [voyager FAILURE]] *x [regular_contest_result mariner [FAILURE 5] voyager [FAILURE 5] : *x]]
+[TestEq "RGC continues...." [TIE 4 [voyager CRITICAL_FAILURE] [mariner CRITICAL_FAILURE]] *x [regular_contest_result mariner [CRITICAL_FAILURE 5] voyager [CRITICAL_FAILURE 9] : *x]]
+
+[TestEq "RGC stops...." [SUCCESS 4 [voyager CRITICAL_SUCCESS] [mariner SUCCESS]] *x [regular_contest_result mariner [SUCCESS 5] voyager [CRITICAL_SUCCESS 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS 4 [voyager CRITICAL_SUCCESS] [mariner FAILURE]] *x [regular_contest_result mariner [FAILURE 5] voyager [CRITICAL_SUCCESS 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS 4 [voyager CRITICAL_SUCCESS] [mariner CRITICAL_FAILURE]] *x [regular_contest_result mariner [CRITICAL_FAILURE 5] voyager [CRITICAL_SUCCESS 9] : *x]]
+
+[TestEq "RGC stops...." [SUCCESS 4 [voyager SUCCESS] [mariner CRITICAL_SUCCESS]] *x [regular_contest_result mariner [CRITICAL_SUCCESS 5] voyager [SUCCESS 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS 4 [voyager SUCCESS] [mariner FAILURE]] *x [regular_contest_result mariner [FAILURE 5] voyager [SUCCESS 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS 4 [voyager SUCCESS] [mariner CRITICAL_FAILURE]] *x [regular_contest_result mariner [CRITICAL_FAILURE 5] voyager [SUCCESS 9] : *x]]
+
 [nl]
 [FailedTestSummary]
 [foreground 0xffff00]

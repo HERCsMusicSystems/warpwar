@@ -3,7 +3,8 @@ import studio
 program gursp_core [
 						d4 d6 d8 d10 d100 d12 d20 DD
 						CRITICAL_SUCCESS SUCCESS FAILURE CRITICAL_FAILURE CRITICAL SUCCESS FAILURE TIE
-						roll roll_result quick_contest_result
+						roll roll_result
+						quick_contest_result regular_contest_result resistance_contest_result
 						t
 					]
 
@@ -62,6 +63,17 @@ auto := [[timestamp *seed : *] [rnd_control *seed] [show "SEED = " *seed]]
 [[quick_contest_result *a [CRITICAL_FAILURE *mm] *b [CRITICAL_FAILURE *mm] TIE     0  [*a CRITICAL_FAILURE] [*b CRITICAL_FAILURE]] /]
 [[quick_contest_result *a [CRITICAL_FAILURE *am] *b [CRITICAL_FAILURE *bm] SUCCESS *m [*a CRITICAL_FAILURE] [*b CRITICAL_FAILURE]] [> *am *bm] / [sum *bm *m *am]]
 [[quick_contest_result *a [CRITICAL_FAILURE *am] *b [CRITICAL_FAILURE *bm] SUCCESS *m [*b CRITICAL_FAILURE] [*a CRITICAL_FAILURE]] [< *am *bm] / [sum *am *m *bm]]
+
+[[regular_contest_result *a [*s *am] *b [*s *bm] TIE : *result] / [quick_contest_result *a [*s *am] *b [*s *bm] *STATUS : *result]]
+[[regular_contest_result *a *status_a *b *status_b SUCCESS : *result] / [quick_contest_result *a *status_a *b *status_b *STATUS : *result]]
+
+[[resistance_contest_result *a [*as *am] *b [*bs *bm] *status *m [*aa *aas] [*bb *bbs]]
+	[quick_contest_result *a [*as *am] *b [*bs *bm] *STATUS *m [*aa *aas] [*bb *bbs]]
+	[resistance_contest_result *a *aa *as *bs *status]
+]
+[[resistance_contest_result *a *a *status *status FAILURE] /]
+[[resistance_contest_result *a *a * * SUCCESS] /]
+[[resistance_contest_result * * * * FAILURE]]
 
 [[t *x *y] [roll_result *x *y : *res] [show *res]]
 
