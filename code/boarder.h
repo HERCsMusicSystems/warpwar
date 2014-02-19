@@ -102,6 +102,7 @@ public:
 	point operator - (const point & p) const;
 	point operator - (void) const;
 	point operator * (const double & scale) const;
+	point operator * (const point & p) const;
 	point operator / (const double & scale) const;
 	bool operator == (const point & p) const;
 	bool operator != (const point & p) const;
@@ -399,14 +400,12 @@ public:
 
 class grid_token : public boarder_token {
 protected:
-	void draw_square_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre);
-	void draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial);
-	void draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial);
+	void draw_square_grid (cairo_t * cr, boarder_viewport * viewport);
+	void draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * viewport, bool initial);
+	void draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * viewport, bool initial);
 	virtual void internal_draw (cairo_t * cr, boarder_viewport * viewport);
 public:
 	virtual void creation_call (boarder * board, FILE * tc);
-	virtual bool should_save_size (void);
-	virtual double default_scaling (void);
 	virtual rect get_bounding_box (void);
 	virtual colour default_foreground_colour (boarder * board);
 	virtual colour default_background_colour (boarder * board);

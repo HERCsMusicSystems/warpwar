@@ -32,6 +32,7 @@ point point :: operator + (const point & p) const {return point (x + p . x, y + 
 point point :: operator - (const point & p) const {return point (x - p . x, y - p . y);}
 point point :: operator - (void) const {return point (- x, - y);}
 point point :: operator * (const double & scale) const {return point (x * scale, y * scale);}
+point point :: operator * (const point & p) const {return point (x * p . x, y * p . y);}
 point point :: operator / (const double & scale) const {if (scale == 0.0) return * this; return point (x / scale, y / scale);}
 bool point :: operator == (const point & p) const {return x == p . x && y == p . y;}
 bool point :: operator != (const point & p) const {return x != p . x || y != p . y;}
@@ -517,7 +518,7 @@ void boarder_viewport :: setBoardPosition (point position) {this -> board_positi
 ///////////////////
 
 boarder_token :: boarder_token (PrologAtom * atom) {
-	location = rect (point (10, 10), point (200, 100));
+	location = rect (point (10, 10), point (64, 64));
 	selected = false;
 	locked = false;
 	foreground_colour = default_foreground ();

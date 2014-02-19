@@ -3,21 +3,17 @@
 
 extern double abs (double value);
 
-grid_token :: grid_token (PrologAtom * atom) : boarder_token (atom) {
-	scaling = default_scaling ();
-}
+grid_token :: grid_token (PrologAtom * atom) : boarder_token (atom) {}
 
 grid_token :: ~ grid_token (void) {
 	printf ("	DELETING GRID [%s]\n", atom -> name ());
 }
 
 void grid_token :: creation_call (boarder * board, FILE * tc) {fprintf (tc, "[%s %s]\n", CREATE_GRID, atom -> name ());}
-bool grid_token :: should_save_size (void) {return false;}
-double grid_token :: default_scaling (void) {return 64.0;}
 
-void grid_token :: draw_square_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre) {
-	for (int ind = 0; ind <= indexing . size . y; ind++) {cairo_move_to (cr, -0.5, -0.5 + ind); cairo_line_to (cr, -0.5 + indexing . size . x, -0.5 + ind);}
-	for (int ind = 0; ind <= indexing . size . x; ind++) {cairo_move_to (cr, -0.5 + ind, -0.5); cairo_line_to (cr, -0.5 + ind, -0.5 + indexing . size . y);}
+void grid_token :: draw_square_grid (cairo_t * cr, boarder_viewport * viewport) {
+	for (int ind = 0; ind <= indexing . size . y; ind++) {cairo_move_to (cr, 0.0, ind); cairo_line_to (cr, indexing . size . x, ind);}
+	for (int ind = 0; ind <= indexing . size . x; ind++) {cairo_move_to (cr, ind, 0.0); cairo_line_to (cr, ind, indexing . size . y);}
 	cairo_matrix_t matrix;
 	cairo_get_matrix (cr, & matrix);
 	cairo_identity_matrix (cr);
@@ -28,7 +24,7 @@ void grid_token :: draw_square_grid (cairo_t * cr, boarder_viewport * viewport, 
 	cairo_set_matrix (cr, & matrix);
 	for (int x = 0; x < indexing . size . x; x++) {
 		for (int y = 0; y < indexing . size . y; y++) {
-			cairo_move_to (cr, x - 0.42, y - 0.3);
+			cairo_move_to (cr, x +0.08, y + 0.2);
 			char command [24];
 			sprintf (command, "%02i%02i", (int) (x + indexing . position . x), (int) (y + indexing . position . y));
 			cairo_show_text (cr, command);
@@ -36,11 +32,11 @@ void grid_token :: draw_square_grid (cairo_t * cr, boarder_viewport * viewport, 
 	}
 }
 
-void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial) {
+void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * viewport, bool initial) {
 	double H = 0.5 * 0.866025404;
-	double vertical_shift = initial ? 0.0 : - H;
+	double vertical_shift = initial ? 0.5 : 0.5 - H;
 	for (int x = 0; x < indexing . size . x; x++) {
-		double xx = -0.25 + (double) x * 0.75;
+		double xx = 0.25 + (double) x * 0.75;
 		double yy = vertical_shift;
 		if (vertical_shift < 0.0 && x < indexing . size . x - 1) {cairo_move_to (cr, xx + 0.5, yy); cairo_line_to (cr, xx + 0.75, yy + H);}
 		for (int y = 0; y < indexing . size . y; y++) {
@@ -57,8 +53,8 @@ void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * view
 		}
 		cairo_move_to (cr, xx, yy);
 		cairo_line_to (cr, xx + 0.5, yy);
-		if (vertical_shift == 0.0) cairo_line_to (cr, xx + 0.75, yy - H);
-		vertical_shift = vertical_shift == 0.0 ? - H : 0.0;
+		if (vertical_shift == 0.5) cairo_line_to (cr, xx + 0.75, yy - H);
+		vertical_shift = vertical_shift == 0.5 ? 0.5 - H : 0.5;
 	}
 	cairo_matrix_t matrix;
 	cairo_get_matrix (cr, & matrix);
@@ -71,7 +67,7 @@ void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * view
 	vertical_shift = initial ? H : 0.0;
 	for (int x = 0; x < indexing . size . x; x++) {
 		for (int y = 0; y < indexing . size . y; y++) {
-			cairo_move_to (cr, x * 0.75 - 0.24, y * (H + H) - 0.22 + vertical_shift);
+			cairo_move_to (cr, x * 0.75 + 0.26, y * (H + H) + 0.28 + vertical_shift);
 			char command [24];
 			sprintf (command, "%02i%02i", (int) (x + indexing . position . x), (int) (y + indexing . position . y));
 			cairo_show_text (cr, command);
@@ -80,11 +76,11 @@ void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * view
 	}
 }
 
-void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * viewport, rect r, point centre, bool initial) {
+void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * viewport, bool initial) {
 	double H = 0.5 * 0.866025404;
-	double horizontal_shift = initial ? 0.0 : - H;
+	double horizontal_shift = initial ? 0.5 : 0.5 - H;
 	for (int y = 0; y < indexing . size . y; y++) {
-		double yy = -0.25 + (double) y * 0.75;
+		double yy = 0.25 + (double) y * 0.75;
 		double xx = horizontal_shift;
 		if (horizontal_shift < 0.0 && y < indexing . size . y - 1) {cairo_move_to (cr, xx, yy + 0.5); cairo_line_to (cr, xx + H, yy + 0.75);}
 		for (int x = 0; x < indexing . size . x; x++) {
@@ -101,8 +97,8 @@ void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * vi
 		}
 		cairo_move_to (cr, xx, yy);
 		cairo_line_to (cr, xx, yy + 0.5);
-		if (horizontal_shift == 0.0) cairo_line_to (cr, xx - H, yy + 0.75);
-		horizontal_shift = horizontal_shift == 0.0 ? - H : 0.0;
+		if (horizontal_shift == 0.5) cairo_line_to (cr, xx - H, yy + 0.75);
+		horizontal_shift = horizontal_shift == 0.5 ? 0.5 - H : 0.5;
 	}
 	cairo_matrix_t matrix;
 	cairo_get_matrix (cr, & matrix);
@@ -115,7 +111,7 @@ void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * vi
 	horizontal_shift = initial ? H : 0.0;
 	for (int y = 0; y < indexing . size . y; y++) {
 		for (int x = 0; x < indexing . size . x; x++) {
-			cairo_move_to (cr, x * (H + H) - 0.36 + horizontal_shift, y * 0.75 - 0.10);
+			cairo_move_to (cr, x * (H + H) + 0.14 + horizontal_shift, y * 0.75 + 0.40);
 			char command [24];
 			sprintf (command, "%02i%02i", (int) (x + indexing . position . x), (int) (y + indexing . position . y));
 			cairo_show_text (cr, command);
@@ -125,19 +121,18 @@ void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * vi
 }
 
 void grid_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
-	location . size = point (scaling, scaling);
-	rect r ((location . position - viewport -> board_position) * viewport -> scaling, location . size * viewport -> scaling);
-	point centre = r . centre ();
-	cairo_translate (cr, centre . x, centre . y);
+	point position = location . position - viewport -> board_position;
+	cairo_translate (cr, position . x, position . y);
 	if (rotation != 0.0) cairo_rotate (cr, rotation * M_PI / 12.0);
-	cairo_scale (cr, r . size . x, r . size . y);
+	point size = location . size * scaling * viewport -> scaling;
+	cairo_scale (cr, size . x, size . y);
 	switch (side) {
-	case 0: draw_square_grid (cr, viewport, r, centre); break;
-	case 1: draw_vertical_hex_grid (cr, viewport, r, centre, false); break;
-	case 2: draw_vertical_hex_grid (cr, viewport, r, centre, true); break;
-	case 3: draw_horizontal_hex_grid (cr, viewport, r, centre, false); break;
-	case 4: draw_horizontal_hex_grid (cr, viewport, r, centre, true); break;
-	default: draw_square_grid (cr, viewport, r, centre); break;
+	case 0: draw_square_grid (cr, viewport); break;
+	case 1: draw_vertical_hex_grid (cr, viewport, false); break;
+	case 2: draw_vertical_hex_grid (cr, viewport, true); break;
+	case 3: draw_horizontal_hex_grid (cr, viewport, false); break;
+	case 4: draw_horizontal_hex_grid (cr, viewport, true); break;
+	default: draw_square_grid (cr, viewport); break;
 	}
 	cairo_identity_matrix (cr);
 }
@@ -146,7 +141,7 @@ double positivise (double d) {return d >= 0.0 ? d : 0.0;}
 
 rect grid_token :: get_bounding_box (void) {
 	rect ret = location;
-	point factor (1, 1);
+	point factor = location . size;
 	switch (side) {
 	case 1: case 2:
 		if (indexing . size . x > 1) factor . x = (0.75 * (indexing . size . x - 1) + 1.0) / indexing . size . x;
@@ -159,15 +154,10 @@ rect grid_token :: get_bounding_box (void) {
 	default: break;
 	}
 	double angle = rotation * M_PI / 12.0;
-	double cell_size = (abs (cos (angle)) + abs (sin (angle))) * scaling;
-	ret . size = point (indexing . size . x * abs (cos (angle)) + indexing . size . y * abs (sin (angle)), indexing . size . y * abs (cos (angle)) + indexing . size . x * abs (sin (angle))) * scaling;
-	ret . size *= factor;
-	ret . position . x += 0.5 * (location . size . x - cell_size);
-	ret . position . y += 0.5 * (location . size . y - cell_size);
-	ret . position . x -= scaling * positivise (sin (angle)) * (indexing . size . y - 1) * factor . y;
-	ret . position . x -= scaling * positivise (- cos (angle)) * (indexing . size . x - 1) * factor . x;
-	ret . position . y -= scaling * positivise (- sin (angle)) * (indexing . size . x - 1) * factor . x;
-	ret . position . y -= scaling * positivise (- cos (angle)) * (indexing . size . y - 1) * factor . y;
+	double absin = abs (sin (angle)), abcos = abs (cos (angle));
+	ret . size = point (indexing . size . x * abcos + indexing . size . y * absin, indexing . size . y * abcos + indexing . size . x * absin) * factor * scaling;
+	double psin = positivise (sin (angle)), pmsin = positivise (- sin (angle)), pmcos = positivise (- cos (angle));
+	ret . position -= (point (indexing . size . y * psin, indexing . size . x * pmsin) + indexing . size * pmcos) * factor * scaling;
 	return ret;
 }
 
@@ -179,17 +169,17 @@ bool grid_token :: moveOnGrid (boarder_token * token, point position) {
 	position -= indexing . position;
 	switch (side) {
 	case 0:
-		position *= scaling;
-		position += (point (scaling, scaling) - token -> get_bounding_box () . size) . half ();
+		position *= location . size;
+		position += (location . size - token -> get_bounding_box () . size) . half ();
 		break;
 	case 1: case 2:
 		if ((int) position . x % 2 != 0) position . y += 0.866025404 * (side == 1 ? -0.5 : 0.5);
-		position *= point (0.75, 0.866025404) * scaling;
+		position *= point (0.75, 0.866025404) * location . size;
 		position += (point (1.0, 0.866025404) - token -> get_bounding_box () . size) . half ();
 		break;
 	case 3: case 4:
 		if ((int) position . y % 2 != 0) position . x += 0.866025404 * (side == 3 ? -0.5 : 0.5);
-		position *= point (0.866025404, 0.75) * scaling;
+		position *= point (0.866025404, 0.75) * location . size;
 		position += (point (0.866025404, 1.0) - token -> get_bounding_box () . size) . half ();
 		break;
 	default: break;
