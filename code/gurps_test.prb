@@ -81,12 +81,45 @@
 [TestEq "RGC stops...." [SUCCESS 4 [voyager CRITICAL_SUCCESS] [mariner FAILURE]] *x [regular_contest_result mariner [FAILURE 5] voyager [CRITICAL_SUCCESS 9] : *x]]
 [TestEq "RGC stops...." [SUCCESS 4 [voyager CRITICAL_SUCCESS] [mariner CRITICAL_FAILURE]] *x [regular_contest_result mariner [CRITICAL_FAILURE 5] voyager [CRITICAL_SUCCESS 9] : *x]]
 
-[TestEq "RGC stops...." [SUCCESS 4 [voyager SUCCESS] [mariner CRITICAL_SUCCESS]] *x [regular_contest_result mariner [CRITICAL_SUCCESS 5] voyager [SUCCESS 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS -4 [mariner CRITICAL_SUCCESS] [voyager SUCCESS]] *x [regular_contest_result mariner [CRITICAL_SUCCESS 5] voyager [SUCCESS 9] : *x]]
 [TestEq "RGC stops...." [SUCCESS 4 [voyager SUCCESS] [mariner FAILURE]] *x [regular_contest_result mariner [FAILURE 5] voyager [SUCCESS 9] : *x]]
 [TestEq "RGC stops...." [SUCCESS 4 [voyager SUCCESS] [mariner CRITICAL_FAILURE]] *x [regular_contest_result mariner [CRITICAL_FAILURE 5] voyager [SUCCESS 9] : *x]]
 
+[TestEq "RGC stops...." [SUCCESS -4 [mariner CRITICAL_SUCCESS] [voyager FAILURE]] *x [regular_contest_result mariner [CRITICAL_SUCCESS 5] voyager [FAILURE 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS -4 [mariner SUCCESS] [voyager FAILURE]] *x [regular_contest_result mariner [SUCCESS 5] voyager [FAILURE 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS 4 [voyager FAILURE] [mariner CRITICAL_FAILURE]] *x [regular_contest_result mariner [CRITICAL_FAILURE 5] voyager [FAILURE 9] : *x]]
+
+[TestEq "RGC stops...." [SUCCESS -4 [mariner CRITICAL_SUCCESS] [voyager CRITICAL_FAILURE]] *x [regular_contest_result mariner [CRITICAL_SUCCESS 5] voyager [CRITICAL_FAILURE 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS -4 [mariner SUCCESS] [voyager CRITICAL_FAILURE]] *x [regular_contest_result mariner [SUCCESS 5] voyager [CRITICAL_FAILURE 9] : *x]]
+[TestEq "RGC stops...." [SUCCESS -4 [mariner FAILURE] [voyager CRITICAL_FAILURE]] *x [regular_contest_result mariner [FAILURE 5] voyager [CRITICAL_FAILURE 9] : *x]]
+
+;===============
+
+[TestEq "RCC continues...." [FAILURE 4 [voyager CRITICAL_SUCCESS] [mariner CRITICAL_SUCCESS]] *x [resistance_contest_result mariner [CRITICAL_SUCCESS 5] voyager [CRITICAL_SUCCESS 9] : *x]]
+[TestEq "RCC continues...." [FAILURE 4 [mariner SUCCESS] [voyager SUCCESS]] *x [resistance_contest_result mariner [SUCCESS 9] voyager [SUCCESS 5] : *x]]
+[TestEq "RCC continues...." [FAILURE 0 [mariner FAILURE] [voyager FAILURE]] *x [resistance_contest_result mariner [FAILURE 5] voyager [FAILURE 5] : *x]]
+[TestEq "RCC continues...." [FAILURE 4 [voyager CRITICAL_FAILURE] [mariner CRITICAL_FAILURE]] *x [resistance_contest_result mariner [CRITICAL_FAILURE 5] voyager [CRITICAL_FAILURE 9] : *x]]
+
+[TestEq "RCC stops...." [FAILURE 4 [voyager CRITICAL_SUCCESS] [mariner SUCCESS]] *x [resistance_contest_result mariner [SUCCESS 5] voyager [CRITICAL_SUCCESS 9] : *x]]
+[TestEq "RCC stops...." [FAILURE 4 [voyager CRITICAL_SUCCESS] [mariner FAILURE]] *x [resistance_contest_result mariner [FAILURE 5] voyager [CRITICAL_SUCCESS 9] : *x]]
+[TestEq "RCC stops...." [FAILURE 4 [voyager CRITICAL_SUCCESS] [mariner CRITICAL_FAILURE]] *x [resistance_contest_result mariner [CRITICAL_FAILURE 5] voyager [CRITICAL_SUCCESS 9] : *x]]
+
+[TestEq "RCC stops...." [SUCCESS -4 [mariner CRITICAL_SUCCESS] [voyager SUCCESS]] *x [resistance_contest_result mariner [CRITICAL_SUCCESS 5] voyager [SUCCESS 9] : *x]]
+[TestEq "RCC stops...." [FAILURE 4 [voyager SUCCESS] [mariner FAILURE]] *x [resistance_contest_result mariner [FAILURE 5] voyager [SUCCESS 9] : *x]]
+[TestEq "RCC stops...." [FAILURE 4 [voyager SUCCESS] [mariner CRITICAL_FAILURE]] *x [resistance_contest_result mariner [CRITICAL_FAILURE 5] voyager [SUCCESS 9] : *x]]
+
+[TestEq "RCC stops...." [SUCCESS -4 [mariner CRITICAL_SUCCESS] [voyager FAILURE]] *x [resistance_contest_result mariner [CRITICAL_SUCCESS 5] voyager [FAILURE 9] : *x]]
+[TestEq "RCC stops...." [SUCCESS -4 [mariner SUCCESS] [voyager FAILURE]] *x [resistance_contest_result mariner [SUCCESS 5] voyager [FAILURE 9] : *x]]
+[TestEq "RCC stops...." [FAILURE 4 [voyager FAILURE] [mariner CRITICAL_FAILURE]] *x [resistance_contest_result mariner [CRITICAL_FAILURE 5] voyager [FAILURE 9] : *x]]
+
+[TestEq "RCC stops...." [SUCCESS -4 [mariner CRITICAL_SUCCESS] [voyager CRITICAL_FAILURE]] *x [resistance_contest_result mariner [CRITICAL_SUCCESS 5] voyager [CRITICAL_FAILURE 9] : *x]]
+[TestEq "RCC stops...." [SUCCESS -4 [mariner SUCCESS] [voyager CRITICAL_FAILURE]] *x [resistance_contest_result mariner [SUCCESS 5] voyager [CRITICAL_FAILURE 9] : *x]]
+[TestEq "RCC stops...." [FAILURE -4 [mariner FAILURE] [voyager CRITICAL_FAILURE]] *x [resistance_contest_result mariner [FAILURE 5] voyager [CRITICAL_FAILURE 9] : *x]]
+
 [nl]
-[FailedTestSummary]
+[TestSummary]
+;[nl]
+;[FailedTestSummary]
 [foreground 0xffff00]
 
 [exit]
