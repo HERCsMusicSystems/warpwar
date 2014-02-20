@@ -38,7 +38,7 @@ void grid_token :: draw_vertical_hex_grid (cairo_t * cr, boarder_viewport * view
 	for (int x = 0; x < indexing . size . x; x++) {
 		double xx = 0.25 + (double) x * 0.75;
 		double yy = vertical_shift;
-		if (vertical_shift < 0.0 && x < indexing . size . x - 1) {cairo_move_to (cr, xx + 0.5, yy); cairo_line_to (cr, xx + 0.75, yy + H);}
+		if (vertical_shift < 0.5 && x < indexing . size . x - 1) {cairo_move_to (cr, xx + 0.5, yy); cairo_line_to (cr, xx + 0.75, yy + H);}
 		for (int y = 0; y < indexing . size . y; y++) {
 			cairo_move_to (cr, xx + 0.5, yy);
 			cairo_line_to (cr, xx, yy);
@@ -82,7 +82,7 @@ void grid_token :: draw_horizontal_hex_grid (cairo_t * cr, boarder_viewport * vi
 	for (int y = 0; y < indexing . size . y; y++) {
 		double yy = 0.25 + (double) y * 0.75;
 		double xx = horizontal_shift;
-		if (horizontal_shift < 0.0 && y < indexing . size . y - 1) {cairo_move_to (cr, xx, yy + 0.5); cairo_line_to (cr, xx + H, yy + 0.75);}
+		if (horizontal_shift < 0.5 && y < indexing . size . y - 1) {cairo_move_to (cr, xx, yy + 0.5); cairo_line_to (cr, xx + H, yy + 0.75);}
 		for (int x = 0; x < indexing . size . x; x++) {
 			cairo_move_to (cr, xx, yy + 0.5);
 			cairo_line_to (cr, xx, yy);
@@ -173,12 +173,12 @@ bool grid_token :: moveOnGrid (boarder_token * token, point position) {
 		position += (location . size - token -> get_bounding_box () . size) . half ();
 		break;
 	case 1: case 2:
-		if ((int) position . x % 2 != 0) position . y += 0.866025404 * (side == 1 ? -0.5 : 0.5);
+		if ((int) position . x % 2 != 0) position . y += 0.866025404 * (side == 1 ? 0.5 : -0.5);
 		position *= point (0.75, 0.866025404) * location . size;
 		position += (point (1.0, 0.866025404) - token -> get_bounding_box () . size) . half ();
 		break;
 	case 3: case 4:
-		if ((int) position . y % 2 != 0) position . x += 0.866025404 * (side == 3 ? -0.5 : 0.5);
+		if ((int) position . y % 2 != 0) position . x += 0.866025404 * (side == 3 ? 0.5 : -0.5);
 		position *= point (0.866025404, 0.75) * location . size;
 		position += (point (0.866025404, 1.0) - token -> get_bounding_box () . size) . half ();
 		break;
