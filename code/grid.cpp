@@ -144,7 +144,7 @@ rect grid_token :: get_bounding_box (void) {
 	point factor = location . size;
 	switch (side) {
 	case 1: case 2:
-		if (indexing . size . x > 1) factor . x = (0.75 * (indexing . size . x - 1) + 1.0) / indexing . size . x;
+		if (indexing . size . x > 1) factor . x *= (0.75 * (indexing . size . x - 1) + 1.0) / indexing . size . x;
 		factor . y *= 0.866025404;
 		break;
 	case 3: case 4:
@@ -155,7 +155,8 @@ rect grid_token :: get_bounding_box (void) {
 	}
 	double angle = rotation * M_PI / 12.0;
 	double absin = abs (sin (angle)), abcos = abs (cos (angle));
-	ret . size = point (indexing . size . x * abcos + indexing . size . y * absin, indexing . size . y * abcos + indexing . size . x * absin) * factor * scaling;
+	ret . size = point (indexing . size . x * abcos + indexing . size . y * absin, indexing . size . y * abcos + indexing . size . x * absin)
+			* factor * scaling;
 	double psin = positivise (sin (angle)), pmsin = positivise (- sin (angle)), pmcos = positivise (- cos (angle));
 	ret . position -= (point (indexing . size . y * psin, indexing . size . x * pmsin) + indexing . size * pmcos) * factor * scaling;
 	return ret;
@@ -170,21 +171,28 @@ bool grid_token :: moveOnGrid (boarder_token * token, point position) {
 	switch (side) {
 	case 0:
 		position *= location . size;
-		position += (location . size - token -> get_bounding_box () . size) . half ();
 		break;
-	case 1: case 2:
-		if ((int) position . x % 2 != 0) position . y += 0.866025404 * (side == 1 ? 0.5 : -0.5);
+	case 1:
+		if ((int) position . x % 2 != 0) position . y += 0.5;
 		position *= point (0.75, 0.866025404) * location . size;
-		position += (point (1.0, 0.866025404) - token -> get_bounding_box () . size) . half ();
 		break;
-	case 3: case 4:
-		if ((int) position . y % 2 != 0) position . x += 0.866025404 * (side == 3 ? 0.5 : -0.5);
+	case 2:
+		if ((int) position . x % 2 == 0) position . y += 0.5;
+		position *= point (0.75, 0.866025404) * location . size;
+		break;
+	case 3:
+		if ((int) position . y % 2 != 0) position . x += 0.5;
 		position *= point (0.866025404, 0.75) * location . size;
-		position += (point (0.866025404, 1.0) - token -> get_bounding_box () . size) . half ();
+		break;
+	case 4:
+		if ((int) position . y % 2 == 0) position . x += 0.5;
+		position *= point (0.866025404, 0.75) * location . size;
 		break;
 	default: break;
 	}
+	position += location . size . half ();
 	position = position . rotate (rotation * M_PI / 12.0) + get_location () . position;
+	position -= token -> get_bounding_box () . size . half ();
 	token -> set_position (position);
 	return true;
 }

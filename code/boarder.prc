@@ -8,6 +8,7 @@ program boarder #machine := "boarder" [
 					Location Size Position Mode Scaling Rotation Sides Text Side Roll Shuffle Insert Release ReleaseRandom SelectDeck
 					Lock Unlock Locked? Select Deselect Selected? Selection
 					DragAndDrop HitTest IsDeck?
+					rep
 
 					mariner viking voyager mix
 					diagnostics test sv
@@ -82,6 +83,8 @@ program boarder #machine := "boarder" [
 #machine TokenType := "TokenType"
 
 #machine diagnostics := "diagnostics"
+
+[[rep : *command] *command [Repaint]]
 
 [[DragAndDrop *x *y] [Repaint]]
 [[DragAndDrop *x *y *file : *command]
