@@ -140,26 +140,26 @@ void grid_token :: internal_draw (cairo_t * cr, boarder_viewport * viewport) {
 double positivise (double d) {return d >= 0.0 ? d : 0.0;}
 
 rect grid_token :: get_bounding_box (void) {
-	rect ret = location;
-	point factor = location . size;
+	point size = location . size;
 	switch (side) {
+	case 0: size *= indexing . size; break;
 	case 1: case 2:
-		if (indexing . size . x > 1) factor . x *= (0.75 * (indexing . size . x - 1) + 1.0) / indexing . size . x;
-		factor . y *= 0.866025404;
+		size *= point (0.75, 0.866025404) * (indexing . size - point (1, 0));
+		size . y += location . size . y * 0.866025404 * 0.5;
 		break;
 	case 3: case 4:
-		if (indexing . size . y > 1) factor . y = (0.75 * (indexing . size . y - 1) + 1.0) / indexing . size . y;
-		factor . x *= 0.866025404;
+		size *= point (0.866025404, 0.75) * (indexing . size - point (0, 1));
+		size . x += location . size . x * 0.866025404 * 0.5;
 		break;
 	default: break;
 	}
+	size *= scaling;
+	if (rotation == 0.0) return rect (location . position, size);
 	double angle = rotation * M_PI / 12.0;
 	double absin = abs (sin (angle)), abcos = abs (cos (angle));
-	ret . size = point (indexing . size . x * abcos + indexing . size . y * absin, indexing . size . y * abcos + indexing . size . x * absin)
-			* factor * scaling;
 	double psin = positivise (sin (angle)), pmsin = positivise (- sin (angle)), pmcos = positivise (- cos (angle));
-	ret . position -= (point (indexing . size . y * psin, indexing . size . x * pmsin) + indexing . size * pmcos) * factor * scaling;
-	return ret;
+	return rect (location . position - size * point (psin, pmsin) - size * pmcos,
+		point (size . x * abcos + size . y * absin, size . y * abcos + size . x * absin));
 }
 
 colour grid_token :: default_foreground_colour (boarder * board) {return board ? board -> default_grid_foreground_colour : default_foreground ();}
