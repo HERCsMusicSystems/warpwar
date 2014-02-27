@@ -145,11 +145,11 @@ rect grid_token :: get_bounding_box (void) {
 	case 0: size *= indexing . size; break;
 	case 1: case 2:
 		size *= point (0.75, 0.866025404) * (indexing . size - point (1, 0));
-		size . y += location . size . y * 0.866025404 * 0.5;
+		size += location . size * point (1.0, 0.5);
 		break;
 	case 3: case 4:
 		size *= point (0.866025404, 0.75) * (indexing . size - point (0, 1));
-		size . x += location . size . x * 0.866025404 * 0.5;
+		size += location . size * point (0.5, 1.0);
 		break;
 	default: break;
 	}
@@ -158,7 +158,7 @@ rect grid_token :: get_bounding_box (void) {
 	double angle = rotation * M_PI / 12.0;
 	double absin = abs (sin (angle)), abcos = abs (cos (angle));
 	double psin = positivise (sin (angle)), pmsin = positivise (- sin (angle)), pmcos = positivise (- cos (angle));
-	return rect (location . position - size * point (psin, pmsin) - size * pmcos,
+	return rect (location . position - size . swap () * point (psin, pmsin) - size * pmcos,
 		point (size . x * abcos + size . y * absin, size . y * abcos + size . x * absin));
 }
 

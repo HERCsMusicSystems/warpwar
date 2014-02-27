@@ -112,6 +112,7 @@ public:
 	point operator *= (const point & p);
 	point half (void);
 	point rotate (double angle);
+	point swap (void);
 	void round (void);
 	void minimise (void);
 	void maximise (void);
