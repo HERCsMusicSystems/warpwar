@@ -189,7 +189,7 @@ static bool shift_on (void) {return minimise_square_area || maximise_square_area
 static rect edit_area (point (0, 0), point (0, 0));
 
 static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
-	printf ("key on [%s %i]\n", gdk_keyval_name (event -> keyval), (int) event -> keyval);
+	//printf ("key on [%s %i]\n", gdk_keyval_name (event -> keyval), (int) event -> keyval);
 	if (board == 0) return FALSE;
 	int key = (int) event -> keyval;
 	switch (key) {
@@ -309,7 +309,7 @@ static gboolean viewport_key_off_event (GtkWidget * widget, GdkEventKey * event,
 	case 65506: minimise_square_area = false; break;
 	default: break;
 	}
-	printf ("key off [%s %i]\n", gdk_keyval_name (event -> keyval), key);
+	//printf ("key off [%s %i]\n", gdk_keyval_name (event -> keyval), key);
 	return FALSE;
 }
 
@@ -423,7 +423,7 @@ static point BoardPoint (boarder_viewport * viewport, GdkEventButton * event) {
 		(viewport -> scaling != 0.0 ? viewport -> scaling : 1.0);
 }
 static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
-	printf ("button up [%i]\n", event -> button);
+	//printf ("button up [%i]\n", event -> button);
 	edited_token = 0;
 	dragging = false;
 	if (board == 0) return TRUE;
@@ -453,7 +453,7 @@ static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, 
 }
 
 static gint window_button_down_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
-	printf ("button down [%i]\n", (int) event -> button);
+	//printf ("button down [%i]\n", (int) event -> button);
 	dragging = true;
 	if (board == 0) return TRUE;
 	edit_area = rect (BoardPoint (viewport, event), point (0, 0));

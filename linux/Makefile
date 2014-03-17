@@ -13,7 +13,7 @@ objects = \
 	$(pi)prolog_transport.o \
 	$(pi)prolog_variable.o \
 	$(pi)prolog_linux_console.o\
-	$(pi)prolog_xml.o $(pi)tinyxml.o $(pi)prolog_neural.o $(pi)encoder.o\
+	$(pi)prolog_xml.o $(pi)tinyxml.o $(pi)prolog_neural.o $(pi)prolog_distribution.o $(pi)encoder.o\
 	prolog_resources.o boarder_service.o boarder.o
 
 objectsosx = \
@@ -44,6 +44,7 @@ prc_objects = \
 	$(pc)sql.prc\
 	$(pc)test.prc\
 	$(pc)xml.prc\
+	$(pc)distribution.prc\
 	../code/boarder.prc
 
 
