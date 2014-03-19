@@ -14,7 +14,7 @@ objects = \
 	$(pi)prolog_variable.o \
 	$(pi)prolog_linux_console.o\
 	$(pi)prolog_xml.o $(pi)tinyxml.o $(pi)prolog_neural.o $(pi)prolog_distribution.o $(pi)encoder.o\
-	prolog_resources.o boarder_service.o boarder.o
+	prolog_resources.o boarder_service.o boarder.o graphics2d.o
 
 objectsosx = \
 	$(piosx)prolog_dll_loader.o\
@@ -95,6 +95,9 @@ boarder_service.o: ../code/boarder.h ../code/boarder_service.h ../code/boarder_s
 
 gtk_board.o: ../code/gtk_board.cpp ../code/boarder.h ../code/boarder_service.h
 	g++ -Wno-write-strings -I. -I$(pc) -I$(piosx) ../code/gtk_board.cpp -c -o gtk_board.o `pkg-config --cflags gtk+-2.0`
+
+graphics2d.o: ../../prolog/code/prolog/graphics2d.h ../../prolog/code/prolog/graphics2d.cpp
+	g++ -Wno-write-strings ../../prolog/code/prolog/graphics2d.cpp -c -o graphics2d.o
 
 
 boardlinux: ~/bin/boarder
