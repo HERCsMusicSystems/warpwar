@@ -483,9 +483,9 @@ boarder_token :: ~ boarder_token (void) {
 	if (atom) {
 		PrologNativeCode * code = atom -> getMachine ();
 		if (code) delete code;
-		atom -> unProtect ();
+		//atom -> unProtect ();
 		atom -> setMachine (0);
-		atom -> unProtect ();
+		//atom -> unProtect ();
 		atom -> removeAtom ();
 	}
 	atom = 0;

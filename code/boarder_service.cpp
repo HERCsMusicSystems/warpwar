@@ -739,6 +739,7 @@ public:
 		if (atom == 0) return false;
 		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
 		if (! atom -> isAtom ()) return false;
+		if (atom -> getAtom () -> getMachine () != 0) return false;
 		viewport_action * machine = new viewport_action (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		PROLOG_STRING viewport_name;
@@ -778,9 +779,9 @@ public:
 		if (board == 0) return false;
 		if (token == 0) return false;
 		if (parameters -> isEarth ()) {
-			token -> atom -> unProtect ();
+			//token -> atom -> unProtect ();
 			token -> atom -> setMachine (0);
-			token -> atom -> unProtect ();
+			//token -> atom -> unProtect ();
 			board -> remove_token (token);
 			delete this;
 			boarder_clean = false;
@@ -1123,6 +1124,7 @@ public:
 		PrologElement * atom = parameters -> getLeft ();
 		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
 		if (! atom -> isAtom ()) return false;
+		if (atom -> getAtom () -> getMachine () != 0) return false;
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new rectangle_token (atom -> getAtom ());
@@ -1144,6 +1146,7 @@ public:
 		PrologElement * atom = parameters -> getLeft ();
 		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
 		if (! atom -> isAtom ()) return false;
+		if (atom -> getAtom () -> getMachine () != 0) return false;
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new circle_token (atom -> getAtom ());
@@ -1177,6 +1180,7 @@ public:
 		}
 		char area [128];
 		sprintf (area, "%s.png", atom -> getAtom () -> name ());
+		if (atom -> getAtom () -> getMachine () != 0) return false;
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new picture_token (atom -> getAtom (), picture_location ? picture_location -> getText () : area, sides ? sides -> getInteger () : 1);
@@ -1216,6 +1220,7 @@ public:
 				}
 			}
 		}
+		if (atom -> getAtom () -> getMachine () != 0) return false;
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		dice_token * dice = 0;
@@ -1255,6 +1260,7 @@ public:
 		PrologElement * atom = parameters -> getLeft ();
 		if (atom -> isVar ()) atom -> setAtom (new PrologAtom ());
 		if (! atom -> isAtom ()) return false;
+		if (atom -> getAtom () -> getMachine () != 0) return false;
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		board -> insert_token (machine -> token = new grid_token (atom -> getAtom ()));
@@ -1279,6 +1285,7 @@ public:
 		if (! parameters -> isPair ()) return false;
 		PrologElement * text = parameters -> getLeft ();
 		if (! text -> isText ()) return false;
+		if (atom -> getAtom () -> getMachine () != 0) return false;
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new text_token (atom -> getAtom (), text -> getText ());
@@ -1306,6 +1313,7 @@ public:
 			text = parameters -> getLeft ();
 			if (! text -> isText ()) return false;
 		}
+		if (atom -> getAtom () -> getMachine () != 0) return false;
 		token_actions * machine = new token_actions (directory);
 		if (! atom -> getAtom () -> setMachine (machine)) {delete machine; return false;}
 		machine -> token = new deck_token (atom -> getAtom (), text ? text -> getText () : 0);
