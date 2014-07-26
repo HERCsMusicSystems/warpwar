@@ -45,6 +45,7 @@ prc_objects = \
 	$(pc)test.prc\
 	$(pc)xml.prc\
 	$(pc)distribution.prc\
+	$(pc)control.prc\
 	../code/boarder.prc
 
 

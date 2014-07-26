@@ -111,6 +111,7 @@ extern char resource_11 [];
 extern char resource_12 [];
 extern char resource_13 [];
 extern char resource_14 [];
+extern char resource_15 [];
 class resource_loader_class : public PrologResourceLoader {
 public:
 	char * load (char * name) {
@@ -129,7 +130,8 @@ public:
 		if (strcmp (name, "test") == 0) ret = resource_11;
 		if (strcmp (name, "xml") == 0) ret = resource_12;
 		if (strcmp (name, "distribution") == 0) ret = resource_13;
-		if (strcmp (name, "boarder") == 0) ret = resource_14;
+		if (strcmp (name, "control") == 0) ret = resource_14;
+		if (strcmp (name, "boarder") == 0) ret = resource_15;
 		if (strcmp (name, "studio.prc") == 0) ret = resource_0;
 		if (strcmp (name, "conductor.prc") == 0) ret = resource_1;
 		if (strcmp (name, "midi.prc") == 0) ret = resource_2;
@@ -144,7 +146,8 @@ public:
 		if (strcmp (name, "test.prc") == 0) ret = resource_11;
 		if (strcmp (name, "xml.prc") == 0) ret = resource_12;
 		if (strcmp (name, "distribution.prc") == 0) ret = resource_13;
-		if (strcmp (name, "boarder.prc") == 0) ret = resource_14;
+		if (strcmp (name, "control.prc") == 0) ret = resource_14;
+		if (strcmp (name, "boarder.prc") == 0) ret = resource_15;
 		return ret;
 	}
 } resource_loader;

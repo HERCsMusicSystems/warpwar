@@ -1461,15 +1461,14 @@ public:
 	}
 };
 
-void boarder_service_class :: init (PrologRoot * root) {
+void boarder_service_class :: init (PrologRoot * root, PrologDirectory * directory) {
 	board = new boarder (root);
-	this -> root = root;
+	this -> directory = directory;
 }
 
 PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
-	PrologDirectory * dir = root -> searchDirectory ("boarder");
 	if (strcmp (name, TOKEN_TYPE) == 0) return new TokenTypeClass ();
-	if (strcmp (name, VIEWPORT) == 0) return new viewport (dir);
+	if (strcmp (name, VIEWPORT) == 0) return new viewport (directory);
 	if (strcmp (name, BACKGROUND_COLOUR) == 0) return new default_colour (& board -> background_colour);
 	if (strcmp (name, REPAINT) == 0) return new repaint ();
 	if (strcmp (name, SAVE_BOARD) == 0) return new save_board ();
@@ -1477,13 +1476,13 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, IS_CLEAN) == 0) return new is_clean ();
 	if (strcmp (name, ERASE) == 0) return new erase ();
 	if (strcmp (name, SELECT_DECK) == 0) return new select_deck ();
-	if (strcmp (name, CREATE_RECTANGLE) == 0) return new create_rectangle (dir);
-	if (strcmp (name, CREATE_CIRCLE) == 0) return new create_circle (dir);
-	if (strcmp (name, CREATE_PICTURE) == 0) return new create_picture (dir);
-	if (strcmp (name, CREATE_TEXT) == 0) return new create_text_token (dir);
-	if (strcmp (name, CREATE_DICE) == 0) return new create_dice (dir);
-	if (strcmp (name, CREATE_GRID) == 0) return new create_grid (dir);
-	if (strcmp (name, CREATE_DECK) == 0) return new create_deck (dir);
+	if (strcmp (name, CREATE_RECTANGLE) == 0) return new create_rectangle (directory);
+	if (strcmp (name, CREATE_CIRCLE) == 0) return new create_circle (directory);
+	if (strcmp (name, CREATE_PICTURE) == 0) return new create_picture (directory);
+	if (strcmp (name, CREATE_TEXT) == 0) return new create_text_token (directory);
+	if (strcmp (name, CREATE_DICE) == 0) return new create_dice (directory);
+	if (strcmp (name, CREATE_GRID) == 0) return new create_grid (directory);
+	if (strcmp (name, CREATE_DECK) == 0) return new create_deck (directory);
 	if (strcmp (name, HIT_TEST) == 0) return new hit_test ();
 	if (strcmp (name, SELECTION) == 0) return new selection ();
 	if (strcmp (name, IS_DECK) == 0) return new is_deck ();
@@ -1516,7 +1515,7 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 	if (strcmp (name, DEFAULT_ICOSAHEDRON_FOREGROUND) == 0) return new default_colour (& board -> default_icosahedron_foreground_colour);
 	if (strcmp (name, DEFAULT_ICOSAHEDRON_BACKGROUND) == 0) return new default_colour (& board -> default_icosahedron_background_colour);
 	if (strcmp (name, "diagnostics") == 0) return new diagnostics ();
-	return NULL;
+	return 0;
 }
 
 boarder_service_class :: ~ boarder_service_class (void) {

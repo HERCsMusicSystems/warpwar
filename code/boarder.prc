@@ -1,6 +1,5 @@
 
 import studio
-import f1
 
 program boarder #machine := "boarder" [
 					Viewport BackgroundColour ForegroundColour Repaint SaveBoard Clean Clean? Erase Indexing NoIndexing Indexed?
@@ -119,7 +118,6 @@ program boarder #machine := "boarder" [
 [[sv] [SaveBoard "sonda.txt"]]
 
 end := [
-			[preprocessor f1]
 			[auto_atoms]
 			[TRY [batch "sonda.txt"]]
 			[command]

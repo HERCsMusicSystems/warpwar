@@ -7,8 +7,8 @@
 
 class boarder_service_class : public PrologServiceClass {
 public:
-	PrologRoot * root;
-	virtual void init (PrologRoot * root);
+	PrologDirectory * directory;
+	virtual void init (PrologRoot * root, PrologDirectory * directory);
 	virtual PrologNativeCode * getNativeCode (char * name);
 	virtual ~ boarder_service_class (void);
 };
