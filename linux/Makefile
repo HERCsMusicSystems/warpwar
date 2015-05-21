@@ -14,7 +14,8 @@ objects = \
 	$(pi)prolog_variable.o \
 	$(pi)prolog_linux_console.o\
 	$(pi)prolog_xml.o $(pi)tinyxml.o $(pi)prolog_neural.o $(pi)prolog_distribution.o $(pi)encoder.o\
-	prolog_resources.o boarder_service.o boarder.o graphics2d.o
+	$(pi)prolog_http.o $(pi)prolog_control.o $(pi)joystick_linux.o $(pi)prolog_conductor.o $(pi)prolog_midi.o\
+	boarder_service.o boarder.o graphics2d.o
 
 objectsosx = \
 	$(piosx)prolog_dll_loader.o\
@@ -28,7 +29,7 @@ objectsosx = \
 	$(piosx)prolog_linux_console.o\
 	$(piosx)midi_command_prompt.o\
 	$(piosx)neural.o $(piosx)encoder.o $(piosx)notes.o\
-	$(piosx)mac_midi.o prolog_resources.o boarder_service.o boarder.o
+	$(piosx)mac_midi.o boarder_service.o boarder.o
 
 prc_objects = \
 	$(pc)studio.prc\
@@ -48,17 +49,19 @@ prc_objects = \
 	$(pc)control.prc\
 	../code/boarder.prc
 
+prc_resources = $(pi)studio_prc.o $(pi)conductor_prc.o $(pi)midi_prc.o $(pi)http_prc.o $(pi)store_prc.o $(pi)f1_prc.o $(pi)help_prc.o $(pi)record_prc.o\
+	$(pi)neural_prc.o $(pi)keyboard_prc.o $(pi)sql_prc.o $(pi)test_prc.o $(pi)xml_prc.o $(pi)distribution_prc.o $(pi)control_prc.o boarder_prc.o
 
 ~/bin/warpwar: warpwar_main.cpp
 	g++ -lreadline -I$(pc) -I$(pi) \
-	$(pi)prolog_resources.o $(objects) $(pi)encoder.o $(pi)neural.o \
+	$(objects) $(pi)encoder.o $(pi)neural.o \
 	-Wno-write-strings warpwar_main.cpp -o ~/bin/warpwar `wx-config --cxxflags` `wx-config --libs`
 
 warpwar: ~/bin/warper
 
 
 ~/bin/polygoon: gridder.cpp
-	g++ -I$(pi) -I$(pc) $(pi)prolog_resources.o $(objects) $(pi)encoder.o $(pi)neural.o \
+	g++ -I$(pi) -I$(pc) $(objects) $(pi)encoder.o $(pi)neural.o \
 	-Wno-write-strings gridder.cpp -o ~/bin/polygoon `wx-config --cxxflags` `wx-config --libs`
 
 polygoon: ~/bin/polygoon
@@ -72,12 +75,6 @@ tabletop: ~/bin/tabletop
 	g++ -Wno-write-strings board.cpp -o ../tabletop.app/Contents/MacOS/tabletop `wx-config --cxxflags` `wx-config --libs`
 
 tabletopmac: ../tabletop.app/Contents/MacOS/tabletop
-
-prolog_resources.cpp: $(prc_objects) $(pi)resource_maker.exe
-	$(pi)resource_maker.exe prolog_resources.cpp $(prc_objects)
-
-prolog_resources.o: prolog_resources.cpp
-	g++ prolog_resources.cpp -c -o prolog_resources.o
 
 boarder.o: ../code/boarder.h ../code/boarder.cpp
 	g++ -Wno-write-strings -I$(piosx) -I$(pc) ../code/boarder.cpp -c -o boarder.o `pkg-config --cflags gtk+-2.0`
@@ -101,6 +98,12 @@ graphics2d.o: ../../prolog/code/prolog/graphics2d.h ../../prolog/code/prolog/gra
 	g++ -Wno-write-strings ../../prolog/code/prolog/graphics2d.cpp -c -o graphics2d.o
 
 
+boarder_prc.o: ../code/boarder.prc
+	objcopy --input binary --output elf64-x86-64 --binary-architecture i386\
+		--redefine-sym _binary____code_boarder_prc_start=resource_boarder\
+		../code/boarder.prc boarder_prc.o
+	objdump -t boarder_prc.o
+
 boardlinux: ~/bin/boarder
 
 ~/bin/boarder: gtk_board.o $(objects)
@@ -111,6 +114,6 @@ boardlinux: ~/bin/boarder
 
 01gurps_objects = gtk_board.o dice.o grid.o
 
-~/bin/01gurps: $(01gurps_objects) $(objects)
-	g++ $(01gurps_objects) $(objects) -o ~/bin/01gurps -lpthread -ldl -lreadline -lX11 `pkg-config --libs gtk+-2.0`
+~/bin/01gurps: $(01gurps_objects) $(objects) $(prc_resources)
+	g++ $(01gurps_objects) $(objects) $(prc_resources) -o ~/bin/01gurps -lpthread -ldl -lreadline -lX11 `pkg-config --libs gtk+-2.0`
 
