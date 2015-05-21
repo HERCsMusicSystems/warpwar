@@ -188,6 +188,15 @@ static bool maximise_square_area = false;
 static bool shift_on (void) {return minimise_square_area || maximise_square_area;}
 static rect edit_area (point (0, 0), point (0, 0));
 
+static bool yes_no (GtkWidget * viewport, char * text) {
+	GtkWidget * dialog = gtk_message_dialog_new (GTK_WINDOW (viewport), GTK_DIALOG_DESTROY_WITH_PARENT,
+		GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, text);
+	gtk_window_set_title (GTK_WINDOW (dialog), "INFO");
+	bool ret = gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES;
+	gtk_widget_destroy (dialog);
+	return ret;
+}
+
 static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, boarder_viewport * viewport) {
 	//printf ("key on [%s %i]\n", gdk_keyval_name (event -> keyval), (int) event -> keyval);
 	if (board == 0) return FALSE;
@@ -297,7 +306,10 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 			board -> repaint ();
 		}
 		break;
-	default: break;
+	case 65535:
+		if (yes_no (widget, "Delete?")) {board -> erase_selection (); board -> repaint ();}
+		break;
+	default: printf ("KEY = %i\n", key); break;
 	}
 	return FALSE;
 }
@@ -528,103 +540,22 @@ static gint window_button_motion_event (GtkWidget * window, GdkEventButton * eve
 	}
 	return TRUE;
 }
-/*
-	edited_token = 0;
-	moved = false;
-	if (board == 0) return TRUE;
-	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
-	rect hit_test_area = area; hit_test_area . position = hit_test_area . position + viewport -> board_position;
-	area . position . round ();
-	//printf ("CLICKED [%i %g %g]\n", event -> button, area . position . x, area . position . y);
-	boarder_token * token = board -> hit_test (hit_test_area);
-	click_init_point = click_point = area . position;
-	switch (event -> button) {
-	case 1:
-		board -> clear_selection ();
-		has_selection = false;
-		if (edit_mode == create_rectangle_mode) CreateRectangleCommand ();
-		if (token) {token -> selected = true; has_selection = true;}
-		break;
-	case 3:
-		if (token) {
-			if (! board -> release_token_from_deck (token)) break;
-			token -> selected = true;
-			has_selection = true;
-			break;
-		} else {
-			CreateRightClickMenu ();
-			gtk_widget_show_all (right_click_menu);
-			gtk_menu_popup (GTK_MENU (right_click_menu), 0, 0, 0, 0, 3, gdk_event_get_time ((GdkEvent *) event));
-			break;
-		}
-		break;
-	default: break;
-	}
-	board -> repaint ();
-	click_button = event -> button;
-	return TRUE;
-}
-
-static gint window_button_up_event (GtkWidget * widget, GdkEventButton * event, boarder_viewport * viewport) {
-	edited_token = 0;
-	if (board == 0) return TRUE;
-	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
-	area . position . round ();
-	//printf ("RELEASED [%i %g %g]\n", event -> button, area . position . x, area . position . y);
-	if (has_selection && click_button > 0 && moved) {
-		boarder_token * deck = board -> hit_test (area);
-		while (deck != 0 && ! deck -> can_insert ()) deck = deck -> hit_test_next (area);
-		if (deck != 0) board -> transfer_selection_to_deck (deck);
-	}
-	if (click_button == 3 && click_init_point != click_point) {
-		rect location (click_init_point + viewport -> board_position, click_point - click_init_point);
-		location . positivise ();
-		boarder_token * token = board -> hit_test (location);
-		while (token != 0) {
-			token -> selected = true;
-			token = token -> hit_test_next (location);
-		}
-	}
-	click_button = 0;
-	board -> repaint ();
-	return TRUE;
-}
-
-static gint window_button_motion_event (GtkWidget * window, GdkEventButton * event, boarder_viewport * viewport) {
-	moved = true;
-	if (board == 0) return TRUE;
-	rect area (point (event -> x, event -> y) / viewport -> scaling, point (0, 0));
-	area . position . round ();
-	//printf ("MOVE [%i %g %g]\n", event -> button, area . position . x, area . position . y);
-	if (edited_token == 0) {
-		if (has_selection && click_button > 0) {
-			board -> move_selection (area . position - click_point);
-		}
-		if (! has_selection && click_button == 1) {
-			viewport -> board_position = viewport -> board_position - area . position + click_point;
-		}
-	}
-	click_point = area . position;
-	if (edited_token != 0) {
-		point size = click_point - click_init_point;
-		//if (size . x > 1.0 && size . y > 1.0)
-		edited_token -> set_size (size);
-	}
-	if (click_button > 0) board -> repaint ();
-	return TRUE;
-}
-*/
 
 void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y, 
-				 GtkSelectionData *data, guint ttype, guint time, gpointer *NA) {
+				 GtkSelectionData *data, guint ttype, guint time, boarder_viewport * viewport) {
 	gchar * ptr = (char *) data -> data;
 	if (board == 0) return;
+	if (board -> not_ready_for_drop) return;
+	board -> not_ready_for_drop = true;
 	PrologRoot * root = board -> root;
 	if (root == 0) return;
 	char command [4096];
 	PrologElement * query = root -> earth ();
 	while (strncmp (ptr, "file:///", 8) == 0) {
 		ptr += 7;
+		#ifdef WIN32
+		ptr++;
+		#endif
 		char * cp = command;
 		while (* ptr >= ' ') {
 			* cp++ = * ptr++;
@@ -633,8 +564,9 @@ void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y,
 		query = root -> pair (root -> text (command), query);
 		while (* ptr > '\0' && * ptr <= ' ') ptr++;
 	}
-	query = root -> pair (root -> integer ((int) y), query);
-	query = root -> pair (root -> integer ((int) x), query);
+	double scaling = viewport -> scaling != 0.0 ? 1.0 / viewport -> scaling : 1.0;
+	query = root -> pair (root -> integer ((int) viewport -> board_position . y + (int) ((double) y * scaling)), query);
+	query = root -> pair (root -> integer ((int) viewport -> board_position . x + (int) ((double) x * scaling)), query);
 	query = root -> pair (root -> atom ("boarder", "DragAndDrop"), query);
 	query = root -> pair (root -> earth (), root -> pair (query, root -> earth ()));
 	root -> resolution (query);
@@ -643,6 +575,7 @@ void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y,
 
 gboolean DnDdrop (GtkWidget *widget, GdkDragContext *context, gint x, gint y, guint time, gpointer *NA) {
 	GdkAtom target_type;
+	if (board != 0) board -> not_ready_for_drop = false;
 	if(context -> targets) {
 		target_type = GDK_POINTER_TO_ATOM (g_list_nth_data (context -> targets, 0));
 		gtk_drag_get_data (widget, context, target_type, time);
@@ -659,28 +592,6 @@ gboolean DnDmotion (GtkWidget *widget, GdkDragContext *context, gint x, gint y,
 	//printf ("MOTION\n");
 	return TRUE;
 }
-
-/*
-// In a dedicated thread:
-while (...) {
-    Package*  package = do_read ();  // This call is slow or blocks.
-    if (package)
-        g_idle_add ((GSourceFunc) process_package, package);
-}
-
-// This is called in the main thread.  Should be fast to not freeze GUI.
-gboolean
-process_package (Package* package)
-{
-    ...
-    package_free (package);
-}
-*/
-
-//class viewport : public PrologNativeCode {
-//public:
-//	PrologDirectory * directory;
-//void CreateViewportCode (PrologDirectory * directory, PrologElement * parameters) {
 
 static gboolean CreateViewportIdleCode (boarder_viewport * viewport) {
 	GtkWidget * window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
@@ -700,19 +611,13 @@ static gboolean CreateViewportIdleCode (boarder_viewport * viewport) {
 	gtk_window_move (GTK_WINDOW (window), (int) viewport -> location . position . x, (int) viewport -> location . position . y);
 	gtk_window_resize (GTK_WINDOW (window), (int) viewport -> location . size . x, (int) viewport -> location . size . y);
 		
-		//gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,NULL,0,GDK_ACTION_COPY);
-		//gtk_drag_dest_add_text_targets(drawing_area);
-		//gtk_drag_dest_add_uri_targets(drawing_area);
-		const GtkTargetEntry targets[2] = { {"text/plain",0,0}, { "application/x-rootwindow-drop",0,0 } };
-		gtk_drag_dest_set(drawing_area,GTK_DEST_DEFAULT_ALL,targets,2,GDK_ACTION_COPY);
-		g_signal_connect(drawing_area,"drag-drop",G_CALLBACK(DnDdrop),NULL);
-		g_signal_connect(drawing_area,"drag-motion",G_CALLBACK(DnDmotion),NULL);
-		g_signal_connect(drawing_area,"drag-data-received",G_CALLBACK(DnDreceive),NULL);
-        g_signal_connect (drawing_area, "drag-leave",G_CALLBACK(DnDleave),NULL);
+	const GtkTargetEntry targets [3] = {{"text/plain",0,0}, {"text/uri-list", 0, 0}, {"application/x-rootwindow-drop", 0, 0}};
+	gtk_drag_dest_set (drawing_area, GTK_DEST_DEFAULT_ALL, targets, 3, GDK_ACTION_COPY);
+	g_signal_connect (drawing_area, "drag-drop", G_CALLBACK (DnDdrop), viewport);
+	g_signal_connect (drawing_area, "drag-motion", G_CALLBACK (DnDmotion), viewport);
+	g_signal_connect (drawing_area, "drag-data-received", G_CALLBACK (DnDreceive), viewport);
+	g_signal_connect (drawing_area, "drag-leave", G_CALLBACK (DnDleave), viewport);
 
-		
-		//gtk_window_move (GTK_WINDOW (window), machine -> viewport -> location . position . x, machine -> viewport -> location . position . y);
-		//gtk_window_resize (GTK_WINDOW (window), machine -> viewport -> location . size . x, machine -> viewport -> location . size . y);
 	gtk_widget_show_all (window);
 	viewport -> window = window;
 	boarder_clean = false;
@@ -779,9 +684,7 @@ public:
 		if (board == 0) return false;
 		if (token == 0) return false;
 		if (parameters -> isEarth ()) {
-			//token -> atom -> unProtect ();
 			token -> atom -> setMachine (0);
-			//token -> atom -> unProtect ();
 			board -> remove_token (token);
 			delete this;
 			boarder_clean = false;

@@ -95,6 +95,7 @@ public:
 	boarder_token * tokens;
 	boarder_token * deck;
 	PrologRoot * root;
+	bool not_ready_for_drop;
 public:
 	colour default_rectangle_foreground_colour, default_rectangle_background_colour;
 	colour default_circle_foreground_colour, default_circle_background_colour;
@@ -122,6 +123,7 @@ public:
 	boarder_token * release_random_token_from_deck (boarder_token * deck);
 	bool randomise_selected_dices (void);
 	void erase (void);
+	void erase_selection (void);
 	bool save (char * location);
 	void draw (cairo_t * cr, boarder_viewport * viewport);
 	void clear_selection (bool select = false);

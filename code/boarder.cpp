@@ -36,6 +36,7 @@ boarder :: boarder (PrologRoot * root) {
 	tokens = 0;
 	deck = 0;
 	this -> root = root;
+	not_ready_for_drop = true;
 	default_dice_foreground_colour = colour (0, 0, 0); default_dice_background_colour = colour (255, 255, 255);
 	default_tetrahedron_foreground_colour = colour (255, 255, 255); default_tetrahedron_background_colour = colour (255, 0, 0);
 	default_cube_foreground_colour = colour (255, 255, 255); default_cube_background_colour = colour (0, 0, 255);
@@ -68,6 +69,24 @@ static void save_colour (FILE *tc, char * command, colour c, colour default_c) {
 }
 
 void boarder :: erase (void) {if (tokens != 0) delete tokens; tokens = 0;}
+void boarder :: erase_selection (void) {
+	while (tokens != 0 && tokens -> selected) {
+		boarder_token * token = tokens;
+		tokens = token -> next;
+		token -> next = 0;
+		delete token;
+	}
+	if (tokens == 0) return;
+	boarder_token * ts = tokens;
+	while (ts -> next != 0) {
+		if (ts -> next -> selected) {
+			boarder_token * token = ts -> next;
+			ts -> next = token -> next;
+			token -> next = 0;
+			delete token;
+		} else ts = ts -> next;
+	}
+}
 
 void boarder :: apply_colour_to_selection (int red, int green, int blue, bool foreground) {
 	boarder_token * token = tokens;
@@ -81,7 +100,11 @@ void boarder :: apply_colour_to_selection (int red, int green, int blue, bool fo
 }
 
 bool boarder :: save (char * location) {
+		#ifdef WIN32
+	FILE * tc = fopen (location, "wt");
+		#else
 	FILE * tc = fopen (location, "wb");
+		#endif
 	if (tc == 0) return false;
 	fprintf (tc, "[auto_atoms]\n\n");
 	fprintf (tc, "[%s]\n", ERASE);
@@ -422,7 +445,7 @@ boarder_viewport :: boarder_viewport (boarder * board, PrologAtom * atom, char *
 	prolog_string_copy (this -> name, name);
 	this -> location = location;
 	this -> next = next;
-	board_position = point (0, 0);
+	board_position = point (0.0, 0.0);
 	scaling = 1.0;
 	edit_mode = boarder_viewport :: move;
 	token_counter++;

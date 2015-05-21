@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BFD9F0C4-B383-4973-B088-B4CE5FD00CC9}</ProjectGuid>
+    <RootNamespace>My01gurps</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>.;..\..\gtk+-bundle_2.24.10-20120208_win32\include\gtk-2.0;..\..\gtk+-bundle_2.24.10-20120208_win32\lib\gtk-2.0\include;..\..\gtk+-bundle_2.24.10-20120208_win32\include\glib-2.0;..\..\gtk+-bundle_2.24.10-20120208_win32\lib\glib-2.0\include;..\..\gtk+-bundle_2.24.10-20120208_win32\include\cairo;..\..\gtk+-bundle_2.24.10-20120208_win32\include\pango-1.0;..\..\gtk+-bundle_2.24.10-20120208_win32\include\gdk-pixbuf-2.0;..\..\gtk+-bundle_2.24.10-20120208_win32\include\atk-1.0;../../prolog/code/prolog;../../prolog/windows;../../pthread;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PTW32_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\gtk+-bundle_2.24.10-20120208_win32\lib;..\..\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>pthread.lib;dinput8.lib;dsound.lib;dxguid.lib;atk-1.0.lib;cairo.lib;expat.lib;fontconfig.lib;freetype.lib;gailutil.lib;gdk_pixbuf-2.0.lib;gdk-win32-2.0.lib;gio-2.0.lib;glib-2.0.lib;gmodule-2.0.lib;gobject-2.0.lib;gtk-win32-2.0.lib;intl.lib;libpng.lib;pango-1.0.lib;pangocairo-1.0.lib;pangoft2-1.0.lib;pangowin32-1.0.lib;zdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\prolog\code\prolog\encoder.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\graphics2d.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\joystick_windows.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\midi_stream.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\object_tracker.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_atom.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_command.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_conductor.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_control.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_directory.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_distribution.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_dll_loader.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_element.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_loader.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_match.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_midi.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_native_code.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_neural.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_query.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_reader.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_resolution.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_root.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_service_class.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_studio.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_transport.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_variable.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_windows_console.cpp" />
+    <ClCompile Include="..\..\prolog\code\prolog\prolog_xml.cpp" />
+    <ClCompile Include="..\..\prolog\code\tinyxml2\tinyxml2.cpp" />
+    <ClCompile Include="..\code\boarder.cpp" />
+    <ClCompile Include="..\code\boarder_service.cpp" />
+    <ClCompile Include="..\code\dice.cpp" />
+    <ClCompile Include="..\code\grid.cpp" />
+    <ClCompile Include="..\code\gtk_board.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\code\boarder.h" />
+    <ClInclude Include="01gurps_resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\prolog\windows\studio.rc" />
+    <ResourceCompile Include="01gurps.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
