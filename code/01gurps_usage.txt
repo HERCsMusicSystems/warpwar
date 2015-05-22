@@ -74,7 +74,7 @@ CREATING TOKENS:
 
 [CreateRectangle (*)atom]                           => creates a rectangle
 [CreateCircle (*)atom]                              => creates a circle
-[CreatePicture (*)atom (sides) "location" (sides)]  => creates a milti-sided picture
+[CreatePicture (*)atom (sides) "location" (sides)]  => creates a multi-sided picture
 [CreateDice (*)atom (sides (shift (multiplier)))]   => creates a dice
 [CreateGrid (*)atom]                                => creates a grid
 [CreateText (*)atom "text"]                         => creates a text
