@@ -405,11 +405,12 @@ boarder_token * boarder :: release_token_from_deck (boarder_token * deck) {
 	return btp;
 }
 
-boarder_token * boarder :: release_token_from_selection (void) {
+boarder_token * boarder :: release_token_from_selection (bool random) {
 	if (tokens == 0) return 0;
 	boarder_token * token = tokens;
 	while (token != 0 && (! token -> selected || ! token -> can_insert ())) token = token -> next;
 	if (token == 0) return 0;
+	if (random) return release_random_token_from_deck (token);
 	return release_token_from_deck (token);
 }
 

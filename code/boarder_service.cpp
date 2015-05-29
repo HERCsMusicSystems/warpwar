@@ -191,7 +191,7 @@ static rect edit_area (point (0, 0), point (0, 0));
 
 static bool yes_no (GtkWidget * viewport, char * text) {
 	GtkWidget * dialog = gtk_message_dialog_new (GTK_WINDOW (viewport), GTK_DIALOG_DESTROY_WITH_PARENT,
-		GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, text);
+		GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, "%s", text);
 	gtk_window_set_title (GTK_WINDOW (dialog), "INFO");
 	bool ret = gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES;
 	gtk_widget_destroy (dialog);
@@ -261,9 +261,10 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 		}
 		if (viewport -> edit_mode == boarder_viewport :: edit_indexing) {board -> reindex_selection (); board -> repaint ();}
 		if (viewport -> edit_mode > boarder_viewport :: select) break;
-		if (board -> release_token_from_selection () != 0) {board -> clear_selection (); board -> repaint (); break;}
+		if (board -> release_token_from_selection (false) != 0) {board -> clear_selection (); board -> repaint (); break;}
 		if (board -> randomise_selected_dices ()) {board -> repaint (); break;}
 		break;
+	case 65293: if (board -> release_token_from_selection (true) != 0) {board -> clear_selection (); board -> repaint ();} break;
 	case 65505: maximise_square_area = true; break;
 	case 65506: minimise_square_area = true; break;
 	case 65361: case 65362: case 65363: case 65364:
@@ -321,7 +322,7 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 	case 65535:
 		if (yes_no (widget, "Delete?")) {board -> erase_selection (); board -> repaint ();}
 		break;
-	default: printf ("KEY = %i\n", key); break;
+	default: break; //printf ("KEY = %i\n", key); break;
 	}
 	return FALSE;
 }

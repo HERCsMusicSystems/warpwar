@@ -119,7 +119,7 @@ public:
 	bool transfer_token_to_deck (boarder_token * deck, boarder_token * token);
 	void transfer_selection_to_deck (boarder_token * deck);
 	boarder_token * release_token_from_deck (boarder_token * deck);
-	boarder_token * release_token_from_selection (void);
+	boarder_token * release_token_from_selection (bool random);
 	bool shuffle_deck_from_selection (void);
 	boarder_token * release_random_token_from_deck (boarder_token * deck);
 	bool randomise_selected_dices (void);
