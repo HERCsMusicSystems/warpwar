@@ -408,9 +408,17 @@ boarder_token * boarder :: release_token_from_deck (boarder_token * deck) {
 boarder_token * boarder :: release_token_from_selection (void) {
 	if (tokens == 0) return 0;
 	boarder_token * token = tokens;
-	while (token != 0 && ! token -> selected && ! token -> can_insert ()) token = token -> next;
+	while (token != 0 && (! token -> selected || ! token -> can_insert ())) token = token -> next;
 	if (token == 0) return 0;
 	return release_token_from_deck (token);
+}
+
+bool boarder :: shuffle_deck_from_selection (void) {
+	if (tokens == 0) return false;
+	boarder_token * token = tokens;
+	while (token != 0 && (! token -> selected || ! token -> can_insert ())) token = token -> next;
+	if (token != 0) return token -> shuffle ();
+	return false;
 }
 
 bool boarder :: randomise_selected_dices (void) {

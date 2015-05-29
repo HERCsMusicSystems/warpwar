@@ -53,6 +53,7 @@ static void ChangeViewportName (boarder_viewport * viewport) {
 	case boarder_viewport :: edit_side: mode = "Edit Side"; break;
 	case boarder_viewport :: edit_scaling: mode = "Edit Scaling"; break;
 	case boarder_viewport :: edit_ordering: mode = "Edit Ordering"; break;
+	case boarder_viewport :: shuffle: mode = "Shuffle Deck"; break;
 	default: mode = "None"; break;
 	}
 	char command [256];
@@ -246,10 +247,21 @@ static gboolean viewport_key_on_event (GtkWidget * widget, GdkEventKey * event, 
 	case 'v': viewport -> edit_mode = boarder_viewport :: edit_side; ChangeViewportName (viewport); break;
 	case 'b': viewport -> edit_mode = boarder_viewport :: edit_scaling; ChangeViewportName (viewport); break;
 	case 'n': viewport -> edit_mode = boarder_viewport :: edit_ordering; ChangeViewportName (viewport); break;
+	case 'm': viewport -> edit_mode = boarder_viewport :: shuffle; ChangeViewportName (viewport); break;
 	case 32:
+		if (viewport -> edit_mode == boarder_viewport :: shuffle) {
+			if (yes_no (widget, "Shuffle Deck?")) {
+				GtkWidget * info = gtk_message_dialog_new (GTK_WINDOW (widget), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+					board -> shuffle_deck_from_selection () ? "Shuffled successfully." : "Nothing shuffled.");
+				gtk_window_set_title (GTK_WINDOW (info), "INFO");
+				gtk_dialog_run (GTK_DIALOG (info));
+				gtk_widget_destroy (info);
+			}
+			break;
+		}
 		if (viewport -> edit_mode == boarder_viewport :: edit_indexing) {board -> reindex_selection (); board -> repaint ();}
 		if (viewport -> edit_mode > boarder_viewport :: select) break;
-		if (board -> release_token_from_selection () != 0) {board -> repaint (); break;}
+		if (board -> release_token_from_selection () != 0) {board -> clear_selection (); board -> repaint (); break;}
 		if (board -> randomise_selected_dices ()) {board -> repaint (); break;}
 		break;
 	case 65505: maximise_square_area = true; break;

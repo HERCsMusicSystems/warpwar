@@ -120,6 +120,7 @@ public:
 	void transfer_selection_to_deck (boarder_token * deck);
 	boarder_token * release_token_from_deck (boarder_token * deck);
 	boarder_token * release_token_from_selection (void);
+	bool shuffle_deck_from_selection (void);
 	boarder_token * release_random_token_from_deck (boarder_token * deck);
 	bool randomise_selected_dices (void);
 	void erase (void);
@@ -155,7 +156,7 @@ public:
 		create_dodecahedron, create_icosahedron,
 		create_text, create_grid, create_deck,
 		edit_size, edit_indexing, edit_rotation, edit_side, edit_scaling, edit_ordering,
-		edit
+		edit, shuffle
 	};
 public:
 	boarder * board;
