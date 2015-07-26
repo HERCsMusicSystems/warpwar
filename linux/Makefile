@@ -104,13 +104,29 @@ boarder_prc.o: ../code/boarder.prc
 		../code/boarder.prc boarder_prc.o
 	objdump -t boarder_prc.o
 
+01gurps_prc.o: ../code/01gurps.prc
+	objcopy --input binary --output elf64-x86-64 --binary-architecture i386\
+		--redefine-sym _binary____code_01gurps_prc_start=resource_01gurps\
+		../code/01gurps.prc 01gurps_prc.o
+	objdump -t 01gurps_prc.o
+
 boardlinux: ~/bin/boarder
 
 ~/bin/boarder: gtk_board.o $(objects)
 	g++ gtk_board.o $(objects) -o ~/bin/boarder -lpthread -ldl -lreadline `pkg-config --libs gtk+-2.0`
 
 
-01gurps: ~/bin/01gurps
+01gurps: /usr/lib/01gurps.so
+
+/usr/lib/01gurps.so: ../code/boarder_service.cpp ../code/boarder_service.h ../code/boarder.h \
+		$(pc)graphics2d.h $(pc)graphics2d.cpp 01gurps_prc.o ../code/dice.cpp ../code/grid.cpp ../code/boarder.cpp
+	g++ -Wno-write-strings -I$(pc) ../code/boarder_service.cpp $(pc)graphics2d.cpp 01gurps_prc.o \
+	../code/dice.cpp ../code/grid.cpp ../code/boarder.cpp \
+	-o /usr/lib/01gurps.so -shared -fPIC `pkg-config --cflags gtk+-2.0 --libs gtk+-2.0`
+
+#	g++ -I$(pc) -I$(piosx) -Wno-write-strings ../code/boarder_service.cpp -c -o boarder_service.o `pkg-config --cflags gtk+-2.0`
+#boarder_service.o: ../code/boarder.h ../code/boarder_service.h ../code/boarder_service.cpp
+#01gurps: ~/bin/01gurps
 
 01gurps_objects = gtk_board.o dice.o grid.o
 

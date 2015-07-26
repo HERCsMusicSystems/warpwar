@@ -361,22 +361,22 @@ static void CreateDiceCommand (int order, bool extended = false) {
 	PrologRoot * root = board -> root;
 	if (root == 0) return;
 	PrologElement * location_query = root -> pair (root -> var (0),
-		root -> pair (root -> atom ("boarder", "Position"),
+		root -> pair (root -> atom ("01gurps", "Position"),
 		root -> pair (root -> integer ((int) edit_area . position . x),
 		root -> pair (root -> integer ((int) edit_area . position . y),
 		root -> earth ()))));
 	PrologElement * creation_query;
 	if (extended) {
-		if (order == 6) creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
+		if (order == 6) creation_query = root -> pair (root -> atom ("01gurps", "CreateDice"),
 					root -> pair (root -> var (0),
 					root -> earth ()));
-		else creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
+		else creation_query = root -> pair (root -> atom ("01gurps", "CreateDice"),
 			root -> pair (root -> var (0),
 			root -> pair (root -> integer (order),
 			root -> pair (root -> integer (0),
 			root -> pair (root -> integer (10),
 			root -> earth ())))));
-	} else creation_query = root -> pair (root -> atom ("boarder", "CreateDice"),
+	} else creation_query = root -> pair (root -> atom ("01gurps", "CreateDice"),
 		root -> pair (root -> var (0),
 		root -> pair (root -> integer (order),
 		root -> earth ())));
@@ -580,7 +580,7 @@ void DnDreceive (GtkWidget *widget, GdkDragContext *context, gint x, gint y,
 	double scaling = viewport -> scaling != 0.0 ? 1.0 / viewport -> scaling : 1.0;
 	query = root -> pair (root -> integer ((int) viewport -> board_position . y + (int) ((double) y * scaling)), query);
 	query = root -> pair (root -> integer ((int) viewport -> board_position . x + (int) ((double) x * scaling)), query);
-	query = root -> pair (root -> atom ("boarder", "DragAndDrop"), query);
+	query = root -> pair (root -> atom ("01gurps", "DragAndDrop"), query);
 	query = root -> pair (root -> earth (), root -> pair (query, root -> earth ()));
 	root -> resolution (query);
 	delete query;
@@ -973,11 +973,11 @@ static void CreateTextCommand (point display_location) {
 	AREA area;
 	if (! show_entry_dialog (area, display_location)) return;
 	PrologElement * location_query = root -> pair (root -> var (0),
-		root -> pair (root -> atom ("boarder", "Position"),
+		root -> pair (root -> atom ("01gurps", "Position"),
 		root -> pair (root -> integer ((int) edit_area . position . x),
 		root -> pair (root -> integer ((int) edit_area . position . y),
 		root -> earth ()))));
-	PrologElement * creation_query = root -> pair (root -> atom ("boarder", "CreateText"),
+	PrologElement * creation_query = root -> pair (root -> atom ("01gurps", "CreateText"),
 		root -> pair (root -> var (0),
 		root -> pair (root -> text (area),
 		root -> earth ())));
@@ -994,7 +994,7 @@ static void CreateFigureCommand (char * figure, bool zero_size) {
 	PrologElement * location_query = 0;
 	if (zero_size) {
 		location_query = root -> pair (root -> var (0),
-			root -> pair (root -> atom ("boarder", "Location"),
+			root -> pair (root -> atom ("01gurps", "Location"),
 			root -> pair (root -> integer ((int) edit_area . position . x),
 			root -> pair (root -> integer ((int) edit_area . position . y),
 			root -> pair (root -> integer (0),
@@ -1002,12 +1002,12 @@ static void CreateFigureCommand (char * figure, bool zero_size) {
 			root -> earth ()))))));
 	} else {
 		location_query = root -> pair (root -> var (0),
-			root -> pair (root -> atom ("boarder", "Position"),
+			root -> pair (root -> atom ("01gurps", "Position"),
 			root -> pair (root -> integer ((int) edit_area . position . x),
 			root -> pair (root -> integer ((int) edit_area . position . y),
 			root -> earth ()))));
 	}
-	PrologElement * creation_query = root -> pair (root -> atom ("boarder", figure),
+	PrologElement * creation_query = root -> pair (root -> atom ("01gurps", figure),
 		root -> pair (root -> var (0),
 		root -> earth ()));
 	PrologElement * query = root -> pair (root -> pair (root -> var (0), root -> earth ()),
@@ -1445,6 +1445,16 @@ PrologNativeCode * boarder_service_class :: getNativeCode (char * name) {
 boarder_service_class :: ~ boarder_service_class (void) {
 	if (board != 0) delete board; board = 0;
 }
+
+#ifdef LINUX_OPERATING_SYSTEM
+extern "C" {
+	extern char * get_module_code (void);
+	extern PrologServiceClass * create_service_class (void);
+}
+extern char resource_01gurps;
+char * get_module_code (void) {return & resource_01gurps;}
+PrologServiceClass * create_service_class (void) {return new boarder_service_class ();}
+#endif
 
 /*
 #include <gtk/gtk.h>
