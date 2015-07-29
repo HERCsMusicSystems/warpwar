@@ -15,7 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\prolog\code\prolog\graphics2d.h" />
-    <ClInclude Include="..\code\01gurps_resource.h" />
     <ClInclude Include="..\code\boarder.h" />
   </ItemGroup>
   <ItemGroup>

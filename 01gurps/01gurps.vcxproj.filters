@@ -20,9 +20,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\code\01gurps_resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\prolog\code\prolog\graphics2d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
