@@ -1446,6 +1446,21 @@ boarder_service_class :: ~ boarder_service_class (void) {
 	if (board != 0) delete board; board = 0;
 }
 
+#ifdef WINDOWS_OPERATING_SYSTEM
+#include "01gurps_resource.h"
+extern "C" {
+	__declspec (dllexport) char * get_module_code (void) {
+		HMODULE hm = GetModuleHandle ("01gurps.dll");
+		HRSRC resource = FindResource (hm, MAKEINTRESOURCE (O1GURPS_PRC), RT_RCDATA);
+		if (resource == 0) return 0;
+		HGLOBAL loader = LoadResource (hm, resource);
+		if (loader == 0) return 0;
+		return (char *) LockResource (loader);
+	}
+	__declspec (dllexport) PrologServiceClass * create_service_class (void) {return new boarder_service_class ();}
+}
+#endif
+
 #ifdef LINUX_OPERATING_SYSTEM
 extern "C" {
 	extern char * get_module_code (void);
