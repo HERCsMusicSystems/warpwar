@@ -9,51 +9,60 @@
 
 <script>
 
-var Galaxy = {};
-
-var GetStarName = function () {return StarNames . splice (Math . floor (Math . random () * StarNames . length), 1) [0];};
 
 var GetName = function (names) {return names . splice (Math . floor (Math . random () * names . length), 1) [0];};
-
-var GenerateGalaxy = function (x, y) {
-	var t = Math . random ();
-	var NumberOfStars = Math . floor (x * y * (1.1 * t + 0.9 * (1 - t)) / 12);
-	console . log (NumberOfStars);
-	var stars = [];
-	for (var ind = 0; ind < NumberOfStars; ind ++) stars . push (GetStarName ());
-	Galaxy = {
-		SizeX: x, SizeY: y,
-		Stars: stars
-	};
+var pmod = function (p, mod) {if (p >= 0) return p % mod; while (p < 0) p += mod; return p;};
+var distance = function (x, y) {
+	if (x >= 0 && y >= 0) return Math . max (x, y);
+	if (x <= 0 && y <= 0) return Math . max (- x, - y);
+	return Math . abs (x) + Math . abs (y);
 };
+
+
+var GenerateLocation = function (x, y) {return {x: Math . floor (Math . random () * x), y: Math . floor (Math . random () * y)};};
 
 var Galaxy = function (x, y) {
 	this . size = {x: x, y: y};
 	var t = Math . random ();
 	var NumberOfStars = Math . floor (x * y * (1.1 * t + 0.9 * (1 - t)) / 12);
 	console . log (NumberOfStars);
-	var stars = [];
-	for (var ind = 0; ind < NumberOfStars; ind ++) stars . push (GetStarName ());
-	Galaxy = {
-		SizeX: x, SizeY: y,
-		Stars: stars
-	};
+	this . stars = {};
+	for (var ind = 0; ind < NumberOfStars; ind ++) {
+		var location = GenerateLocation (x, y);
+		while (this . StarAround (location . x, location . y)) location = GenerateLocation (x, y);
+		this . stars [GetName (this . names)] = {location: location, economy: 10};
+	}
 };
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "ALTAIR", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Caopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
 
-
-for (var ind = 0; ind < Galaxy . prototype . length; ind ++) {
-	var name = StarNames [ind];
-	var count = 0;
-	for (var sub = 0; sub < StarNames . length; sub ++) {
-		if (StarNames [ind] === StarNames [sub]) count ++;
+Galaxy . prototype . StarAt = function (x, y) {
+	for (star of Object . keys (this . stars)) {
+		var location = this . stars [star] . location;
+		if (location . x === x && location . y === y) return star;
 	}
-	if (count > 1) console . log (StarNames [ind], count);
-}
+	return null;
+};
 
-//GenerateGalaxy (20, 20);
-//console . log (Galaxy);
+Galaxy . prototype . StarAround = function (x, y) {
+	var star = this . StarAt (x, y); if (star) return star;
+	star = this . StarAt (x, pmod (y + 1, this . size . y)); if (star) return star;
+	star = this . StarAt (pmod (x + 1, this . size . x), y); if (star) return star;
+	star = this . StarAt (pmod (x + 1, this . size . x), pmod (y + 1, this . size . y)); if (star) return star;
+	star = this . StarAt (x, pmod (y - 1, this . size . y)); if (star) return star;
+	star = this . StarAt (pmod (x - 1, this . size . x), y); if (star) return star;
+	star = this . StarAt (pmod (x - 1, this . size . x), pmod (y - 1, this . size . y)); if (star) return star;
+	return null;
+};
+
+for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
+	var name = Galaxy . prototype . names [ind];
+	var count = 0;
+	for (var sub = 0; sub < Galaxy . prototype . names . length; sub ++) {
+		if (Galaxy . prototype . names [ind] === Galaxy . prototype . names [sub]) count ++;
+	}
+	if (count > 1) console . log (Galaxy . prototype . names [ind], count);
+}
 
 var g = new Galaxy (40, 40);
 
