@@ -5,9 +5,9 @@
 	</head>
 
 
-<body bgcolor="blue" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
+<body bgcolor="black" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
 
-<canvas id="canvas" width="400" height="200"/>
+<canvas id="canvas" onmousedown="javascript: return OnMouseDown (event);" onmousemove="javascript: OnMouseMove (event);" onmouseup="javascript: OnMouseUp (event);" oncontextmenu="javascript: event . preventDefault ();" width="400" height="200"/>
 
 <script>
 
@@ -27,6 +27,7 @@ var GenerateLocation = function (x, y) {return {x: Math . floor (Math . random (
 
 var Galaxy = function (x, y) {
 	this . size = {width: x, height: y, radius: 32};
+	this . shift = {x: window . innerWidth * 0.5, y: 0};
 	var t = Math . random ();
 	var NumberOfStars = Math . floor (x * y * (1.1 * t + 0.9 * (1 - t)) / 12);
 	console . log (NumberOfStars);
@@ -40,7 +41,7 @@ var Galaxy = function (x, y) {
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "ALTAIR", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Caopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
 
-Galaxy . prototype . StarAt = function (y, x) {
+Galaxy . prototype . StarAt = function (x, y) {
 	for (star of Object . keys (this . stars)) {
 		var location = this . stars [star] . location;
 		if (location . x === x && location . y === y) return star;
@@ -48,14 +49,14 @@ Galaxy . prototype . StarAt = function (y, x) {
 	return null;
 };
 
-Galaxy . prototype . StarAround = function (y, x) {
+Galaxy . prototype . StarAround = function (x, y) {
 	var star = this . StarAt (x, y); if (star) return star;
-	star = this . StarAt (x, pmod (y + 1, this . size . y)); if (star) return star;
-	star = this . StarAt (pmod (x + 1, this . size . x), y); if (star) return star;
-	star = this . StarAt (pmod (x + 1, this . size . x), pmod (y + 1, this . size . y)); if (star) return star;
-	star = this . StarAt (x, pmod (y - 1, this . size . y)); if (star) return star;
-	star = this . StarAt (pmod (x - 1, this . size . x), y); if (star) return star;
-	star = this . StarAt (pmod (x - 1, this . size . x), pmod (y - 1, this . size . y)); if (star) return star;
+	star = this . StarAt (x, pmod (y + 1, this . size . height)); if (star) return star;
+	star = this . StarAt (pmod (x + 1, this . size . width), y); if (star) return star;
+	star = this . StarAt (pmod (x + 1, this . size . width), pmod (y + 1, this . size . height)); if (star) return star;
+	star = this . StarAt (x, pmod (y - 1, this . size . height)); if (star) return star;
+	star = this . StarAt (pmod (x - 1, this . size . width), y); if (star) return star;
+	star = this . StarAt (pmod (x - 1, this . size . width), pmod (y - 1, this . size . height)); if (star) return star;
 	return null;
 };
 
@@ -69,15 +70,15 @@ Galaxy . prototype . draw = function () {
 	for (var sub = 0; sub < this . size . height; sub ++) {
 		for (var ind = 0; ind < this . size . width; ind ++) {
 			ctx . beginPath ();
-			ctx . arc (500 - sub * hh + radius + ind * hhh, sub * ll + radius, radius, 0, Math . PI * 2);
+			ctx . arc (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius, radius, 0, Math . PI * 2);
 			ctx . stroke ();
 		}
 	}
 	ctx . textAlign = 'center';
+	ctx . fillStyle = 'white';
 	for (var star in this . stars) {
 		var st = this . stars [star];
-		ctx . fillText (star, 500 + st . location . x * hhh - st . location . y * hh + radius, st . location . y * ll + radius);
-		console . log (star, st . location);
+		ctx . fillText (star, this . shift . x + st . location . x * hhh - st . location . y * hh + radius, this . shift . y + st . location . y * ll + radius);
 	}
 };
 
@@ -99,6 +100,28 @@ var repaint = function () {
 	galaxy . draw ();
 	ctx . restore ();
 	// ctx . fillRect (0, 0, canvas . width, canvas . height);
+};
+
+var MouseLocation = {x: 0, y: 0};
+var dragging = false;
+
+var OnMouseDown = function (e) {
+	e . preventDefault ();
+	MouseLocation = {x: e . clientX, y: e . clientY};
+	dragging = true;
+	return false;
+};
+
+var OnMouseUp = function () {dragging = false;};
+
+var OnMouseMove = function (e) {
+	if (! dragging) return;
+	var point = {x: e . clientX, y: e . clientY};
+	var delta = {x: point . x - MouseLocation . x, y: point . y - MouseLocation . y};
+	galaxy . shift . x += delta . x; galaxy . shift . y += delta . y;
+	// console . log (delta);
+	MouseLocation = point;
+	repaint ();
 };
 
 repaint ();
