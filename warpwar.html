@@ -16,30 +16,41 @@ var ctx = canvas . getContext ('2d');
 
 var GetName = function (names) {return names . splice (Math . floor (Math . random () * names . length), 1) [0];};
 var pmod = function (p, mod) {if (p >= 0) return p % mod; while (p < 0) p += mod; return p;};
-var distance = function (x, y) {
-	if (x >= 0 && y >= 0) return Math . max (x, y);
-	if (x <= 0 && y <= 0) return Math . max (- x, - y);
-	return Math . abs (x) + Math . abs (y);
-};
-
 
 var GenerateLocation = function (x, y) {return {x: Math . floor (Math . random () * x), y: Math . floor (Math . random () * y)};};
 
 var Galaxy = function (x, y) {
 	this . size = {width: x, height: y, radius: 32};
-	this . shift = {x: window . innerWidth * 0.5, y: 0};
+	var factor = Math . pow (3, 0.5);
+	var left = this . size . height * this . size . radius; var right = this . size . width * factor * this . size . radius;
+	var together = left + right;
+	var margin = (window . innerWidth - together) * 0.5;
+	var height = this . size . radius * this . size . height * 1.5;
+	// console . log (left, right, together, window . innerWidth, margin);
+	this . shift = {x: margin + left - this . size . radius * 2 + factor * 0.5 * this . size . radius,
+		y: (window . innerHeight - height - this . size . radius * 0.5) * 0.5};
 	var t = Math . random ();
 	var NumberOfStars = Math . floor (x * y * (1.1 * t + 0.9 * (1 - t)) / 12);
-	console . log (NumberOfStars);
+	// console . log (NumberOfStars);
 	this . stars = {};
 	for (var ind = 0; ind < NumberOfStars; ind ++) {
 		var location = GenerateLocation (x, y);
 		while (this . StarAround (location . x, location . y) !== null) location = GenerateLocation (x, y);
 		this . stars [GetName (this . names)] = {location: location, economy: 10};
 	}
+	this . warps = [];
+	for (var star in this . stars) {
+		var destinations = []
+		for (var ind in this . stars) {
+			if (star !== ind) destinations . push ({star: ind, distance: this . distance (star, ind)});
+		}
+		destinations . sort (function (a, b) {return a . distance < b . distance ? -1 : a . distance > b . distance ? 1 : 0;});
+		this . warps . push ({from: star, to: destinations [0] . star});
+		// console . log (star, destinations);
+	}
 };
 
-Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "ALTAIR", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Caopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
+Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "Altair", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Canopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
 
 Galaxy . prototype . StarAt = function (x, y) {
 	for (star of Object . keys (this . stars)) {
@@ -60,17 +71,64 @@ Galaxy . prototype . StarAround = function (x, y) {
 	return null;
 };
 
+var distance = function (dx) {
+	if (dx . x >= 0 && dx . y >= 0) return Math . max (dx . x, dx . y);
+	if (dx . x <= 0 && dx . y <= 0) return Math . max (- dx . x, - dx . y);
+	return Math . abs (dx . x) + Math . abs (dx . y);
+};
+
+Galaxy . prototype . distance = function (from, to) {
+	if (typeof from === 'string') from = {x: this . stars [from] . location . x, y: this . stars [from] . location . y};
+	if (typeof to === 'string') to = {x: this . stars [to] . location . x, y: this . stars [to] . location . y};
+	var dx = {x: to . x - from . x, y: to . y - from . y};
+	var d1 = distance (dx);
+	var d2 = distance ({x: dx . x - this . size . width, y: dx . y});
+	var d3 = distance ({x: dx . x + this . size . width, y: dx . y});
+	var d4 = distance ({x: dx . x, y: dx . y - this . size . height});
+	var d5 = distance ({x: dx . x, y: dx . y + this . size . height});
+	var d6 = distance ({x: dx . x - this . size . width, y: dx . y - this . size . height});
+	var d7 = distance ({x: dx . x - this . size . width, y: dx . y + this . size . height});
+	var d8 = distance ({x: dx . x + this . size . width, y: dx . y - this . size . height});
+	var d9 = distance ({x: dx . x + this . size . width, y: dx . y + this . size . height});
+	return Math . min (d1, d2, d3, d4, d5, d6, d7, d8, d9);
+};
+
+Galaxy . prototype . RawDistance = function (from, to) {
+	var dx = {x: to . x - from . x, y: to . y - from . y};
+	var d1 = distance (dx);
+	var d2 = distance ({x: dx . x - this . size . width, y: dx . y});
+	var d3 = distance ({x: dx . x + this . size . width, y: dx . y});
+	var d4 = distance ({x: dx . x, y: dx . y - this . size . height});
+	var d5 = distance ({x: dx . x, y: dx . y + this . size . height});
+	var d6 = distance ({x: dx . x - this . size . width, y: dx . y - this . size . height});
+	var d7 = distance ({x: dx . x - this . size . width, y: dx . y + this . size . height});
+	var d8 = distance ({x: dx . x + this . size . width, y: dx . y - this . size . height});
+	var d9 = distance ({x: dx . x + this . size . width, y: dx . y + this . size . height});
+	return Math . min (d1, d2, d3, d4, d5, d6, d7, d8, d9);
+};
+
 Galaxy . prototype . draw = function () {
 	var radius = this . size . radius;
 	var size = radius + radius;
 	var hh = Math . pow (3, 0.5) * radius / 2;
 	var hhh = hh + hh;
 	var ll = radius * 1.5;
+	var l = radius * 0.5;
+	var hhx = hh * 1;
 	ctx . strokeStyle = 'gray';
+	// for (var sub = - Math . floor (this . size . height * 0.5); sub < Math . floor (this . size . height * 1.5); sub ++) {
 	for (var sub = 0; sub < this . size . height; sub ++) {
+		// for (var ind = - Math . floor (this . size . width * 0.5); ind < Math . floor (this . size . width * 1.5); ind ++) {
 		for (var ind = 0; ind < this . size . width; ind ++) {
 			ctx . beginPath ();
-			ctx . arc (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius, radius, 0, Math . PI * 2);
+			ctx . moveTo (this . shift . x - sub * hh + radius + ind * hhh + hhx, this . shift . y + sub * ll + radius - l);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh + hhx, this . shift . y + sub * ll + radius + l);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius + radius);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh - hhx, this . shift . y + sub * ll + radius + l);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh - hhx, this . shift . y + sub * ll + radius - l);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll);
+			ctx . closePath ();
+			// ctx . arc (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius, radius, 0, Math . PI * 2);
 			ctx . stroke ();
 		}
 	}
@@ -78,7 +136,40 @@ Galaxy . prototype . draw = function () {
 	ctx . fillStyle = 'white';
 	for (var star in this . stars) {
 		var st = this . stars [star];
-		ctx . fillText (star, this . shift . x + st . location . x * hhh - st . location . y * hh + radius, this . shift . y + st . location . y * ll + radius);
+		var dx = this . shift . x + st . location . x * hhh - st . location . y * hh + radius;
+		var dy = this . shift . y + st . location . y * ll + radius;
+		ctx . fillText (star, dx, dy);
+		ctx . fillText (star, dx - this . size . width * hhh, dy);
+		ctx . fillText (star, dx + this . size . width * hhh, dy);
+		ctx . fillText (star, dx - this . size . width * hh, dy + this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * hh, dy - this . size . height * ll);
+		ctx . fillText (star, dx - this . size . width * (hhh + hh), dy + this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * (hhh - hh), dy + this . size . height * ll);
+		ctx . fillText (star, dx - this . size . width * (hhh - hh), dy - this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * (hhh + hh), dy - this . size . height * ll);
+	}
+	ctx . strokeStyle = 'blue';
+	for (var ind in this . warps) {
+		var warp = this . warps [ind];
+		var from = this . stars [warp . from] . location; var to = this . stars [warp . to] . location; var toa = [];
+		toa . push (to);
+		toa . push ({x: to . x - this . size . width, y: to . y});
+		toa . push ({x: to . x - this . size . width, y: to . y - this . size . height});
+		toa . push ({x: to . x, y: to . y - this . size . height});
+		toa . push ({x: to . x + this . size . width, y: to . y - this . size . height});
+		toa . push ({x: to . x + this . size . width, y: to . y});
+		toa . push ({x: to . x + this . size . width, y: to . y + this . size . height});
+		toa . push ({x: to . x, y: to . y + this . size . height});
+		toa . push ({x: to . x - this . size . width, y: to . y + this . size . height});
+		for (var t in toa) toa [t] . distance = distance ({x: toa [t] . x - from . x, y: toa [t] . y - from . y});
+		toa . sort (function (a, b) {return a . distance < b . distance ? -1 : a . distance > b . distance ? 1 : 0;});
+		to = toa [0];
+		// console . log (warp, from, toa);
+		ctx . beginPath ();
+		ctx . moveTo (this . shift . x + from . x * hhh - from . y * hh + radius, this . shift . y + from . y * ll + radius);
+		ctx . lineTo (this . shift . x + to . x * hhh - to . y * hh + radius, this . shift . y + to . y * ll + radius);
+		ctx . stroke ();
+		// console . log (from, to);
 	}
 };
 
@@ -91,7 +182,7 @@ for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
 	if (count > 1) console . log (Galaxy . prototype . names [ind], count);
 }
 
-var galaxy = new Galaxy (8, 8);
+var galaxy = new Galaxy (12, 12);
 
 var repaint = function () {
 	canvas . width = window . innerWidth;
