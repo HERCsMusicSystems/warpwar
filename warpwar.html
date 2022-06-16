@@ -7,6 +7,22 @@
 
 <body bgcolor="black" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
 
+<div id="CreateRace" style="position: absolute; bottom: 8px; right: 8px; background-color: gold; border-radius: 8px; font-family: arial; padding: 8px;">
+	<div id="CreateRaces"><table><tr><td>RACES:</td></tr></table></div>
+	NEW RACE: <input type="text" id="CreateRaceName"/>
+	<select id="CreateRaceStar">
+	</select>
+	<select id="CreateRaceColour">
+		<option value="navy" style="background-color: blue;">Blue</option>
+		<option value="red" style="background-color: red;">Red</option>
+		<option value="magenta" style="background-color: magenta;">Magenta</option>
+		<option value="green" style="background-color: green;">Green</option>
+		<option value="cyan" style="background-color: cyan;">Cyan</option>
+		<option value="yellow" style="background-color: yellow;">Yellow</option>
+	</select>
+	<input type="button" value="Create Race" onclick="javascript: galaxy . CreateRace (document . getElementById ('CreateRaceName') . value, document . getElementById ('CreateRaceStar') . value, document . getElementById ('CreateRaceColour') . value); RefitRaces (); repaint ();"/>
+</div>
+
 <canvas id="canvas" onmousedown="javascript: return OnMouseDown (event);" onmousemove="javascript: OnMouseMove (event);" onmouseup="javascript: OnMouseUp (event);" oncontextmenu="javascript: event . preventDefault ();" width="400" height="200"/>
 
 <script>
@@ -210,7 +226,7 @@ for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
 	if (count > 1) console . log (Galaxy . prototype . names [ind], count);
 }
 
-var galaxy = new Galaxy (12, 12);
+var galaxy = new Galaxy (20, 20);
 
 var repaint = function () {
 	canvas . width = window . innerWidth;
@@ -243,8 +259,20 @@ var OnMouseMove = function (e) {
 	repaint ();
 };
 
-galaxy . restore ();
+// galaxy . restore ();
 repaint ();
+
+var Stars = [];
+for (var star in galaxy . stars) Stars . push (star);
+Stars . sort ();
+for (var star of Stars) document . getElementById ('CreateRaceStar') . add (new Option (star, star));
+
+var RefitRaces = function () {
+	var table = '<table><tr><td>RACES:</td>';
+	for (var race in galaxy . races) table += `<td bgcolor="${galaxy . races [race] . colour}"><font color="white">${race}</font></td>`;
+	table += '</tr></table>';
+	document . getElementById ('CreateRaces') . innerHTML = table;
+};
 
 </script>
 
