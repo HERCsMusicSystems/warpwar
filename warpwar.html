@@ -33,10 +33,11 @@ var Galaxy = function (x, y) {
 	var NumberOfStars = Math . floor (x * y * (1.1 * t + 0.9 * (1 - t)) / 12);
 	// console . log (NumberOfStars);
 	this . stars = {};
+	var economies = [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 15];
 	for (var ind = 0; ind < NumberOfStars; ind ++) {
 		var location = GenerateLocation (x, y);
 		while (this . StarAround (location . x, location . y) !== null) location = GenerateLocation (x, y);
-		this . stars [GetName (this . names)] = {location: location, economy: 10};
+		this . stars [GetName (this . names)] = {location: location, economy: economies [Math . floor (Math . random () * economies . length)]};
 	}
 	this . warps = [];
 	for (var star in this . stars) {
@@ -45,12 +46,21 @@ var Galaxy = function (x, y) {
 			if (star !== ind) destinations . push ({star: ind, distance: this . distance (star, ind)});
 		}
 		destinations . sort (function (a, b) {return a . distance < b . distance ? -1 : a . distance > b . distance ? 1 : 0;});
-		this . warps . push ({from: star, to: destinations [0] . star});
-		// console . log (star, destinations);
+		for (var sub = 0; sub < 4 && sub < destinations . length; sub ++)
+			if (Math . random () < 0.25) this . warps . push ({from: star, to: destinations [sub] . star});
 	}
 };
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "Altair", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Canopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
+
+Galaxy . prototype . store = function () {localStorage . setItem ('galaxy', JSON . stringify (this));};
+Galaxy . prototype . restore = function () {
+	var json = localStorage . getItem ('galaxy');
+	if (json === null) return;
+	json = JSON . parse (json);
+	for (var key in json) this [key] = json [key];
+	repaint ();
+};
 
 Galaxy . prototype . StarAt = function (x, y) {
 	for (star of Object . keys (this . stars)) {
@@ -121,12 +131,12 @@ Galaxy . prototype . draw = function () {
 		// for (var ind = - Math . floor (this . size . width * 0.5); ind < Math . floor (this . size . width * 1.5); ind ++) {
 		for (var ind = 0; ind < this . size . width; ind ++) {
 			ctx . beginPath ();
-			ctx . moveTo (this . shift . x - sub * hh + radius + ind * hhh + hhx, this . shift . y + sub * ll + radius - l);
-			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh + hhx, this . shift . y + sub * ll + radius + l);
-			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius + radius);
-			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh - hhx, this . shift . y + sub * ll + radius + l);
-			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh - hhx, this . shift . y + sub * ll + radius - l);
-			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll);
+			ctx . moveTo (this . shift . x - sub * hh + radius + ind * hhh + hhx * 0.9, this . shift . y + sub * ll + radius - l);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh + hhx * 0.9, this . shift . y + sub * ll + radius + l);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius + radius * 0.9);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh - hhx * 0.9, this . shift . y + sub * ll + radius + l);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh - hhx * 0.9, this . shift . y + sub * ll + radius - l);
+			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius * 0.1);
 			ctx . closePath ();
 			// ctx . arc (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius, radius, 0, Math . PI * 2);
 			ctx . stroke ();
@@ -147,6 +157,7 @@ Galaxy . prototype . draw = function () {
 		ctx . fillText (star, dx + this . size . width * (hhh - hh), dy + this . size . height * ll);
 		ctx . fillText (star, dx - this . size . width * (hhh - hh), dy - this . size . height * ll);
 		ctx . fillText (star, dx + this . size . width * (hhh + hh), dy - this . size . height * ll);
+		ctx . fillText (st . economy, dx, dy + 12);
 	}
 	ctx . strokeStyle = 'blue';
 	for (var ind in this . warps) {
