@@ -5,22 +5,51 @@
 	</head>
 
 
-<body bgcolor="black" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
+<body bgcolor="#001166" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
+<div style="position: absolute; background-color: #ffff0088; border-radius: 8px; padding: 8px; top: 8px; left: 8px;">
+	<img src="g1.png"/>
+	<img src="g2.png"/>
+	<img src="g3.png"/>
+	<img src="g4.png"/>
+	<img src="g5.png"/>
+	<img src="g6.png"/>
+	<img src="g7.png"/>
+	<img src="g8.png"/>
+	<img src="g9.png"/><br/>
+	<img src="s1.png"/>
+	<img src="s2.png"/>
+	<img src="s3.png"/>
+	<img src="s4.png"/>
+	<img src="s5.png"/>
+	<img src="s6.png"/>
+	<img src="s7.png"/>
+	<img src="s8.png"/>
+	<img src="s9.png"/><br/>
+	<img src="s10.png"/>
+	<img src="s11.png"/>
+	<img src="s12.png"/>
+	<img src="s13.png"/>
+	<img src="s14.png"/>
+	<img src="s15.png"/>
+	<img src="s16.png"/>
+	<img src="s17.png"/>
+	<img src="s18.png"/>
+</div>
 
 <div id="CreateRace" style="position: absolute; bottom: 8px; right: 8px; background-color: gold; border-radius: 8px; font-family: arial; padding: 8px;">
 	<div id="CreateRaces"><table><tr><td>RACES:</td></tr></table></div>
-	NEW RACE: <input type="text" id="CreateRaceName"/>
+	<input type="button" value="Create New Race" onclick="javascript: galaxy . CreateRace (document . getElementById ('CreateRaceName') . value, document . getElementById ('CreateRaceStar') . value, document . getElementById ('CreateRaceColour') . value); RefitRaces (); repaint ();"/>
+	<input type="text" id="CreateRaceName"/><br/>
 	<select id="CreateRaceStar">
 	</select>
 	<select id="CreateRaceColour">
 		<option value="navy" style="background-color: blue;">Blue</option>
-		<option value="red" style="background-color: red;">Red</option>
-		<option value="magenta" style="background-color: magenta;">Magenta</option>
+		<option value="crimson" style="background-color: crimson;">Crimson</option>
+		<option value="purple" style="background-color: indigo;">Purple</option>
 		<option value="green" style="background-color: green;">Green</option>
-		<option value="cyan" style="background-color: cyan;">Cyan</option>
-		<option value="yellow" style="background-color: yellow;">Yellow</option>
+		<option value="sienna" style="background-color: sienna;">Sienna</option>
+		<option value="olive" style="background-color: olive;">Olive</option>
 	</select>
-	<input type="button" value="Create Race" onclick="javascript: galaxy . CreateRace (document . getElementById ('CreateRaceName') . value, document . getElementById ('CreateRaceStar') . value, document . getElementById ('CreateRaceColour') . value); RefitRaces (); repaint ();"/>
 </div>
 
 <canvas id="canvas" onmousedown="javascript: return OnMouseDown (event);" onmousemove="javascript: OnMouseMove (event);" onmouseup="javascript: OnMouseUp (event);" oncontextmenu="javascript: event . preventDefault ();" width="400" height="200"/>
@@ -36,6 +65,10 @@ var pmod = function (p, mod) {if (p >= 0) return p % mod; while (p < 0) p += mod
 var GenerateLocation = function (x, y) {return {x: Math . floor (Math . random () * x), y: Math . floor (Math . random () * y)};};
 
 var Galaxy = function (x, y) {
+	this . names = [];
+	for (var name of Galaxy . prototype . names) this . names . push (name);
+	this . constellations = [];
+	for (var name of Galaxy . prototype . constellations) this . constellations . push (name);
 	this . size = {width: x, height: y, radius: 32};
 	var factor = Math . pow (3, 0.5);
 	var left = this . size . height * this . size . radius; var right = this . size . width * factor * this . size . radius;
@@ -70,6 +103,8 @@ var Galaxy = function (x, y) {
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "Altair", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Canopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
 
+Galaxy . prototype . constellations = ["Andromeda", "Antlia", "Apus", "Aquarius", "Aquila", "Ara", "Aries", "Auriga", "Boötes", "Caelum", "Camelopardalis", "Cancer", "Canes Venatici", "Canis Major", "Canis Minor", "Capricornus", "Carina", "Cassiopeia", "Centaurus", "Cepheus", "Cetus", "Chamaeleon", "Circinus", "Columba", "Coma Berenices", "Corona Austrina", "Corona Borealis", "Corvus", "Crater", "Crux", "Cygnus", "Delphinus", "Dorado", "Draco", "Equuleus", "Eridanus", "Fornax", "Gemini", "Grus", "Hercules", "Horologium", "Hydra", "Hydrus", "Indus", "Lacerta", "Leo", "Leo Minor", "Lepus", "Libra", "Lupus", "Lynx", "Lyra", "Mensa", "Microscopium", "Monoceros", "Musca", "Norma", "Octans", "Ophiuchus", "Orion", "Pavo", "Pegasus", "Perseus", "Phoenix", "Pictor", "Pisces", "Piscis Austrinus", "Puppis", "Pyxis", "Reticulum", "Sagitta", "Sagittarius", "Scorpius", "Sculptor", "Scutum", "Serpens", "Sextans", "Taurus", "Telescopium", "Triangulum", "Triangulum Australe", "Tucana", "Ursa Major", "Ursa Minor", "Vela", "Virgo", "Volans", "Vulpecula"];
+
 Galaxy . prototype . store = function () {localStorage . setItem ('galaxy', JSON . stringify (this));};
 Galaxy . prototype . restore = function () {
 	var json = localStorage . getItem ('galaxy');
@@ -80,8 +115,15 @@ Galaxy . prototype . restore = function () {
 };
 
 Galaxy . prototype . CreateRace = function (name, base, colour) {
+	if (this . races [name] !== undefined) {alert (`Race ${name} already exists.`); return;}
+	for (var race in this . races) {
+		console . log (race, this . races [race]);
+		if (this . races [race] . colour === colour) {alert (`Colour ${colour} already taken.`); return;}
+		if (this . races [race] . bases [base] !== undefined) {alert (`Star ${base} already taken.`); return;}
+	}
 	this . races [name] = {colour: colour, bases: {}};
 	this . races [name] . bases [base] = {BuildPoints: 0, construction: 30};
+	this . stars [base] . economy = 5;
 };
 
 Galaxy . prototype . StarAt = function (x, y) {
@@ -175,23 +217,6 @@ Galaxy . prototype . draw = function () {
 			}
 		}
 	}
-	ctx . textAlign = 'center';
-	ctx . fillStyle = 'white';
-	for (var star in this . stars) {
-		var st = this . stars [star];
-		var dx = this . shift . x + st . location . x * hhh - st . location . y * hh + radius;
-		var dy = this . shift . y + st . location . y * ll + radius;
-		ctx . fillText (star, dx, dy);
-		ctx . fillText (star, dx - this . size . width * hhh, dy);
-		ctx . fillText (star, dx + this . size . width * hhh, dy);
-		ctx . fillText (star, dx - this . size . width * hh, dy + this . size . height * ll);
-		ctx . fillText (star, dx + this . size . width * hh, dy - this . size . height * ll);
-		ctx . fillText (star, dx - this . size . width * (hhh + hh), dy + this . size . height * ll);
-		ctx . fillText (star, dx + this . size . width * (hhh - hh), dy + this . size . height * ll);
-		ctx . fillText (star, dx - this . size . width * (hhh - hh), dy - this . size . height * ll);
-		ctx . fillText (star, dx + this . size . width * (hhh + hh), dy - this . size . height * ll);
-		ctx . fillText (st . economy, dx, dy + 12);
-	}
 	ctx . strokeStyle = 'blue';
 	for (var ind in this . warps) {
 		var warp = this . warps [ind];
@@ -215,6 +240,23 @@ Galaxy . prototype . draw = function () {
 		ctx . stroke ();
 		// console . log (from, to);
 	}
+	ctx . textAlign = 'center';
+	ctx . fillStyle = 'white';
+	for (var star in this . stars) {
+		var st = this . stars [star];
+		var dx = this . shift . x + st . location . x * hhh - st . location . y * hh + radius;
+		var dy = this . shift . y + st . location . y * ll + radius;
+		ctx . fillText (star, dx, dy);
+		ctx . fillText (star, dx - this . size . width * hhh, dy);
+		ctx . fillText (star, dx + this . size . width * hhh, dy);
+		ctx . fillText (star, dx - this . size . width * hh, dy + this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * hh, dy - this . size . height * ll);
+		ctx . fillText (star, dx - this . size . width * (hhh + hh), dy + this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * (hhh - hh), dy + this . size . height * ll);
+		ctx . fillText (star, dx - this . size . width * (hhh - hh), dy - this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * (hhh + hh), dy - this . size . height * ll);
+		ctx . fillText (st . economy, dx, dy + 12);
+	}
 };
 
 for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
@@ -226,7 +268,7 @@ for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
 	if (count > 1) console . log (Galaxy . prototype . names [ind], count);
 }
 
-var galaxy = new Galaxy (20, 20);
+var galaxy = new Galaxy (26, 16);
 
 var repaint = function () {
 	canvas . width = window . innerWidth;
