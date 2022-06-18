@@ -5,8 +5,8 @@
 	</head>
 
 
-<body bgcolor="black" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
-<div style="position: absolute; background-color: #00aa0066; border-radius: 8px; padding: 8px; top: 8px; left: 8px;">
+<body bgcolor="#000033" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
+<div id="Ships" style="visibility: hidden; position: absolute; background-color: #00aa0066; border-radius: 8px; padding: 8px; top: 8px; left: 8px;">
 	<img src="g1.png"/>
 	<img src="g2.png"/>
 	<img src="g3.png"/>
@@ -249,12 +249,12 @@ Galaxy . prototype . draw = function () {
 		ctx . fillText (star, dx, dy);
 		ctx . fillText (star, dx - this . size . width * hhh, dy);
 		ctx . fillText (star, dx + this . size . width * hhh, dy);
-		ctx . fillText (star, dx - this . size . width * hh, dy + this . size . height * ll);
-		ctx . fillText (star, dx + this . size . width * hh, dy - this . size . height * ll);
-		ctx . fillText (star, dx - this . size . width * (hhh + hh), dy + this . size . height * ll);
-		ctx . fillText (star, dx + this . size . width * (hhh - hh), dy + this . size . height * ll);
-		ctx . fillText (star, dx - this . size . width * (hhh - hh), dy - this . size . height * ll);
-		ctx . fillText (star, dx + this . size . width * (hhh + hh), dy - this . size . height * ll);
+		ctx . fillText (star, dx - this . size . height * hh, dy + this . size . height * ll);
+		ctx . fillText (star, dx + this . size . height * hh, dy - this . size . height * ll);
+		ctx . fillText (star, dx - this . size . width * hhh - this . size . height * hh, dy + this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * hhh - this . size . height * hh, dy + this . size . height * ll);
+		ctx . fillText (star, dx - this . size . width * hhh + this . size . height * hh, dy - this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * hhh + this . size . height * hh, dy - this . size . height * ll);
 		ctx . fillText (st . economy, dx, dy + 12);
 	}
 };
