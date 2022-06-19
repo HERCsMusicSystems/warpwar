@@ -99,6 +99,8 @@ var Galaxy = function (x, y) {
 			if (Math . random () < 0.25) this . warps . push ({from: star, to: destinations [sub] . star});
 	}
 	this . races = {};
+	this . TechnologyLevel = 0;
+	this . turns = [];
 };
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "Altair", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Canopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
@@ -123,6 +125,7 @@ Galaxy . prototype . CreateRace = function (name, base, colour) {
 	}
 	this . races [name] = {colour: colour, bases: {}};
 	this . races [name] . bases [base] = {BuildPoints: 0, construction: 30};
+	this . races [name] . ships = {};
 	this . stars [base] . economy = 5;
 };
 
@@ -181,6 +184,14 @@ Galaxy . prototype . RawDistance = function (from, to) {
 	return Math . min (d1, d2, d3, d4, d5, d6, d7, d8, d9);
 };
 
+Galaxy . prototype . Collect = function () {
+	for (var race in this . races) {
+		for (var base in this . races [race] . bases) {
+			this . races [race] . bases [base] . BuildPoints += this . stars [base] . economy * 2;
+		}
+	}
+};
+
 Galaxy . prototype . draw = function () {
 	var radius = this . size . radius;
 	var size = radius + radius;
@@ -211,6 +222,11 @@ Galaxy . prototype . draw = function () {
 						if (st . location . x === ind && st . location . y === sub) {
 							ctx . fillStyle = this . races [race] . colour;
 							ctx . fill ();
+							ctx . fillStyle = 'white';
+							ctx . textAlign = 'center';
+							ctx . fillText (`[${this . races [race] . bases [base] . BuildPoints}]`,
+								this . shift . x + st . location . x * hhh - st . location . y * hh + radius,
+								this . shift . y + st . location . y * ll + radius - 12);
 						}
 					}
 				}
@@ -259,6 +275,45 @@ Galaxy . prototype . draw = function () {
 	}
 };
 
+Galaxy . prototype . RaceFromBase = function (base) {
+	for (var race in this . races) {
+		for (var b in this . races [race] . bases) {
+			if (b === base) return race;
+		}
+	}
+	return null;
+};
+
+var Ship = function (galaxy, ship) {this . galaxy = galaxy; this . ship = ship; this . source = null;};
+Ship . prototype . Source = function (base) {
+	console . log (base);
+	for (var race in this . galaxy . races) {
+		for (var b in this . galaxy . races [race] . bases) {
+			console . log (race, b, base);
+			if (b === base) this . source = this . galaxy . races [race] . bases [base];
+		}
+	}
+	return this;
+};
+Ship . prototype . PowerDrive = function (pd) {
+	if (this . source === null) return this;
+	if (this . source . BuildPoints < pd) return this;
+	this . source . BuildPoints -= pd;
+	this . ship . PowerDrive += pd;
+	this . ship . original . PowerDrive += pd;
+	return this;
+};
+
+Galaxy . prototype . CreateShip = function (base, name) {
+	if (name === undefined) name = GetName (this . constellations);
+	var race = this . RaceFromBase (base);
+	if (race === null) {alert (`Can not identify race at ${base}.`); return null;}
+	var ship = {PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0, Armor: 0, Cannons: 0, Shells: 0, Bays: [], Hold: 0, RepairBays: false,
+		original: {PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0, Armor: 0, Cannons: 0, Shells: 0, Bays: [], Hold: 0, RepairBays: false}};
+	this . races [race] . ships [name] = ship;
+	return new Ship (this, ship);
+};
+
 for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
 	var name = Galaxy . prototype . names [ind];
 	var count = 0;
@@ -268,7 +323,7 @@ for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
 	if (count > 1) console . log (Galaxy . prototype . names [ind], count);
 }
 
-var galaxy = new Galaxy (26, 16);
+var galaxy = new Galaxy (6, 5);
 
 var repaint = function () {
 	canvas . width = window . innerWidth;
