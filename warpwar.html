@@ -296,12 +296,12 @@ Ship . prototype . Source = function (base) {
 	return this;
 };
 Ship . prototype . PowerDrive = function (pd) {
-	if (this . source === null) return this;
-	if (this . source . BuildPoints < pd) return this;
-	this . source . BuildPoints -= pd;
-	this . ship . PowerDrive += pd;
-	this . ship . original . PowerDrive += pd;
-	return this;
+	if (this . source === null || this . source . BuildPoints < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . PowerDrive += pd; this . ship . original . PowerDrive += pd; return this;
+};
+Ship . prototype . WarpGenerator = function () {
+	if (this . source === null || this . source . BuildPoints < 5) return this;
+	this . source . BuildPoints -= 5; this . ship . WarpGenerator = true; this . ship . original . WarpGenerator = true; return this;
 };
 
 Galaxy . prototype . CreateShip = function (base, name) {
