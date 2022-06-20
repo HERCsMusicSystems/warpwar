@@ -6,34 +6,36 @@
 
 
 <body bgcolor="#000033" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
+
+<div style="position: absolute; left: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
+	<input type="button" value="Build" onclick="javascript: BuildShip (); repaint ();"/>
+	<input type="button" value="Reset" onclick="javascript: BuildShipReset ();"/><br/>
+	Location:<select id="BuildLocations"></select><br/>
+	Warp Generator: <input type="checkbox" id="BuildWarpGenerator"/><br/>
+	Repair Bay: <input type="checkbox" id="BuildRepairBay"/><br/>
+	Power Drive: <input type="number" min="0" value="0" style="width: 5em;" id="BuildPowerDrive"/><br/>
+	Beams: <input type="number" min="0" value="0" style="width: 5em;" id="BuildBeams"/><br/>
+	Shields: <input type="number" min="0" value="0" style="width: 5em;" id="BuildShields"/><br/>
+	ECM: <input type="number" min="0" value="0" style="width: 5em;" id="BuildECM"/><br/>
+	Tubes: <input type="number" min="0" value="0" style="width: 5em;" id="BuildTubes"/><br/>
+	Missiles: <input type="number" min="0" value="0" style="width: 5em;" id="BuildMissiles"/><br/>
+	Armor: <input type="number" min="0" value="0" style="width: 5em;" id="BuildArmor"/><br/>
+	Cannons: <input type="number" min="0" value="0" style="width: 5em;" id="BuildCannons"/><br/>
+	Shells: <input type="number" min="0" value="0" style="width: 5em;" id="BuildShells"/><br/>
+	Bays: <input type="number" min="0" value="0" style="width: 5em;" id="BuildBays"/><br/>
+	Holds: <input type="number" min="0" value="0" style="width: 5em;" id="BuildHolds"/><br/>
+</div>
+<div style="position: absolute; bottom: 8px; left: 8px; border-radius: 8px; padding: 8px; background-color: gold;">
+	<input type="button" value="Collect" onclick="javascript: galaxy . Collect (); repaint ();"/>
+	<input type="button" value="Store" onclick="javascript: galaxy . store ();"/>
+	<input type="button" value="Restore" onclick="javascript: galaxy . restore (); RestoreSelects (); repaint ();"/>
+</div>
 <div id="Ships" style="visibility: hidden; position: absolute; background-color: #00aa0066; border-radius: 8px; padding: 8px; top: 8px; left: 8px;">
-	<img src="g1.png"/>
-	<img src="g2.png"/>
-	<img src="g3.png"/>
-	<img src="g4.png"/>
-	<img src="g5.png"/>
-	<img src="g6.png"/>
-	<img src="g7.png"/>
-	<img src="g8.png"/>
-	<img src="g9.png"/><br/>
-	<img src="s1.png"/>
-	<img src="s2.png"/>
-	<img src="s3.png"/>
-	<img src="s4.png"/>
-	<img src="s5.png"/>
-	<img src="s6.png"/>
-	<img src="s7.png"/>
-	<img src="s8.png"/>
-	<img src="s9.png"/><br/>
-	<img src="s10.png"/>
-	<img src="s11.png"/>
-	<img src="s12.png"/>
-	<img src="s13.png"/>
-	<img src="s14.png"/>
-	<img src="s15.png"/>
-	<img src="s16.png"/>
-	<img src="s17.png"/>
-	<img src="s18.png"/>
+	<img src="g1.png"/><img src="g2.png"/><img src="g3.png"/><img src="g4.png"/><img src="g5.png"/><img src="g6.png"/>
+	<img src="g7.png"/><img src="g8.png"/><img src="g9.png"/><br/>
+	<img src="s1.png"/><img src="s2.png"/><img src="s3.png"/><img src="s4.png"/><img src="s5.png"/><img src="s6.png"/><img src="s7.png"/>
+	<img src="s8.png"/><img src="s9.png"/><br/><img src="s10.png"/><img src="s11.png"/><img src="s12.png"/><img src="s13.png"/>
+	<img src="s14.png"/><img src="s15.png"/><img src="s16.png"/><img src="s17.png"/><img src="s18.png"/>
 </div>
 
 <div id="CreateRace" style="position: absolute; bottom: 8px; right: 8px; background-color: gold; border-radius: 8px; font-family: arial; padding: 8px;">
@@ -55,6 +57,48 @@
 <canvas id="canvas" onmousedown="javascript: return OnMouseDown (event);" onmousemove="javascript: OnMouseMove (event);" onmouseup="javascript: OnMouseUp (event);" oncontextmenu="javascript: event . preventDefault ();" width="400" height="200"/>
 
 <script>
+
+var RestoreSelects = function () {
+	var Stars = [];
+	for (var star in galaxy . stars) Stars . push (star);
+	Stars . sort ();
+	document . getElementById ('CreateRaceStar') . options . length = 0;
+	document . getElementById ('BuildLocations') . options . length = 0;
+	for (var star of Stars) {
+		document . getElementById ('CreateRaceStar') . add (new Option (star, star));
+		document . getElementById ('BuildLocations') . add (new Option (star, star));
+	}
+};
+
+var BuildShipReset = function () {
+	document . getElementById ('BuildWarpGenerator') . checked = false;
+	document . getElementById ('BuildRepairBay') . checked = false;
+	document . getElementById ('BuildPowerDrive') . value = 0;
+	document . getElementById ('BuildBeams') . value = 0;
+	document . getElementById ('BuildShields') . value = 0;
+	document . getElementById ('BuildECM') . value = 0;
+	document . getElementById ('BuildTubes') . value = 0;
+	document . getElementById ('BuildMissiles') . value = 0;
+	document . getElementById ('BuildArmor') . value = 0;
+	document . getElementById ('BuildCannons') . value = 0;
+	document . getElementById ('BuildShells') . value = 0;
+	document . getElementById ('BuildBays') . value = 0;
+	document . getElementById ('BuildHolds') . value = 0;
+};
+
+var BuildShip = function () {
+	var location = document . getElementById ('BuildLocations') . value;
+	var ship = galaxy . CreateShip (document . getElementById ('BuildLocations') . value);
+	if (ship === null) return null;
+	if (document . getElementById ('BuildWarpGenerator') . checked) ship . WarpGenerator ();
+	if (document . getElementById ('BuildRepairBay') . checked) ship . RepairBay ();
+	var PowerDrive = Number (document . getElementById ('BuildPowerDrive') . value); if (PowerDrive > 0) ship . PowerDrive (PowerDrive);
+	var Beams = Number (document . getElementById ('BuildBeams') . value); if (Beams > 0) ship . Beams (Beams);
+	var Shields = Number (document . getElementById ('BuildShields') . value); if (Shields > 0) ship . Shields (Shields);
+	var ECM = Number (document . getElementById ('BuildECM') . value); if (ECM > 0) ship . ECM (ECM);
+	console . log (ship);
+	return ship;
+};
 
 var canvas = document . getElementById ('canvas');
 var ctx = canvas . getContext ('2d');
@@ -107,13 +151,18 @@ Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens"
 
 Galaxy . prototype . constellations = ["Andromeda", "Antlia", "Apus", "Aquarius", "Aquila", "Ara", "Aries", "Auriga", "Boötes", "Caelum", "Camelopardalis", "Cancer", "Canes Venatici", "Canis Major", "Canis Minor", "Capricornus", "Carina", "Cassiopeia", "Centaurus", "Cepheus", "Cetus", "Chamaeleon", "Circinus", "Columba", "Coma Berenices", "Corona Austrina", "Corona Borealis", "Corvus", "Crater", "Crux", "Cygnus", "Delphinus", "Dorado", "Draco", "Equuleus", "Eridanus", "Fornax", "Gemini", "Grus", "Hercules", "Horologium", "Hydra", "Hydrus", "Indus", "Lacerta", "Leo", "Leo Minor", "Lepus", "Libra", "Lupus", "Lynx", "Lyra", "Mensa", "Microscopium", "Monoceros", "Musca", "Norma", "Octans", "Ophiuchus", "Orion", "Pavo", "Pegasus", "Perseus", "Phoenix", "Pictor", "Pisces", "Piscis Austrinus", "Puppis", "Pyxis", "Reticulum", "Sagitta", "Sagittarius", "Scorpius", "Sculptor", "Scutum", "Serpens", "Sextans", "Taurus", "Telescopium", "Triangulum", "Triangulum Australe", "Tucana", "Ursa Major", "Ursa Minor", "Vela", "Virgo", "Volans", "Vulpecula"];
 
+var Icons = {};
+var In = ['g1.png', 'g2.png', 'g3.png', 'g4.png', 'g5.png', 'g6.png', 'g7.png', 'g8.png', 'g9.png',
+		's1.png', 's2.png', 's3.png', 's4.png', 's5.png', 's6.png', 's7.png', 's8.png', 's9.png',
+		's10.png', 's11.png', 's12.png', 's13.png', 's13.png', 's14.png', 's15.png', 's16.png', 's17.png', 's18.png'];
+for (var name of In) {Icons [name] = new Image (); Icons [name] . src = name;}
+
 Galaxy . prototype . store = function () {localStorage . setItem ('galaxy', JSON . stringify (this));};
 Galaxy . prototype . restore = function () {
 	var json = localStorage . getItem ('galaxy');
 	if (json === null) return;
 	json = JSON . parse (json);
 	for (var key in json) this [key] = json [key];
-	repaint ();
 };
 
 Galaxy . prototype . CreateRace = function (name, base, colour) {
@@ -273,6 +322,20 @@ Galaxy . prototype . draw = function () {
 		ctx . fillText (star, dx + this . size . width * hhh + this . size . height * hh, dy - this . size . height * ll);
 		ctx . fillText (st . economy, dx, dy + 12);
 	}
+	for (var race in this . races) {
+		for (var ship in this . races [race] . ships) {
+			var s = this . races [race] . ships [ship];
+			var st = this . stars [s . location] . location;
+			ctx . save ();
+			ctx . translate (Icons [s . icon] . width * -0.25, Icons [s . icon] . height * -0.25);
+			ctx . translate (this . shift . x, this . shift . y);
+			ctx . translate (hh, radius);
+			ctx . translate (st . x * hhh - st . y * hh, st . y * ll);
+			ctx . scale (0.5, 0.5);
+			ctx . drawImage (Icons [s . icon], 0, 0);
+			ctx . restore ();
+		}
+	}
 };
 
 Galaxy . prototype . RaceFromBase = function (base) {
@@ -301,17 +364,74 @@ Ship . prototype . PowerDrive = function (pd) {
 };
 Ship . prototype . WarpGenerator = function () {
 	if (this . source === null || this . source . BuildPoints < 5) return this;
+	this . ship . icon = RandomWarpIcon ();
 	this . source . BuildPoints -= 5; this . ship . WarpGenerator = true; this . ship . original . WarpGenerator = true; return this;
 };
+Ship . prototype . Beams = function (pd) {
+	if (this . source === null || this . source . BuildPoints < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . Beams += pd; this . ship . original . Beams += pd; return this;
+};
+Ship . prototype . Shields = function (pd) {
+	if (this . source === null || this . source . BuildPoint < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . Shields += pd; this . ship . original . Shields += pd; return this;
+};
+Ship . prototype . ECM = function (pd) {
+	if (this . source === null || this . source . BuildPoints < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . ECM += pd; this . ship . original . ECM += pd; return this;
+};
+Ship . prototype . Tubes = function (pd) {
+	if (this . source === null || this . source . BuildPoint < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . Tubes += pd; this . ship . original . Tubes += pd; return this;
+};
+Ship . prototype . Missiles = function (pd) {
+	if (this . source === null || this . source . BuildPoints < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . Missiles += pd * 3; this . ship . original . Missiles += pd * 3; return this;
+};
+Ship . prototype . Armor = function (pd) {
+	if (this . source === null || this . source . BuildPoints < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . Armor += pd * 2; this . ship . original . Armor += pd * 3; return this;
+};
+Ship . prototype . Cannons = function (pd) {
+	if (this . source === null || this . source . BuildPoints < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . Cannons += pd; this . ship . original . Cannons += pd; return this;
+};
+Ship . prototype . Shells = function (pd) {
+	if (this . source === null || this . source . BuildPoints < pd) return this;
+	this . source . BuildPoints -= pd; this . ship . Shells += pd * 6; this . ship . original . Shells += pd * 6; return this;
+};
+Ship . prototype . Bays = function (pd) {
+	if (this . source === null || this . source . BuildPoints < pd || ! this . ship . original . WarpGenerator) return this;
+	this . source . BuildPoints -= pd; this . ship . original . Bays += pd;
+	for (var ind = 0; ind < pd; ind ++) this . ship . Bays . push (null);
+	return this;
+};
+Ship . prototype . Holds = function (pd) {
+	if (this . source === null || this . source . BuildPoints < pd || ! this . ship . original . WarpGenerator) return this;
+	this . source . BuildPoints -= pd; this . ship . Holds += pd * 10; this . ship . original . Holds += pd * 10; return this;
+};
+Ship . prototype . RepairBay = function () {
+	if (this . source === null || this . source . BuildPoints < 5 || ! this . ship . original . WarpGenerator) return this;
+	this . source . BuildPoints -= 5; this . ship . RepairBay = true; this . ship . original . RepairBay = true; return this;
+};
+Ship . prototype . Icon = function (icon) {this . ship . icon = icon;};
 
+var RandomSystemIcon = function () {
+	var s = ['s1.png', 's2.png', 's3.png', 's4.png', 's5.png', 's6.png', 's7.png', 's8.png', 's9.png', 's10.png', 's11.png', 's12.png', 's13.png', 's14.png', 's15.png', 's16.png', 's17.png', 's18.png'];
+	return s [Math . floor (Math . random () * s . length)];
+};
+var RandomWarpIcon = function () {
+	var g = ['g1.png', 'g2.png', 'g3.png', 'g4.png', 'g5.png', 'g6.png', 'g7.png', 'g8.png', 'g9.png'];
+	return g [Math . floor (Math . random () * g . length)];
+};
 Galaxy . prototype . CreateShip = function (base, name) {
 	if (name === undefined) name = GetName (this . constellations);
 	var race = this . RaceFromBase (base);
 	if (race === null) {alert (`Can not identify race at ${base}.`); return null;}
-	var ship = {PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0, Armor: 0, Cannons: 0, Shells: 0, Bays: [], Hold: 0, RepairBays: false,
-		original: {PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0, Armor: 0, Cannons: 0, Shells: 0, Bays: [], Hold: 0, RepairBays: false}};
+	var ship = {PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0, Armor: 0, Cannons: 0, Shells: 0, Bays: [], Holds: 0, RepairBay: false,
+		original: {PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0, Armor: 0, Cannons: 0, Shells: 0, Bays: 0, Holds: 0, RepairBay: false},
+		location: base, move: 0, name: name, icon: RandomSystemIcon ()};
 	this . races [race] . ships [name] = ship;
-	return new Ship (this, ship);
+	return new Ship (this, ship) . Source (base);
 };
 
 for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
@@ -323,7 +443,7 @@ for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
 	if (count > 1) console . log (Galaxy . prototype . names [ind], count);
 }
 
-var galaxy = new Galaxy (6, 5);
+var galaxy = new Galaxy (8, 5);
 
 var repaint = function () {
 	canvas . width = window . innerWidth;
@@ -362,7 +482,10 @@ repaint ();
 var Stars = [];
 for (var star in galaxy . stars) Stars . push (star);
 Stars . sort ();
-for (var star of Stars) document . getElementById ('CreateRaceStar') . add (new Option (star, star));
+for (var star of Stars) {
+	document . getElementById ('CreateRaceStar') . add (new Option (star, star));
+	document . getElementById ('BuildLocations') . add (new Option (star, star));
+}
 
 var RefitRaces = function () {
 	var table = '<table><tr><td>RACES:</td>';
