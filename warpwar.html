@@ -97,6 +97,13 @@ var BuildShip = function () {
 	var Beams = Number (document . getElementById ('BuildBeams') . value); if (Beams > 0) ship . Beams (Beams);
 	var Shields = Number (document . getElementById ('BuildShields') . value); if (Shields > 0) ship . Shields (Shields);
 	var ECM = Number (document . getElementById ('BuildECM') . value); if (ECM > 0) ship . ECM (ECM);
+	var Tubes = Number (document . getElementById ('BuildTubes') . value); if (Tubes > 0) ship . Tubes (Tubes);
+	var Missiles = Number (document . getElementById ('BuildMissiles') . value); if (Missiles > 0) ship . Missiles (Missiles);
+	var Armor = Number (document . getElementById ('BuildArmor') . value); if (Armor > 0) ship . Armor (Armor);
+	var Cannons = Number (document . getElementById ('BuildCannons') . value); if (Cannons > 0) ship . Cannons (Cannons);
+	var Shells = Number (document . getElementById ('BuildShells') . value); if (Shells > 0) ship . Shells (Shells);
+	var Bays = Number (document . getElementById ('BuildBays') . vaule); if (Bays > 0) ship . Bays (Bays);
+	var Holds = Number (document . getElementById ('BuildHolds') . value); if (Holds > 0) ship . Holds (Holds);
 	console . log (ship);
 	return ship;
 };
@@ -235,9 +242,21 @@ Galaxy . prototype . RawDistance = function (from, to) {
 };
 
 Galaxy . prototype . Collect = function () {
-	for (var race in this . races) {
-		for (var base in this . races [race] . bases) {
-			this . races [race] . bases [base] . BuildPoints += this . stars [base] . economy * 2;
+	for (var star in this . stars) {
+		var Star = this . stars [star];
+		var Base = this . BaseAt (Star . location . x, Star . location . y);
+		if (Base) Base . BuildPoints += Star . economy * 2;
+		else {
+			var Ships = this . ShipsAt (Star . location . x, Star . location . y);
+			var BuildPoints = Star . economy;
+			for (var ind = 0; BuildPoints > 0 && ind < Ships . length; ind ++) {
+				var Ship = Ships [ind];
+				var capacity = Ship . Holds - Ship . BuildPoints;
+				var amount = BuildPoints > capacity ? capacity : BuildPoints;
+				BuildPoints -= amount;
+				Ship . BuildPoints += amount;
+				// console . log (Ship . name, Ship . Holds, Ship . BuildPoints);
+			}
 		}
 	}
 };
@@ -269,7 +288,7 @@ Galaxy . prototype . draw = function () {
 			if (Base !== null) {
 				if (Base . location === undefined || typeof Base . location === 'string') {ctx . fillStyle = Base . colour; ctx . fill ();}
 				ctx . fillStyle = 'white'; ctx . textAlign = 'center';
-				if (Base . BuildPoints !== undefined) ctx . fillText (`[${Base . BuildPoints}]`,
+				if (Base . BuildPoints !== undefined && Base . name === undefined) ctx . fillText (`[${Base . BuildPoints}]`,
 					this . shift . x + ind * hhh - sub * hh + radius,
 					this . shift . y + sub * ll + radius - 12);
 			}
@@ -365,6 +384,20 @@ Galaxy . prototype . ShipAt = function (x, y) {
 	return null;
 };
 
+Galaxy . prototype . ShipsAt = function (x, y) {
+	var ships = [];
+	for (var race in this . races) {
+		var r = this . races [race];
+		for (var ship in r . ships) {
+			var s = r . ships [ship];
+			var st = s . location;
+			if (typeof st === 'string') st = this . stars [st] . location;
+			if (st . x === x && st . y === y) ships . push (s);
+		}
+	}
+	return ships;
+};
+
 Galaxy . prototype . BaseOrShipAt = function (x, y) {return this . BaseAt (x, y) || this . ShipAt (x, y);};
 
 var Ship = function (galaxy, ship) {this . galaxy = galaxy; this . ship = ship; this . source = null;};
@@ -452,7 +485,7 @@ Galaxy . prototype . CreateShip = function (base, name) {
 			PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0,
 			Armor: 0, Cannons: 0, Shells: 0, Bays: 0, Holds: 0, RepairBay: false},
 		location: base, move: 0, name: name, icon: RandomSystemIcon (), TechnologyLevel: this . TechnologyLevel,
-		race: race, colour: this . races [race] . colour};
+		race: race, colour: this . races [race] . colour, BuildPoints: 0};
 	this . races [race] . ships [name] = ship;
 	return new Ship (this, ship) . Source (base);
 };
