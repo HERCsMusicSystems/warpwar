@@ -28,6 +28,7 @@
 </div>
 <div style="position: absolute; bottom: 8px; left: 8px; border-radius: 8px; padding: 8px; background-color: gold;">
 	<input type="button" value="Collect" onclick="javascript: galaxy . Collect (); repaint ();"/>
+	<input type="button" value="ReMove" onclick="javascript: galaxy . ReMoveShips (); repaint ();"/>
 	<input type="button" value="Store" onclick="javascript: galaxy . store ();"/>
 	<input type="button" value="Restore" onclick="javascript: galaxy . restore (); RestoreSelects (); repaint ();"/>
 </div>
@@ -183,7 +184,8 @@ Galaxy . prototype . CreateRace = function (name, base, colour) {
 	this . races [name] = {colour: colour, bases: {}};
 	this . races [name] . bases [base] = {BuildPoints: 0, construction: 30, race: name, colour: colour};
 	this . races [name] . ships = {};
-	this . stars [base] . economy = 5;
+	// this . stars [base] . economy = 5;
+	this . turns . push (name);
 };
 
 Galaxy . prototype . StarAt = function (x, y) {
@@ -257,6 +259,24 @@ Galaxy . prototype . Collect = function () {
 				Ship . BuildPoints += amount;
 				// console . log (Ship . name, Ship . Holds, Ship . BuildPoints);
 			}
+		}
+	}
+};
+
+Galaxy . prototype . ShipSelect = function (name) {
+	for (var race in this . races) {
+		for (var ship in this . races [race] . ships) {
+			if (ship === name) return new Ship (this, this . races [race] . ships [ship]);
+		}
+	}
+	return null;
+};
+
+Galaxy . prototype . ReMoveShips = function () {
+	for (var race in this . races) {
+		for (var ship in this . races [race] . ships) {
+			var Ship = this . races [race] . ships [ship];
+			Ship . move = Ship . PowerDrive;
 		}
 	}
 };
@@ -401,6 +421,31 @@ Galaxy . prototype . ShipsAt = function (x, y) {
 Galaxy . prototype . BaseOrShipAt = function (x, y) {return this . BaseAt (x, y) || this . ShipAt (x, y);};
 
 var Ship = function (galaxy, ship) {this . galaxy = galaxy; this . ship = ship; this . source = null;};
+Ship . prototype . move = function (target) {
+	if (this . ship . move < 1) return this;
+	if (typeof target === 'string') {
+		for (var ind in this . galaxy . warps) {
+			var warp = this . galaxy . warps [ind];
+			if ((warp . from === this . ship . location && warp . to === target) ||
+				(warp . to === this . ship . location && warp . from === target)) {
+				this . ship . location = target; this . ship . move --; return this;
+			}
+		}
+	} else {
+		var st = this . ship . location;
+		if (typeof st === 'string') st = {x: this . galaxy . stars [st] . location . x, y: this . galaxy . stars [st] . location . y};
+		if (target . x > 1 || target . x < -1 || target . y > 1 || target . y < -1) return this;
+		st . x += target . x; st . y += target . y;
+		this . ship . location = st;
+		this . ship . move --;
+		for (var star in this . galaxy . stars) {
+			if (this . galaxy . stars [star] . location . x === st . x && this . galaxy . stars [star] . location . y === st . y)
+				this . ship . location = star;
+		}
+		return this;
+	}
+	return this;
+};
 Ship . prototype . Source = function (base) {
 	for (var race in this . galaxy . races) {
 		for (var b in this . galaxy . races [race] . bases) {
