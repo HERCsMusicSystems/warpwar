@@ -12,17 +12,18 @@
 	<input type="button" value="Reset" onclick="javascript: BuildShipReset ();"/><br/>
 	Location:<select id="BuildLocations"></select><br/>
 	Warp Generator: <input type="checkbox" id="BuildWarpGenerator"/><br/>
-	Repair Bay: <input type="checkbox" id="BuildRepairBay"/><br/>
 	Power Drive: <input type="number" min="0" value="0" style="width: 5em;" id="BuildPowerDrive"/><br/>
 	Beams: <input type="number" min="0" value="0" style="width: 5em;" id="BuildBeams"/><br/>
 	Shields: <input type="number" min="0" value="0" style="width: 5em;" id="BuildShields"/><br/>
-	ECM: <input type="number" min="0" value="0" style="width: 5em;" id="BuildECM"/><br/>
 	Tubes: <input type="number" min="0" value="0" style="width: 5em;" id="BuildTubes"/><br/>
 	Missiles: <input type="number" min="0" value="0" style="width: 5em;" id="BuildMissiles"/><br/>
+	Bays: <input type="number" min="0" value="0" style="width: 5em;" id="BuildBays"/><br/>
+	<hr/>
+	Repair Bay: <input type="checkbox" id="BuildRepairBay"/><br/>
+	ECM: <input type="number" min="0" value="0" style="width: 5em;" id="BuildECM"/><br/>
 	Armor: <input type="number" min="0" value="0" style="width: 5em;" id="BuildArmor"/><br/>
 	Cannons: <input type="number" min="0" value="0" style="width: 5em;" id="BuildCannons"/><br/>
 	Shells: <input type="number" min="0" value="0" style="width: 5em;" id="BuildShells"/><br/>
-	Bays: <input type="number" min="0" value="0" style="width: 5em;" id="BuildBays"/><br/>
 	Holds: <input type="number" min="0" value="0" style="width: 5em;" id="BuildHolds"/><br/>
 </div>
 <div style="position: absolute; bottom: 8px; left: 8px; border-radius: 8px; padding: 8px; background-color: gold;">
@@ -173,7 +174,7 @@ Galaxy . prototype . CreateRace = function (name, base, colour) {
 		if (this . races [race] . bases [base] !== undefined) {alert (`Star ${base} already taken.`); return;}
 	}
 	this . races [name] = {colour: colour, bases: {}};
-	this . races [name] . bases [base] = {BuildPoints: 0, construction: 30};
+	this . races [name] . bases [base] = {BuildPoints: 0, construction: 30, race: name, colour: colour};
 	this . races [name] . ships = {};
 	this . stars [base] . economy = 5;
 };
@@ -264,21 +265,13 @@ Galaxy . prototype . draw = function () {
 			ctx . closePath ();
 			// ctx . arc (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius, radius, 0, Math . PI * 2);
 			ctx . stroke ();
-			for (var star in this . stars) {
-				for (var race in this . races) {
-					for (var base in this . races [race] . bases) {
-						var st = this . stars [base];
-						if (st . location . x === ind && st . location . y === sub) {
-							ctx . fillStyle = this . races [race] . colour;
-							ctx . fill ();
-							ctx . fillStyle = 'white';
-							ctx . textAlign = 'center';
-							ctx . fillText (`[${this . races [race] . bases [base] . BuildPoints}]`,
-								this . shift . x + st . location . x * hhh - st . location . y * hh + radius,
-								this . shift . y + st . location . y * ll + radius - 12);
-						}
-					}
-				}
+			var Base = this . BaseOrShipAt (ind, sub);
+			if (Base !== null) {
+				if (Base . location === undefined || typeof Base . location === 'string') {ctx . fillStyle = Base . colour; ctx . fill ();}
+				ctx . fillStyle = 'white'; ctx . textAlign = 'center';
+				if (Base . BuildPoints !== undefined) ctx . fillText (`[${Base . BuildPoints}]`,
+					this . shift . x + ind * hhh - sub * hh + radius,
+					this . shift . y + sub * ll + radius - 12);
 			}
 		}
 	}
@@ -325,7 +318,9 @@ Galaxy . prototype . draw = function () {
 	for (var race in this . races) {
 		for (var ship in this . races [race] . ships) {
 			var s = this . races [race] . ships [ship];
-			var st = this . stars [s . location] . location;
+			var st = s . location;
+			if (typeof st === 'string') st = this . stars [st] . location;
+			// var st = this . stars [s . location] . location;
 			ctx . save ();
 			ctx . translate (Icons [s . icon] . width * -0.25, Icons [s . icon] . height * -0.25);
 			ctx . translate (this . shift . x, this . shift . y);
@@ -347,12 +342,35 @@ Galaxy . prototype . RaceFromBase = function (base) {
 	return null;
 };
 
+Galaxy . prototype . BaseAt = function (x, y) {
+	for (var race in this . races) {
+		for (var base in this . races [race] . bases) {
+			var star = this . stars [base];
+			if (star . location . x === x && star . location . y === y) return this . races [race] . bases [base];
+		}
+	}
+	return null;
+};
+
+Galaxy . prototype . ShipAt = function (x, y) {
+	for (var race in this . races) {
+		var r = this . races [race];
+		for (var ship in r . ships) {
+			var s = r . ships [ship];
+			var st = s . location;
+			if (typeof st === 'string') st = this . stars [st] . location;
+			if (st . x === x && st . y === y) return s;
+		}
+	}
+	return null;
+};
+
+Galaxy . prototype . BaseOrShipAt = function (x, y) {return this . BaseAt (x, y) || this . ShipAt (x, y);};
+
 var Ship = function (galaxy, ship) {this . galaxy = galaxy; this . ship = ship; this . source = null;};
 Ship . prototype . Source = function (base) {
-	console . log (base);
 	for (var race in this . galaxy . races) {
 		for (var b in this . galaxy . races [race] . bases) {
-			console . log (race, b, base);
 			if (b === base) this . source = this . galaxy . races [race] . bases [base];
 		}
 	}
@@ -372,7 +390,7 @@ Ship . prototype . Beams = function (pd) {
 	this . source . BuildPoints -= pd; this . ship . Beams += pd; this . ship . original . Beams += pd; return this;
 };
 Ship . prototype . Shields = function (pd) {
-	if (this . source === null || this . source . BuildPoint < pd) return this;
+	if (this . source === null || this . source . BuildPoints < pd) return this;
 	this . source . BuildPoints -= pd; this . ship . Shields += pd; this . ship . original . Shields += pd; return this;
 };
 Ship . prototype . ECM = function (pd) {
@@ -380,7 +398,7 @@ Ship . prototype . ECM = function (pd) {
 	this . source . BuildPoints -= pd; this . ship . ECM += pd; this . ship . original . ECM += pd; return this;
 };
 Ship . prototype . Tubes = function (pd) {
-	if (this . source === null || this . source . BuildPoint < pd) return this;
+	if (this . source === null || this . source . BuildPoints < pd) return this;
 	this . source . BuildPoints -= pd; this . ship . Tubes += pd; this . ship . original . Tubes += pd; return this;
 };
 Ship . prototype . Missiles = function (pd) {
@@ -427,9 +445,14 @@ Galaxy . prototype . CreateShip = function (base, name) {
 	if (name === undefined) name = GetName (this . constellations);
 	var race = this . RaceFromBase (base);
 	if (race === null) {alert (`Can not identify race at ${base}.`); return null;}
-	var ship = {PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0, Armor: 0, Cannons: 0, Shells: 0, Bays: [], Holds: 0, RepairBay: false,
-		original: {PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0, Armor: 0, Cannons: 0, Shells: 0, Bays: 0, Holds: 0, RepairBay: false},
-		location: base, move: 0, name: name, icon: RandomSystemIcon ()};
+	var ship = {
+		PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0,
+		Armor: 0, Cannons: 0, Shells: 0, Bays: [], Holds: 0, RepairBay: false,
+		original: {
+			PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0,
+			Armor: 0, Cannons: 0, Shells: 0, Bays: 0, Holds: 0, RepairBay: false},
+		location: base, move: 0, name: name, icon: RandomSystemIcon (), TechnologyLevel: this . TechnologyLevel,
+		race: race, colour: this . races [race] . colour};
 	this . races [race] . ships [name] = ship;
 	return new Ship (this, ship) . Source (base);
 };
