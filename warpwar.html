@@ -261,22 +261,30 @@ Galaxy . prototype . RawDistance = function (from, to) {
 	return Math . min (d1, d2, d3, d4, d5, d6, d7, d8, d9);
 };
 
+var GetName = function (names) {return names . splice (Math . floor (Math . random () * names . length), 1) [0];};
 Galaxy . prototype . Collect = function () {
 	if (this . Phase === 'build') return; this . Phase = 'build';
+	this . Turns . shift (galaxy . races);
+	if (this . Turns . length < 1) {
+		var races = Object . keys (this . races);
+		while (races . length > 0) this . Turns . push (races . splice (Math . floor (Math . random () * races . length), 1) [0]);
+	}
 	for (var star in this . stars) {
 		var Star = this . stars [star];
 		var Base = this . BaseAt (Star . location . x, Star . location . y);
-		if (Base) Base . BuildPoints += Star . economy * 2;
+		if (Base && Base . race === this . Turns [0]) Base . BuildPoints += Star . economy * 2;
 		else {
 			var Ships = this . ShipsAt (Star . location . x, Star . location . y);
 			var BuildPoints = Star . economy;
 			for (var ind = 0; BuildPoints > 0 && ind < Ships . length; ind ++) {
 				var Ship = Ships [ind];
-				var capacity = Ship . Holds - Ship . BuildPoints;
-				var amount = BuildPoints > capacity ? capacity : BuildPoints;
-				BuildPoints -= amount;
-				Ship . BuildPoints += amount;
-				// console . log (Ship . name, Ship . Holds, Ship . BuildPoints);
+				if (Ship . ship . race === this . Turs [0]) {
+					var capacity = Ship . Holds - Ship . BuildPoints;
+					var amount = BuildPoints > capacity ? capacity : BuildPoints;
+					BuildPoints -= amount;
+					Ship . BuildPoints += amount;
+					// console . log (Ship . name, Ship . Holds, Ship . BuildPoints);
+				}
 			}
 		}
 	}
@@ -295,7 +303,7 @@ var ShipSelect = function (name) {
 	SelectedShip = galaxy . ShipSelect (name);
 	document . getElementById ('ShipData') . innerHTML = SelectedShip ?
 		`<img src="${SelectedShip . ship . icon}"/><br/><font color="${SelectedShip . ship . colour}">${SelectedShip . ship . race} ${SelectedShip . ship . name}: ${SelectedShip . ship . move}</font>` :
-		``;
+		'';
 };
 
 Galaxy . prototype . ReMoveShips = function () {
@@ -310,8 +318,10 @@ Galaxy . prototype . ReMoveShips = function () {
 
 Galaxy . prototype . Next = function () {
 	switch (this . Phase) {
-	case 'move': this . TechnologyLevel ++; this . Collect (); break;
 	case 'build': this . ReMoveShips (); break;
+	case 'move': this . Phase = 'combat'; break;
+	case 'combat': this . Phase = 'rearrange'; break;
+	case 'rearrange': this . TechnologyLevel ++; this . Collect (); break;
 	default: break;
 	}
 };
