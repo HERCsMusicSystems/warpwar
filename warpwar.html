@@ -26,11 +26,13 @@
 	Shells: <input type="number" min="0" value="0" style="width: 5em;" id="BuildShells"/><br/>
 	Holds: <input type="number" min="0" value="0" style="width: 5em;" id="BuildHolds"/><br/>
 </div>
-<div style="position: absolute; bottom: 8px; left: 8px; border-radius: 8px; padding: 8px; background-color: gold;">
+<div style="position: absolute; bottom: 8px; left: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<input type="button" value="Collect" onclick="javascript: galaxy . Collect (); repaint ();"/>
 	<input type="button" value="ReMove" onclick="javascript: galaxy . ReMoveShips (); repaint ();"/>
 	<input type="button" value="Store" onclick="javascript: galaxy . store ();"/>
-	<input type="button" value="Restore" onclick="javascript: galaxy . restore (); RestoreSelects (); repaint ();"/>
+	<input type="button" value="Restore" onclick="javascript: galaxy . restore (); repaint ();"/>
+	<input type="button" value="Next" onclick="javascript: galaxy . Next (); repaint ();"/>
+	<div id="GameStatus" style="float: right;"></div>
 </div>
 <div id="Ships" style="visibility: hidden; position: absolute; background-color: #00aa0066; border-radius: 8px; padding: 8px; top: 8px; left: 8px;">
 	<img src="g1.png"/><img src="g2.png"/><img src="g3.png"/><img src="g4.png"/><img src="g5.png"/><img src="g6.png"/>
@@ -38,6 +40,11 @@
 	<img src="s1.png"/><img src="s2.png"/><img src="s3.png"/><img src="s4.png"/><img src="s5.png"/><img src="s6.png"/><img src="s7.png"/>
 	<img src="s8.png"/><img src="s9.png"/><br/><img src="s10.png"/><img src="s11.png"/><img src="s12.png"/><img src="s13.png"/>
 	<img src="s14.png"/><img src="s15.png"/><img src="s16.png"/><img src="s17.png"/><img src="s18.png"/>
+</div>
+
+<div id="SelectedShip" style="position: absolute; right: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
+	<select id="ShipsForSelection" onchange="javascript: ShipSelect (this . value);"/></select>
+	<div id="ShipData"/></div>
 </div>
 
 <div id="CreateRace" style="position: absolute; bottom: 8px; right: 8px; background-color: gold; border-radius: 8px; font-family: arial; padding: 8px;">
@@ -70,6 +77,14 @@ var RestoreSelects = function () {
 		document . getElementById ('CreateRaceStar') . add (new Option (star, star));
 		document . getElementById ('BuildLocations') . add (new Option (star, star));
 	}
+	document . getElementById ('ShipsForSelection') . options . length = 0;
+	document . getElementById ('ShipsForSelection') . add (new Option ('none', 'none'));
+	for (var race in galaxy . races) {
+		for (var ship in galaxy . races [race] . ships) {
+			document . getElementById ('ShipsForSelection') . add (new Option (ship, ship));
+		}
+	}
+	document . getElementById ('GameStatus') . innerHTML = `Phase: ${galaxy . Phase}; Turn: ${galaxy . Turns [0] || 'none'}; TL: ${galaxy . TechnologyLevel};`;
 };
 
 var BuildShipReset = function () {
@@ -153,7 +168,10 @@ var Galaxy = function (x, y) {
 	}
 	this . races = {};
 	this . TechnologyLevel = 0;
-	this . turns = [];
+	this . TechnologyStep = 6;
+	this . Phase = 'build';
+	this . Turns = [];
+	this . SelectedShip = null;
 };
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "Altair", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Canopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
@@ -185,7 +203,7 @@ Galaxy . prototype . CreateRace = function (name, base, colour) {
 	this . races [name] . bases [base] = {BuildPoints: 0, construction: 30, race: name, colour: colour};
 	this . races [name] . ships = {};
 	// this . stars [base] . economy = 5;
-	this . turns . push (name);
+	this . Turns . push (name);
 };
 
 Galaxy . prototype . StarAt = function (x, y) {
@@ -244,6 +262,7 @@ Galaxy . prototype . RawDistance = function (from, to) {
 };
 
 Galaxy . prototype . Collect = function () {
+	if (this . Phase === 'build') return; this . Phase = 'build';
 	for (var star in this . stars) {
 		var Star = this . stars [star];
 		var Base = this . BaseAt (Star . location . x, Star . location . y);
@@ -272,12 +291,28 @@ Galaxy . prototype . ShipSelect = function (name) {
 	return null;
 };
 
+var ShipSelect = function (name) {
+	SelectedShip = galaxy . ShipSelect (name);
+	document . getElementById ('ShipData') . innerHTML = SelectedShip ?
+		`<img src="${SelectedShip . ship . icon}"/><br/><font color="${SelectedShip . ship . colour}">${SelectedShip . ship . race} ${SelectedShip . ship . name}: ${SelectedShip . ship . move}</font>` :
+		``;
+};
+
 Galaxy . prototype . ReMoveShips = function () {
+	if (this . Phase === 'move') return; this . Phase = 'move';
 	for (var race in this . races) {
 		for (var ship in this . races [race] . ships) {
 			var Ship = this . races [race] . ships [ship];
 			Ship . move = Ship . PowerDrive;
 		}
+	}
+};
+
+Galaxy . prototype . Next = function () {
+	switch (this . Phase) {
+	case 'move': this . TechnologyLevel ++; this . Collect (); break;
+	case 'build': this . ReMoveShips (); break;
+	default: break;
 	}
 };
 
@@ -435,7 +470,8 @@ Ship . prototype . move = function (target) {
 		var st = this . ship . location;
 		if (typeof st === 'string') st = {x: this . galaxy . stars [st] . location . x, y: this . galaxy . stars [st] . location . y};
 		if (target . x > 1 || target . x < -1 || target . y > 1 || target . y < -1) return this;
-		st . x += target . x; st . y += target . y;
+		if (target . x + target . y === 0 && target . x !== target . y) return this;
+		st . x = pmod (st . x + target . x, this . galaxy . size . width); st . y = pmod (st . y + target . y, this . galaxy . size . height);
 		this . ship . location = st;
 		this . ship . move --;
 		for (var star in this . galaxy . stars) {
@@ -552,6 +588,7 @@ var repaint = function () {
 	ctx . save ();
 	galaxy . draw ();
 	ctx . restore ();
+	RestoreSelects ();
 	// ctx . fillRect (0, 0, canvas . width, canvas . height);
 };
 
@@ -562,6 +599,22 @@ var OnMouseDown = function (e) {
 	e . preventDefault ();
 	MouseLocation = {x: e . clientX, y: e . clientY};
 	dragging = true;
+	if (galaxy . Phase === 'move' && SelectedShip) {
+		var fraction = Math . pow (3, 0.5);
+		var hit = {
+			x: 0.5 + (e . clientX - galaxy . shift . x - galaxy . size . radius) / (galaxy . size . radius * fraction),
+			y: Math . floor (0.5 + (e . clientY - galaxy . shift . y - galaxy . size . radius) / (galaxy . size . radius * 1.5))
+		};
+		hit . x = Math . floor (hit . x + hit . y * 0.5);
+		var star = galaxy . StarAt (hit . x, hit . y);
+		var ShipLocation = SelectedShip . ship . location;
+		if (star && typeof ShipLocation === 'string') hit = star;
+		if (typeof ShipLocation === 'string') ShipLocation = galaxy . stars [ShipLocation] . location;
+		console . log ('Move', SelectedShip . ship . name, ShipLocation, star, hit);
+		if (typeof hit !== 'string' && typeof ShipLocation !== 'string') {hit . x -= ShipLocation . x; hit . y -= ShipLocation . y;}
+		SelectedShip . move (hit);
+		repaint ();
+	}
 	return false;
 };
 
