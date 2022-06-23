@@ -32,15 +32,20 @@
 	<input type="button" value="Store" onclick="javascript: galaxy . store ();"/>
 	<input type="button" value="Restore" onclick="javascript: galaxy . restore (); repaint ();"/>
 	<input type="button" value="Next" onclick="javascript: galaxy . Next (); repaint ();"/>
-	<div id="GameStatus" style="float: right;"></div>
+	<!--<div id="GameStatus" style="float: right;"></div>-->
 </div>
-<div id="Ships" style="visibility: hidden; position: absolute; background-color: #00aa0066; border-radius: 8px; padding: 8px; top: 8px; left: 8px;">
+<!--<div id="Ships" style="visibility: hidden; position: absolute; background-color: #44444444; border-radius: 8px; padding: 8px; top: 8px; left: 256px;">
 	<img src="g1.png"/><img src="g2.png"/><img src="g3.png"/><img src="g4.png"/><img src="g5.png"/><img src="g6.png"/>
 	<img src="g7.png"/><img src="g8.png"/><img src="g9.png"/><br/>
 	<img src="s1.png"/><img src="s2.png"/><img src="s3.png"/><img src="s4.png"/><img src="s5.png"/><img src="s6.png"/><img src="s7.png"/>
 	<img src="s8.png"/><img src="s9.png"/><br/><img src="s10.png"/><img src="s11.png"/><img src="s12.png"/><img src="s13.png"/>
-	<img src="s14.png"/><img src="s15.png"/><img src="s16.png"/><img src="s17.png"/><img src="s18.png"/>
-</div>
+	<img src="s14.png"/><img src="s15.png"/><img src="s16.png"/><img src="s17.png"/><img src="s18.png"/><br/>
+	<img src="g11.png"/><img src="g12.png"/><img src="g13.png"/><img src="g14.png"/><img src="g15.png"/><img src="g16.png"/>
+	<img src="g17.png"/><img src="g18.png"/><img src="g19.png"/><br/>
+	<img src="s21.png"/><img src="s22.png"/><img src="s23.png"/><img src="s24.png"/><img src="s25.png"/><img src="s26.png"/><img src="s27.png"/>
+	<img src="s28.png"/><img src="s29.png"/><br/><img src="s30.png"/><img src="s31.png"/><img src="s32.png"/><img src="s33.png"/>
+	<img src="s34.png"/><img src="s35.png"/><img src="s36.png"/><img src="s37.png"/><img src="s38.png"/>
+</div>-->
 
 <div id="SelectedShip" style="position: absolute; right: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<select id="ShipsForSelection" onchange="javascript: ShipSelect (this . value);"/></select>
@@ -67,6 +72,38 @@
 
 <script>
 
+var SelectedShip = null;
+
+var UpdateShipSelectDiv = function () {
+	// console . log (galaxy . SelectedShip);
+	if (! SelectedShip) document . getElementById ('ShipData') . innerHTML = '';
+	else {
+		var ship = SelectedShip . ship;
+		var text = `<img src="${ship . icon}"/><br/><font color="${ship . colour}">${ship . race} ${ship . name}: ${ship . move}</font>`;
+		if (ship . race === galaxy . Turns [0]) {
+			text += '<hr/>';
+			if (ship . WarpGenerator) text += 'Warp Generator<br/>';
+			text += `Power Drive = ${ship . PowerDrive} [${ship . original . PowerDrive}]<br/>`;
+			if (ship . original . Beams > 0) text += `Beams = ${ship . Beams} [${ship . original . Beams}]<br/>`;
+			if (ship . original . Shields > 0) text += `Shields = ${ship . Shields} [${ship . original . Shields}]<br/>`;
+			if (ship . original . Tubes > 0) text += `Tubes = ${ship . Tubes} [${ship . original . Tubes}]<br/>`;
+			if (ship . original . Missiles > 0) text += `Missiles = ${ship . Missiles} [${ship . original . Missiles}]<br/>`;
+			if (ship . original . Bays > 0) text += `Bays = ${ship . Bays . length} [${ship . original . Bays}]<br/>`;
+			text += '<hr/>';
+			if (ship . RepairBay) text += 'Repair Bay<br/>';
+			if (ship . original . ECM > 0) text += `ECM = ${ship . ECM} [${ship . original . ECM}]<br/>`;
+			if (ship . original . Armor > 0) text += `Armor = ${ship . Armor} [${ship . original . Armor}]<br/>`;
+			if (ship . original . Cannons > 0) text += `Cannons = ${ship . Cannons} [${ship . original . Cannons}]<br/>`;
+			if (ship . original . Shells > 0) text += `Shells = ${ship . Shells} [${ship . original . Shells}]<br/>`;
+			if (ship . original . Holds > 0) {
+				text += `Holds = ${ship . Holds} [${ship . original . Holds}]<br/>`;
+				text += `Build Points = ${ship . BuildPoints}<br/>`;
+			}
+			
+		}
+		document . getElementById ('ShipData') . innerHTML = text;
+	}
+};
 var RestoreSelects = function () {
 	var Stars = [];
 	for (var star in galaxy . stars) Stars . push (star);
@@ -84,7 +121,8 @@ var RestoreSelects = function () {
 			document . getElementById ('ShipsForSelection') . add (new Option (ship, ship));
 		}
 	}
-	document . getElementById ('GameStatus') . innerHTML = `Phase: ${galaxy . Phase}; Turn: ${galaxy . Turns [0] || 'none'}; TL: ${galaxy . TechnologyLevel};`;
+	// document . getElementById ('GameStatus') . innerHTML = `Phase: ${galaxy . Phase}; Turn: ${galaxy . Turns [0] || 'none'}; TL: ${galaxy . TechnologyLevel};`;
+	UpdateShipSelectDiv ();
 };
 
 var BuildShipReset = function () {
@@ -144,7 +182,7 @@ var Galaxy = function (x, y) {
 	var margin = (window . innerWidth - together) * 0.5;
 	var height = this . size . radius * this . size . height * 1.5;
 	// console . log (left, right, together, window . innerWidth, margin);
-	this . shift = {x: margin + left - this . size . radius * 2 + factor * 0.5 * this . size . radius,
+	this . shift = {x: margin + left - this . size . radius * 2 + factor * 0.5 * this . size . radius - this . size . radius * 0.5,
 		y: (window . innerHeight - height - this . size . radius * 0.5) * 0.5};
 	var t = Math . random ();
 	var NumberOfStars = Math . floor (x * y * (1.1 * t + 0.9 * (1 - t)) / 12);
@@ -180,8 +218,12 @@ Galaxy . prototype . constellations = ["Andromeda", "Antlia", "Apus", "Aquarius"
 
 var Icons = {};
 var In = ['g1.png', 'g2.png', 'g3.png', 'g4.png', 'g5.png', 'g6.png', 'g7.png', 'g8.png', 'g9.png',
+		'g11.png', 'g12.png', 'g13.png', 'g14.png', 'g15.png', 'g16.png', 'g17.png', 'g18.png', 'g19.png',
 		's1.png', 's2.png', 's3.png', 's4.png', 's5.png', 's6.png', 's7.png', 's8.png', 's9.png',
-		's10.png', 's11.png', 's12.png', 's13.png', 's13.png', 's14.png', 's15.png', 's16.png', 's17.png', 's18.png'];
+		's10.png', 's11.png', 's12.png', 's13.png', 's14.png', 's15.png', 's16.png', 's17.png', 's18.png',
+		's21.png', 's22.png', 's23.png', 's24.png', 's25.png', 's26.png', 's27.png', 's28.png', 's29.png',
+		's30.png', 's31.png', 's32.png', 's33.png', 's34.png', 's35.png', 's36.png', 's37.png', 's38.png'
+	];
 for (var name of In) {Icons [name] = new Image (); Icons [name] . src = name;}
 
 Galaxy . prototype . store = function () {localStorage . setItem ('galaxy', JSON . stringify (this));};
@@ -190,6 +232,7 @@ Galaxy . prototype . restore = function () {
 	if (json === null) return;
 	json = JSON . parse (json);
 	for (var key in json) this [key] = json [key];
+	if (this . SelectedShip) SelectedShip = this . ShipSelect (this . SelectedShip);
 };
 
 Galaxy . prototype . CreateRace = function (name, base, colour) {
@@ -200,7 +243,7 @@ Galaxy . prototype . CreateRace = function (name, base, colour) {
 		if (this . races [race] . bases [base] !== undefined) {alert (`Star ${base} already taken.`); return;}
 	}
 	this . races [name] = {colour: colour, bases: {}};
-	this . races [name] . bases [base] = {BuildPoints: 0, construction: 30, race: name, colour: colour};
+	this . races [name] . bases [base] = {BuildPoints: 20, construction: 30, race: name, colour: colour};
 	this . races [name] . ships = {};
 	// this . stars [base] . economy = 5;
 	this . Turns . push (name);
@@ -262,12 +305,14 @@ Galaxy . prototype . RawDistance = function (from, to) {
 };
 
 var GetName = function (names) {return names . splice (Math . floor (Math . random () * names . length), 1) [0];};
+
 Galaxy . prototype . Collect = function () {
 	if (this . Phase === 'build') return; this . Phase = 'build';
 	this . Turns . shift (galaxy . races);
 	if (this . Turns . length < 1) {
 		var races = Object . keys (this . races);
 		while (races . length > 0) this . Turns . push (races . splice (Math . floor (Math . random () * races . length), 1) [0]);
+		this . TechnologyLevel ++;
 	}
 	for (var star in this . stars) {
 		var Star = this . stars [star];
@@ -278,7 +323,7 @@ Galaxy . prototype . Collect = function () {
 			var BuildPoints = Star . economy;
 			for (var ind = 0; BuildPoints > 0 && ind < Ships . length; ind ++) {
 				var Ship = Ships [ind];
-				if (Ship . ship . race === this . Turs [0]) {
+				if (Ship . race === this . Turns [0]) {
 					var capacity = Ship . Holds - Ship . BuildPoints;
 					var amount = BuildPoints > capacity ? capacity : BuildPoints;
 					BuildPoints -= amount;
@@ -290,38 +335,37 @@ Galaxy . prototype . Collect = function () {
 	}
 };
 
+Galaxy . prototype . Combat = function () {
+	if (this . Phase !== 'move') return; this . Phase = 'combat';
+	for (var race in this . races) {for (var ship in this . races [race] . ships) {this . races [race] . ships [ship] . move = 0;}}
+};
+
 Galaxy . prototype . ShipSelect = function (name) {
 	for (var race in this . races) {
 		for (var ship in this . races [race] . ships) {
-			if (ship === name) return new Ship (this, this . races [race] . ships [ship]);
+			if (ship === name) {this . SelectedShip = name; return new Ship (this, this . races [race] . ships [ship]);}
 		}
 	}
+	this . SelectedShip = null;
 	return null;
 };
 
-var ShipSelect = function (name) {
-	SelectedShip = galaxy . ShipSelect (name);
-	document . getElementById ('ShipData') . innerHTML = SelectedShip ?
-		`<img src="${SelectedShip . ship . icon}"/><br/><font color="${SelectedShip . ship . colour}">${SelectedShip . ship . race} ${SelectedShip . ship . name}: ${SelectedShip . ship . move}</font>` :
-		'';
-};
+var ShipSelect = function (name) {SelectedShip = galaxy . ShipSelect (name); repaint ();};
 
 Galaxy . prototype . ReMoveShips = function () {
 	if (this . Phase === 'move') return; this . Phase = 'move';
-	for (var race in this . races) {
-		for (var ship in this . races [race] . ships) {
-			var Ship = this . races [race] . ships [ship];
-			Ship . move = Ship . PowerDrive;
-		}
+	for (var ship in this . races [this . Turns [0]] . ships) {
+		var Ship = this . races [this . Turns [0]] . ships [ship];
+		Ship . move = Ship . PowerDrive;
 	}
 };
 
 Galaxy . prototype . Next = function () {
 	switch (this . Phase) {
 	case 'build': this . ReMoveShips (); break;
-	case 'move': this . Phase = 'combat'; break;
+	case 'move': this . Combat (); break;
 	case 'combat': this . Phase = 'rearrange'; break;
-	case 'rearrange': this . TechnologyLevel ++; this . Collect (); break;
+	case 'rearrange': this . Collect (); break;
 	default: break;
 	}
 };
@@ -415,6 +459,38 @@ Galaxy . prototype . draw = function () {
 			ctx . restore ();
 		}
 	}
+	for (var star in this . stars) {
+		var location = this . stars [star] . location;
+		var ships = this . ShipsAt (location . x, location . y);
+		var races = [];
+		for (var ind in ships) if (races . indexOf (ships [ind] . race) < 0) races . push (ships [ind] . race);
+		if (races . length > 1) {
+			ctx . strokeStyle = 'red';
+			ctx . beginPath ();
+			ctx . arc (
+				this . shift . x + this . size . radius + location . x * hhh - location . y * hh,
+				this . shift . y + this . size . radius + location . y * ll,
+				this . size . radius * 1.5, 0, Math . PI * 2);
+			ctx . stroke ();
+		}
+	}
+	for (var race in this . races) {
+		var Race = this . races [race];
+		for (var ship in Race . ships) {
+			if (ship === this . SelectedShip) {
+				ctx . strokeStyle = 'blue';
+				var location = Race . ships [ship] . location;
+				if (typeof location === 'string') location = this . stars [location] . location;
+				ctx . strokeStyle = 'blue';
+				ctx . beginPath ();
+				ctx . arc (
+					this . shift . x + this . size . radius + location . x * hhh - location . y * hh,
+					this . shift . y + this . size . radius + location . y * ll,
+					this . size . radius * 1.25, 0, Math . PI * 2);
+				ctx . stroke ();
+			}
+		}
+	}
 };
 
 Galaxy . prototype . RaceFromBase = function (base) {
@@ -468,6 +544,13 @@ Galaxy . prototype . BaseOrShipAt = function (x, y) {return this . BaseAt (x, y)
 var Ship = function (galaxy, ship) {this . galaxy = galaxy; this . ship = ship; this . source = null;};
 Ship . prototype . move = function (target) {
 	if (this . ship . move < 1) return this;
+	if (typeof this . ship . location === 'string') {
+		var location = this . galaxy . stars [this . ship . location] . location;
+		var ships = this . galaxy . ShipsAt (location . x, location . y);
+		for (var ship in ships) {
+			if (ships [ship] . race !== this . ship . race) {console . log (`${ships [ship] . race} is present.`); return this;}
+		}
+	}
 	if (typeof target === 'string') {
 		for (var ind in this . galaxy . warps) {
 			var warp = this . galaxy . warps [ind];
@@ -479,6 +562,7 @@ Ship . prototype . move = function (target) {
 	} else {
 		var st = this . ship . location;
 		if (typeof st === 'string') st = {x: this . galaxy . stars [st] . location . x, y: this . galaxy . stars [st] . location . y};
+		if (target . x === 0 && target . y === 0) return this;
 		if (target . x > 1 || target . x < -1 || target . y > 1 || target . y < -1) return this;
 		if (target . x + target . y === 0 && target . x !== target . y) return this;
 		st . x = pmod (st . x + target . x, this . galaxy . size . width); st . y = pmod (st . y + target . y, this . galaxy . size . height);
@@ -531,7 +615,7 @@ Ship . prototype . Missiles = function (pd) {
 };
 Ship . prototype . Armor = function (pd) {
 	if (this . source === null || this . source . BuildPoints < pd) return this;
-	this . source . BuildPoints -= pd; this . ship . Armor += pd * 2; this . ship . original . Armor += pd * 3; return this;
+	this . source . BuildPoints -= pd; this . ship . Armor += pd * 2; this . ship . original . Armor += pd * 2; return this;
 };
 Ship . prototype . Cannons = function (pd) {
 	if (this . source === null || this . source . BuildPoints < pd) return this;
@@ -558,17 +642,26 @@ Ship . prototype . RepairBay = function () {
 Ship . prototype . Icon = function (icon) {this . ship . icon = icon;};
 
 var RandomSystemIcon = function () {
-	var s = ['s1.png', 's2.png', 's3.png', 's4.png', 's5.png', 's6.png', 's7.png', 's8.png', 's9.png', 's10.png', 's11.png', 's12.png', 's13.png', 's14.png', 's15.png', 's16.png', 's17.png', 's18.png'];
+	var s = [
+		's1.png', 's2.png', 's3.png', 's4.png', 's5.png', 's6.png', 's7.png', 's8.png', 's9.png',
+		's10.png', 's11.png', 's12.png', 's13.png', 's14.png', 's15.png', 's16.png', 's17.png', 's18.png',
+		's21.png', 's22.png', 's23.png', 's24.png', 's25.png', 's26.png', 's27.png', 's28.png', 's29.png',
+		's30.png', 's31.png', 's32.png', 's33.png', 's34.png', 's35.png', 's36.png', 's37.png', 's38.png'
+	];
 	return s [Math . floor (Math . random () * s . length)];
 };
 var RandomWarpIcon = function () {
-	var g = ['g1.png', 'g2.png', 'g3.png', 'g4.png', 'g5.png', 'g6.png', 'g7.png', 'g8.png', 'g9.png'];
+	var g = [
+		'g1.png', 'g2.png', 'g3.png', 'g4.png', 'g5.png', 'g6.png', 'g7.png', 'g8.png', 'g9.png',
+		'g11.png', 'g12.png', 'g13.png', 'g14.png', 'g15.png', 'g16.png', 'g17.png', 'g18.png', 'g19.png'
+	];
 	return g [Math . floor (Math . random () * g . length)];
 };
 Galaxy . prototype . CreateShip = function (base, name) {
 	if (name === undefined) name = GetName (this . constellations);
 	var race = this . RaceFromBase (base);
 	if (race === null) {alert (`Can not identify race at ${base}.`); return null;}
+	if (race !== this . Turns [0]) {alert (`It is now ${this . Turns [0]} turn. Not ${race}.`); return null;}
 	var ship = {
 		PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0,
 		Armor: 0, Cannons: 0, Shells: 0, Bays: [], Holds: 0, RepairBay: false,
@@ -581,23 +674,18 @@ Galaxy . prototype . CreateShip = function (base, name) {
 	return new Ship (this, ship) . Source (base);
 };
 
-for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
-	var name = Galaxy . prototype . names [ind];
-	var count = 0;
-	for (var sub = 0; sub < Galaxy . prototype . names . length; sub ++) {
-		if (Galaxy . prototype . names [ind] === Galaxy . prototype . names [sub]) count ++;
-	}
-	if (count > 1) console . log (Galaxy . prototype . names [ind], count);
-}
-
-var galaxy = new Galaxy (8, 5);
-
 var repaint = function () {
 	canvas . width = window . innerWidth;
 	canvas . height = window . innerHeight;
 	ctx . save ();
 	galaxy . draw ();
-	ctx . restore ();
+	if (Object . keys (galaxy . races) . length > 0) {
+		ctx . fillStyle = galaxy . races [galaxy . Turns [0]] . colour;
+		ctx . font = '24px arial';
+		ctx . textAlign = 'left';
+		ctx . fillText (`${galaxy . Turns [0]} ${galaxy . Phase} TL = [${galaxy . TechnologyLevel}]`, 400, 32);
+		ctx . restore ();
+	}
 	RestoreSelects ();
 	// ctx . fillRect (0, 0, canvas . width, canvas . height);
 };
@@ -620,7 +708,7 @@ var OnMouseDown = function (e) {
 		var ShipLocation = SelectedShip . ship . location;
 		if (star && typeof ShipLocation === 'string') hit = star;
 		if (typeof ShipLocation === 'string') ShipLocation = galaxy . stars [ShipLocation] . location;
-		console . log ('Move', SelectedShip . ship . name, ShipLocation, star, hit);
+		// console . log ('Move', SelectedShip . ship . name, ShipLocation, star, hit);
 		if (typeof hit !== 'string' && typeof ShipLocation !== 'string') {hit . x -= ShipLocation . x; hit . y -= ShipLocation . y;}
 		SelectedShip . move (hit);
 		repaint ();
@@ -640,23 +728,25 @@ var OnMouseMove = function (e) {
 	repaint ();
 };
 
-// galaxy . restore ();
-repaint ();
-
-var Stars = [];
-for (var star in galaxy . stars) Stars . push (star);
-Stars . sort ();
-for (var star of Stars) {
-	document . getElementById ('CreateRaceStar') . add (new Option (star, star));
-	document . getElementById ('BuildLocations') . add (new Option (star, star));
-}
-
 var RefitRaces = function () {
 	var table = '<table><tr><td>RACES:</td>';
 	for (var race in galaxy . races) table += `<td bgcolor="${galaxy . races [race] . colour}"><font color="white">${race}</font></td>`;
 	table += '</tr></table>';
 	document . getElementById ('CreateRaces') . innerHTML = table;
 };
+
+for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
+	var name = Galaxy . prototype . names [ind];
+	var count = 0;
+	for (var sub = 0; sub < Galaxy . prototype . names . length; sub ++) {
+		if (Galaxy . prototype . names [ind] === Galaxy . prototype . names [sub]) count ++;
+	}
+	if (count > 1) console . log (Galaxy . prototype . names [ind], count);
+}
+
+var galaxy = new Galaxy (28, 14);
+// galaxy . restore ();
+repaint ();
 
 </script>
 
