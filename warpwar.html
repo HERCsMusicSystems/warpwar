@@ -98,12 +98,17 @@ var UpdateShipSelectDiv = function () {
 			if (ship . original . Holds > 0) {
 				text += `Holds = ${ship . Holds} [${ship . original . Holds}]<br/>`;
 				text += `Build Points = ${ship . BuildPoints}<br/>`;
+				if (typeof ship . location === 'string' && galaxy . Phase === 'build') {
+					text += `<input type="button" value="LOAD" onclick="javascript: galaxy . LoadBuildPoints ('${ship . race}', '${ship . name}', 1); repaint ();" style="padding: 0px;"/>`;
+					text += `<input type="button" value="UNLOAD" onclick="javascript: galaxy . LoadBuildPoints ('${ship . race}', '${ship . name}', -1); repaint ();" style="padding: 0px;"/>`;
+				}
 			}
 			
 		}
 		document . getElementById ('ShipData') . innerHTML = text;
 	}
 };
+
 var RestoreSelects = function () {
 	var Stars = [];
 	for (var star in galaxy . stars) Stars . push (star);
@@ -232,7 +237,7 @@ Galaxy . prototype . restore = function () {
 	if (json === null) return;
 	json = JSON . parse (json);
 	for (var key in json) this [key] = json [key];
-	if (this . SelectedShip) SelectedShip = this . ShipSelect (this . SelectedShip);
+	SelectedShip = null; if (this . SelectedShip) SelectedShip = this . ShipSelect (this . SelectedShip);
 };
 
 Galaxy . prototype . CreateRace = function (name, base, colour) {
@@ -247,6 +252,23 @@ Galaxy . prototype . CreateRace = function (name, base, colour) {
 	this . races [name] . ships = {};
 	// this . stars [base] . economy = 5;
 	this . Turns . push (name);
+};
+
+Galaxy . prototype . LoadBuildPoints = function (race, ship, bp) {
+	if (this . Phase !== 'build') return;
+	ship = this . races [race] . ships [ship];
+	var base = this . races [race] . bases [ship . location];
+	if (bp > 0 && base && base . BuildPoints >= bp && ship . Holds >= ship . BuildPoints + bp) {base . BuildPoints -= bp; ship . BuildPoints += bp; return;}
+	if (bp < 0) {
+		bp = - bp;
+		if (ship . BuildPoints < bp) return;
+		if (base) {
+			if (base . construction >= 30) base . BuildPoints += bp; else base . construction += bp;
+		} else {
+			this . races [race] . bases [ship . location] = {BuildPoints: 0, construction: bp, race: race, colour: ship . colour};
+		}
+		ship . BuildPoints -= bp;
+	}
 };
 
 Galaxy . prototype . StarAt = function (x, y) {
@@ -317,7 +339,7 @@ Galaxy . prototype . Collect = function () {
 	for (var star in this . stars) {
 		var Star = this . stars [star];
 		var Base = this . BaseAt (Star . location . x, Star . location . y);
-		if (Base && Base . race === this . Turns [0]) Base . BuildPoints += Star . economy * 2;
+		if (Base && Base . race === this . Turns [0] && Base . construction >= 30) Base . BuildPoints += Star . economy * 2;
 		else {
 			var Ships = this . ShipsAt (Star . location . x, Star . location . y);
 			var BuildPoints = Star . economy;
@@ -397,9 +419,10 @@ Galaxy . prototype . draw = function () {
 			if (Base !== null) {
 				if (Base . location === undefined || typeof Base . location === 'string') {ctx . fillStyle = Base . colour; ctx . fill ();}
 				ctx . fillStyle = 'white'; ctx . textAlign = 'center';
-				if (Base . BuildPoints !== undefined && Base . name === undefined) ctx . fillText (`[${Base . BuildPoints}]`,
-					this . shift . x + ind * hhh - sub * hh + radius,
-					this . shift . y + sub * ll + radius - 12);
+				if (Base . BuildPoints !== undefined && Base . name === undefined)
+					ctx . fillText (Base . construction >= 30 ? `[${Base . BuildPoints}]` : `<${Base . construction}>`,
+						this . shift . x + ind * hhh - sub * hh + radius,
+						this . shift . y + sub * ll + radius - 12);
 			}
 		}
 	}
