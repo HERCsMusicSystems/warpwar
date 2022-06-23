@@ -91,7 +91,10 @@ var UpdateShipSelectDiv = function () {
 			if (ship . original . Beams > 0) text += `Beams = ${ship . Beams} [${ship . original . Beams}]<br/>`;
 			if (ship . original . Shields > 0) text += `Shields = ${ship . Shields} [${ship . original . Shields}]<br/>`;
 			if (ship . original . Tubes > 0) text += `Tubes = ${ship . Tubes} [${ship . original . Tubes}]<br/>`;
-			if (ship . original . Missiles > 0) text += `Missiles = ${ship . Missiles} [${ship . original . Missiles}]<br/>`;
+			if (ship . original . Missiles > 0) {
+				text += `Missiles = ${ship . Missiles} [${ship . original . Missiles}]<br/>`;
+				for (var ind = 0; ind < ship . Missiles; ind ++) text += `<img src="Harpoon.png" width="128px;"/><br/>`;
+			}
 			if (ship . original . Bays > 0) text += `Bays = ${ship . Bays . length} [${ship . original . Bays}]<br/>`;
 			text += '<hr/>';
 			if (ship . RepairBay) text += 'Repair Bay<br/>';
