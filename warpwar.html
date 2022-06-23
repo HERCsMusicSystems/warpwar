@@ -692,6 +692,7 @@ Galaxy . prototype . CreateShip = function (base, name) {
 	var race = this . RaceFromBase (base);
 	if (race === null) {alert (`Can not identify race at ${base}.`); return null;}
 	if (race !== this . Turns [0]) {alert (`It is now ${this . Turns [0]} turn. Not ${race}.`); return null;}
+	if (this . races [race] . bases [base] . construction < 30) {alert (`Base at ${base} incomplete.`); return null;}
 	var ship = {
 		PowerDrive: 0, WarpGenerator: false, Beams: 0, Shields: 0, ECM: 0, Tubes: 0, Missiles: 0,
 		Armor: 0, Cannons: 0, Shells: 0, Bays: [], Holds: 0, RepairBay: false,
