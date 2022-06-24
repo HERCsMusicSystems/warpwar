@@ -7,7 +7,7 @@
 
 <body bgcolor="#000033" style="background-size: cover; padding: 0px; margin: 0px;" onresize="javascript: repaint ();">
 
-<div style="position: absolute; left: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
+<div id="BuildPanel" style="position: absolute; left: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<input type="button" value="Build" onclick="javascript: BuildShip (); repaint ();"/>
 	<input type="button" value="Reset" onclick="javascript: BuildShipReset ();"/><br/>
 	Location:<select id="BuildLocations"></select><br/>
@@ -83,19 +83,58 @@ var UpdateShipSelectDiv = function () {
 	if (! SelectedShip) document . getElementById ('ShipData') . innerHTML = '';
 	else {
 		var ship = SelectedShip . ship;
-		var text = `<img src="${ship . icon}"/><br/><font color="${ship . colour}">${ship . race} ${ship . name}: ${ship . move}</font>`;
+		var text = `<img src="${ship . icon}"/><br/><font color="${ship . colour}">${ship . race} ${ship . name}: ${ship . move}<br/>`;
+		if (typeof ship . location === 'string') {
+			if (galaxy . stars [ship . location]) text += `${ship . location} ${galaxy . stars [ship . location] . economy}`;
+			else text += `${ship . location} docked`;
+			var base = galaxy . races [ship . race] . bases [ship . location];
+			if (base) {
+			 	if (base . construction < 30) text += ` <${base . construction}>`; else text += ` [${base . BuildPoints}]`;
+			}
+		} else text += `Space [${ship . location . x} : ${ship . location . y}]`;
+		text += `</font>`;
 		if (ship . race === galaxy . Turns [0]) {
 			text += '<hr/>';
 			if (ship . WarpGenerator) text += 'Warp Generator<br/>';
 			text += `Power Drive = ${ship . PowerDrive} [${ship . original . PowerDrive}]<br/>`;
-			if (ship . original . Beams > 0) text += `Beams = ${ship . Beams} [${ship . original . Beams}]<br/>`;
+			if (ship . original . Beams > 0) {
+				text += `Beams = ${ship . Beams} [${ship . original . Beams}]`;
+				if (galaxy . Phase === 'build' && ship . original . Beams > ship . Beams) text += ` <input type="button" value="REP" style="padding: 0px;"/>`;
+				text += '<br/>';
+			}
 			if (ship . original . Shields > 0) text += `Shields = ${ship . Shields} [${ship . original . Shields}]<br/>`;
 			if (ship . original . Tubes > 0) text += `Tubes = ${ship . Tubes} [${ship . original . Tubes}]<br/>`;
 			if (ship . original . Missiles > 0) {
 				text += `Missiles = ${ship . Missiles} [${ship . original . Missiles}]<br/>`;
 				for (var ind = 0; ind < ship . Missiles; ind ++) text += `<img src="Harpoon.png" width="128px;"/><br/>`;
 			}
-			if (ship . original . Bays > 0) text += `Bays = ${ship . Bays . length} [${ship . original . Bays}]<br/>`;
+			if (ship . original . Bays > 0) {
+				text += `Bays = ${ship . Bays . length} [${ship . original . Bays}]<br/>`;
+				text += `<table><tr>`;
+				for (var ind in ship . Bays) {
+					if (ship . Bays [ind] === null) {
+						text += `<td height="48" style="background-color: gray;">EMPTY<br/>`;
+						if (typeof ship . location === 'string') {
+							text += `<select onclick="javascript: SelectedShip . Pick (this . value, '${ind}'); if (this . value !== 'Pick') repaint ();"><option>Pick</option>`;
+							for (var s in galaxy . races [ship . race] . ships) {
+								var ss = galaxy . races [ship . race] . ships [s];
+								if (ss . location === ship . location && ! ss . WarpGenerator) text += `<option value="${ss . name}">${ss . name}</option>`;
+							}
+							text += `</select>`;
+						}
+						text += `</td>`;
+					} else if (ship . Bays [ind] === 'damage') text += `<td>DAMAGED</td>`;
+					else {
+						var Docked = galaxy . races [ship . race] . ships [ship . Bays [ind]];
+						text += `<td style="background-color: red; text-align: center;"><img src="${Docked . icon}" width="64"/><br/>`;
+						if (typeof ship . location === 'string')
+							text += `<input type="button" value="${Docked . name}" onclick="javascript: SelectedShip . Drop (${ind}); repaint ();"/>`;
+						else text += `${Docked . name}`;
+						text += `</td>`;
+					}
+				}
+				text += `</table></tr>`;
+			}
 			text += '<hr/>';
 			if (ship . RepairBay) text += 'Repair Bay<br/>';
 			if (ship . original . ECM > 0) text += `ECM = ${ship . ECM} [${ship . original . ECM}]<br/>`;
@@ -135,6 +174,23 @@ var RestoreSelects = function () {
 	}
 	// document . getElementById ('GameStatus') . innerHTML = `Phase: ${galaxy . Phase}; Turn: ${galaxy . Turns [0] || 'none'}; TL: ${galaxy . TechnologyLevel};`;
 	UpdateShipSelectDiv ();
+	switch (galaxy . Phase) {
+	case 'build':
+		document . getElementById ('BuildPanel') . style . visibility = 'visible';
+		break;
+	case 'move':
+		document . getElementById ('BuildPanel') . style . visibility = 'hidden';
+		break;
+	case 'combat':
+		document . getElementById ('BuildPanel') . style . visibility = 'hidden';
+		break;
+	case 'rearrange':
+		document . getElementById ('BuildPanel') . style . visibility = 'hidden';
+		break;
+	default:
+		document . getElementById ('BuildPanel') . style . visibility = 'hidden';
+		break;
+	}
 };
 
 var BuildShipReset = function () {
@@ -168,7 +224,7 @@ var BuildShip = function () {
 	var Armor = Number (document . getElementById ('BuildArmor') . value); if (Armor > 0) ship . Armor (Armor);
 	var Cannons = Number (document . getElementById ('BuildCannons') . value); if (Cannons > 0) ship . Cannons (Cannons);
 	var Shells = Number (document . getElementById ('BuildShells') . value); if (Shells > 0) ship . Shells (Shells);
-	var Bays = Number (document . getElementById ('BuildBays') . vaule); if (Bays > 0) ship . Bays (Bays);
+	var Bays = Number (document . getElementById ('BuildBays') . value); if (Bays > 0) ship . Bays (Bays);
 	var Holds = Number (document . getElementById ('BuildHolds') . value); if (Holds > 0) ship . Holds (Holds);
 	// console . log (ship);
 	return ship;
@@ -477,16 +533,18 @@ Galaxy . prototype . draw = function () {
 		for (var ship in this . races [race] . ships) {
 			var s = this . races [race] . ships [ship];
 			var st = s . location;
-			if (typeof st === 'string') st = this . stars [st] . location;
+			if (typeof st === 'string') {st = this . stars [st]; if (st) st = st . location;}
 			// var st = this . stars [s . location] . location;
-			ctx . save ();
-			ctx . translate (Icons [s . icon] . width * -0.25, Icons [s . icon] . height * -0.25);
-			ctx . translate (this . shift . x, this . shift . y);
-			ctx . translate (hh, radius);
-			ctx . translate (st . x * hhh - st . y * hh, st . y * ll);
-			ctx . scale (0.5, 0.5);
-			ctx . drawImage (Icons [s . icon], 0, 0);
-			ctx . restore ();
+			if (st) {
+				ctx . save ();
+				ctx . translate (Icons [s . icon] . width * -0.25, Icons [s . icon] . height * -0.25);
+				ctx . translate (this . shift . x, this . shift . y);
+				ctx . translate (hh, radius);
+				ctx . translate (st . x * hhh - st . y * hh, st . y * ll);
+				ctx . scale (0.5, 0.5);
+				ctx . drawImage (Icons [s . icon], 0, 0);
+				ctx . restore ();
+			}
 		}
 	}
 	for (var star in this . stars) {
@@ -510,7 +568,14 @@ Galaxy . prototype . draw = function () {
 			if (ship === this . SelectedShip) {
 				ctx . strokeStyle = 'blue';
 				var location = Race . ships [ship] . location;
-				if (typeof location === 'string') location = this . stars [location] . location;
+				if (typeof location === 'string') {
+					location = this . stars [location];
+					if (location) location = location . location;
+					else {
+						location = Race . ships [Race . ships [ship] . location] . location;
+						if (typeof location === 'string') location = this . stars [location] . location;
+					}
+				}
 				ctx . strokeStyle = 'blue';
 				ctx . beginPath ();
 				ctx . arc (
@@ -548,8 +613,8 @@ Galaxy . prototype . ShipAt = function (x, y) {
 		for (var ship in r . ships) {
 			var s = r . ships [ship];
 			var st = s . location;
-			if (typeof st === 'string') st = this . stars [st] . location;
-			if (st . x === x && st . y === y) return s;
+			if (typeof st === 'string') {st = this . stars [st]; if (st) st = st . location;}
+			if (st && st . x === x && st . y === y) return s;
 		}
 	}
 	return null;
@@ -562,8 +627,8 @@ Galaxy . prototype . ShipsAt = function (x, y) {
 		for (var ship in r . ships) {
 			var s = r . ships [ship];
 			var st = s . location;
-			if (typeof st === 'string') st = this . stars [st] . location;
-			if (st . x === x && st . y === y) ships . push (s);
+			if (typeof st === 'string') {st = this . stars [st]; if (st) st = st . location;}
+			if (st && st . x === x && st . y === y) ships . push (s);
 		}
 	}
 	return ships;
@@ -606,12 +671,13 @@ Ship . prototype . move = function (target) {
 	}
 	return this;
 };
-Ship . prototype . Source = function (base) {
-	for (var race in this . galaxy . races) {
-		for (var b in this . galaxy . races [race] . bases) {
-			if (b === base) this . source = this . galaxy . races [race] . bases [base];
-		}
-	}
+Ship . prototype . Source = function (ship) {
+	var Base = this . galaxy . races [this . ship . race] . bases [this . ship . location];
+	if (Base && Base . construction >= 30) {this . source = Base; return this;}
+	var Ship = this . galaxy . races [this . ship . race] . ships [ship];
+	if (Ship && this . ship . location === Ship . location && Ship . BuildPoints > 0) {this . source = Ship; return this;}
+	var Carrier = this . galaxy . races [this . ship . race] . ships [this . ship . location];
+	if (Ship && Carrier && Carrier . location === Ship . location && Ship . BuildPoints > 0) {this . source = Ship; return this;}
 	return this;
 };
 Ship . prototype . PowerDrive = function (pd) {
@@ -670,6 +736,25 @@ Ship . prototype . RepairBay = function () {
 	this . source . BuildPoints -= 5; this . ship . RepairBay = true; this . ship . original . RepairBay = true; return this;
 };
 Ship . prototype . Icon = function (icon) {this . ship . icon = icon;};
+Ship . prototype . Drop = function (bay) {
+	if (typeof this . ship . location !== 'string') return this;
+	if (this . galaxy . Phase === 'move' && this . ship . move < 1) return this;
+	var ship = this . ship . Bays [bay];
+	ship = this . galaxy . races [this . ship . race] . ships [ship];
+	ship . location = this . ship . location;
+	this . ship . Bays [bay] = null;
+	if (this . galaxy . Phase === 'move') this . ship . move --;
+	return this;
+};
+Ship . prototype . Pick = function (ship, bay) {
+	if (typeof this . ship . location !== 'string') return this;
+	if (this . galaxy . Phase === 'move' && this . ship . move < 1) return this;
+	ship = this . galaxy . races [this . ship . race] . ships [ship];
+	if (! ship) return this;
+	this . ship . Bays [bay] = ship . name;
+	ship . location = this . ship . name;
+	return this;
+};
 
 var RandomSystemIcon = function () {
 	var s = [
