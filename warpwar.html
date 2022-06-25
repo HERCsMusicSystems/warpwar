@@ -63,7 +63,7 @@
 	<select id="CreateRaceStar">
 	</select>
 	<select id="CreateRaceColour">
-		<option value="navy" style="background-color: blue;">Blue</option>
+		<option value="#6666ff" style="background-color: blue;">Blue</option>
 		<option value="crimson" style="background-color: crimson;">Crimson</option>
 		<option value="purple" style="background-color: indigo;">Purple</option>
 		<option value="green" style="background-color: green;">Green</option>
@@ -141,21 +141,27 @@ var UpdateShipSelectDiv = function () {
 					if (ship . Bays [ind] === null) {
 						text += `<td style="background-color: gray;">EMPTY<br/>`;
 						if (typeof ship . location === 'string') {
-							text += `<select onchange="javascript: SelectedShip . Pick (this . value, '${ind}'); if (this . value !== 'Pick') repaint ();"><option>Pick</option>`;
-							for (var s in galaxy . races [ship . race] . ships) {
-								var ss = galaxy . races [ship . race] . ships [s];
-								if (ss . location === ship . location && ! ss . WarpGenerator) text += `<option value="${ss . name}">${ss . name}</option>`;
+							if (galaxy . Phase !== 'combat') {
+								text += `<select onchange="javascript: SelectedShip . Pick (this . value, '${ind}'); if (this . value !== 'Pick') repaint ();"><option>Pick</option>`;
+								for (var s in galaxy . races [ship . race] . ships) {
+									var ss = galaxy . races [ship . race] . ships [s];
+									if (ss . location === ship . location && ! ss . WarpGenerator) text += `<option value="${ss . name}">${ss . name}</option>`;
+								}
+								text += `</select>`;
 							}
-							text += `</select>`;
 						}
 						text += `</td>`;
-					} else if (ship . Bays [ind] === 'damage') text += `<td style="background-color: gray;" align="center">DAMAGED<br/><input type="button" value="REPAIR" onclick="javascript: SelectedShip . BayRepair (${ind}); repaint();"/></td>`;
-					else {
+					} else if (ship . Bays [ind] === 'damage') {
+						text += `<td style="background-color: gray;" align="center">DAMAGED`;
+						if (CanRepair) text += `<br/><input type="button" value="REPAIR" onclick="javascript: SelectedShip . BayRepair (${ind}); repaint();"/>`;
+						text += `</td>`;
+					} else {
 						var Docked = galaxy . races [ship . race] . ships [ship . Bays [ind]];
 						text += `<td style="background-color: red; text-align: center;"><img src="${Docked . icon}" width="64"/><br/>`;
-						if (typeof ship . location === 'string')
-							text += `<input type="button" value="${Docked . name}" onclick="javascript: SelectedShip . Drop (${ind}); repaint ();"/>`;
-						else text += `${Docked . name}`;
+						if (typeof ship . location === 'string') {
+							if (galaxy . Phase === 'combat') text += Docked . name;
+							else text += `<input type="button" value="${Docked . name}" onclick="javascript: SelectedShip . Drop (${ind}); repaint ();"/>`;
+						} else text += `${Docked . name}`;
 						text += `</td>`;
 					}
 				}
@@ -494,7 +500,7 @@ Galaxy . prototype . ReMoveShips = function () {
 	if (this . Phase === 'move') return; this . Phase = 'move';
 	for (var ship in this . races [this . Turns [0]] . ships) {
 		var Ship = this . races [this . Turns [0]] . ships [ship];
-		Ship . move = Ship . PowerDrive;
+		if (Ship . WarpGenerator) Ship . move = Ship . PowerDrive;
 	}
 };
 
@@ -565,23 +571,6 @@ Galaxy . prototype . draw = function () {
 		ctx . stroke ();
 		// console . log (from, to);
 	}
-	ctx . textAlign = 'center';
-	ctx . fillStyle = 'white';
-	for (var star in this . stars) {
-		var st = this . stars [star];
-		var dx = this . shift . x + st . location . x * hhh - st . location . y * hh + radius;
-		var dy = this . shift . y + st . location . y * ll + radius;
-		ctx . fillText (star, dx, dy);
-		ctx . fillText (star, dx - this . size . width * hhh, dy);
-		ctx . fillText (star, dx + this . size . width * hhh, dy);
-		ctx . fillText (star, dx - this . size . height * hh, dy + this . size . height * ll);
-		ctx . fillText (star, dx + this . size . height * hh, dy - this . size . height * ll);
-		ctx . fillText (star, dx - this . size . width * hhh - this . size . height * hh, dy + this . size . height * ll);
-		ctx . fillText (star, dx + this . size . width * hhh - this . size . height * hh, dy + this . size . height * ll);
-		ctx . fillText (star, dx - this . size . width * hhh + this . size . height * hh, dy - this . size . height * ll);
-		ctx . fillText (star, dx + this . size . width * hhh + this . size . height * hh, dy - this . size . height * ll);
-		ctx . fillText (st . economy, dx, dy + 12);
-	}
 	for (var race in this . races) {
 		for (var ship in this . races [race] . ships) {
 			var s = this . races [race] . ships [ship];
@@ -599,6 +588,23 @@ Galaxy . prototype . draw = function () {
 				ctx . restore ();
 			}
 		}
+	}
+	ctx . textAlign = 'center';
+	ctx . fillStyle = 'white';
+	for (var star in this . stars) {
+		var st = this . stars [star];
+		var dx = this . shift . x + st . location . x * hhh - st . location . y * hh + radius;
+		var dy = this . shift . y + st . location . y * ll + radius;
+		ctx . fillText (star, dx, dy);
+		ctx . fillText (star, dx - this . size . width * hhh, dy);
+		ctx . fillText (star, dx + this . size . width * hhh, dy);
+		ctx . fillText (star, dx - this . size . height * hh, dy + this . size . height * ll);
+		ctx . fillText (star, dx + this . size . height * hh, dy - this . size . height * ll);
+		ctx . fillText (star, dx - this . size . width * hhh - this . size . height * hh, dy + this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * hhh - this . size . height * hh, dy + this . size . height * ll);
+		ctx . fillText (star, dx - this . size . width * hhh + this . size . height * hh, dy - this . size . height * ll);
+		ctx . fillText (star, dx + this . size . width * hhh + this . size . height * hh, dy - this . size . height * ll);
+		ctx . fillText (st . economy, dx, dy + 12);
 	}
 	for (var star in this . stars) {
 		var location = this . stars [star] . location;
@@ -829,6 +835,7 @@ Ship . prototype . Pick = function (ship, bay) {
 	if (! ship) return this;
 	this . ship . Bays [bay] = ship . name;
 	ship . location = this . ship . name;
+	if (this . galaxy . Phase === 'move') this . ship . move --;
 	return this;
 };
 Ship . prototype . Repair = function (attribute, bp, delta) {
