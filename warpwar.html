@@ -111,21 +111,21 @@ var UpdateShipSelectDiv = function () {
 			text += '<hr/>';
 			if (ship . WarpGenerator) text += 'Warp Generator<br/>';
 			text += `Power Drive = ${ship . PowerDrive} [${ship . original . PowerDrive}]`;
-			if (CanRepair && ship . original . PowerDrive > ship . PowerDrive) text += ` <input type="button" value="REP" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('PowerDrive', 1); repaint ();"/>`;
+			if (CanRepair && ship . original . PowerDrive > ship . PowerDrive) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('PowerDrive', 1); repaint ();"/>`;
 			text += `<br/>`;
 			if (ship . original . Beams > 0) {
 				text += `Beams = ${ship . Beams} [${ship . original . Beams}]`;
-				if (CanRepair && ship . original . Beams > ship . Beams) text += ` <input type="button" value="REP" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Beams', 1); repaint ();"/>`;
+				if (CanRepair && ship . original . Beams > ship . Beams) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Beams', 1); repaint ();"/>`;
 				text += '<br/>';
 			}
 			if (ship . original . Shields > 0) {
 				text += `Shields = ${ship . Shields} [${ship . original . Shields}]`;
-				if (CanRepair && ship . original . Shields > ship . Shields) text += ` <input type="button" value="REP" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Shields', 1); repaint ();"/>`;
+				if (CanRepair && ship . original . Shields > ship . Shields) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Shields', 1); repaint ();"/>`;
 				text += `<br/>`;
 			}
 			if (ship . original . Tubes > 0) {
 				text += `Tubes = ${ship . Tubes} [${ship . original . Tubes}]`;
-				if (CanRepair && ship . original . Tubes > ship . Tubes) text += ` <input type="button" value="REP" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Tubes', 1); repaint ();"/>`;
+				if (CanRepair && ship . original . Tubes > ship . Tubes) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Tubes', 1); repaint ();"/>`;
 				text += `<br/>`;
 			}
 			if (ship . original . Missiles > 0) {
@@ -149,7 +149,7 @@ var UpdateShipSelectDiv = function () {
 							text += `</select>`;
 						}
 						text += `</td>`;
-					} else if (ship . Bays [ind] === 'damage') text += `<td style="background-color: gray;" align="center">DAMAGED<br/><input type="button" value="REPAIR"/></td>`;
+					} else if (ship . Bays [ind] === 'damage') text += `<td style="background-color: gray;" align="center">DAMAGED<br/><input type="button" value="REPAIR" onclick="javascript: SelectedShip . BayRepair (${ind}); repaint();"/></td>`;
 					else {
 						var Docked = galaxy . races [ship . race] . ships [ship . Bays [ind]];
 						text += `<td style="background-color: red; text-align: center;"><img src="${Docked . icon}" width="64"/><br/>`;
@@ -163,12 +163,30 @@ var UpdateShipSelectDiv = function () {
 			}
 			text += '<hr/>';
 			if (ship . RepairBay) text += 'Repair Bay<br/>';
-			if (ship . original . ECM > 0) text += `ECM = ${ship . ECM} [${ship . original . ECM}]<br/>`;
-			if (ship . original . Armor > 0) text += `Armor = ${ship . Armor} [${ship . original . Armor}]<br/>`;
-			if (ship . original . Cannons > 0) text += `Cannons = ${ship . Cannons} [${ship . original . Cannons}]<br/>`;
-			if (ship . original . Shells > 0) text += `Shells = ${ship . Shells} [${ship . original . Shells}]<br/>`;
+			if (ship . original . ECM > 0) {
+				text += `ECM = ${ship . ECM} [${ship . original . ECM}]`;
+				if (CanRepair && ship . original . ECM > ship . ECM) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('ECM', 1); repaint ();"/>`;
+				text += `<br/>`;
+			}
+			if (ship . original . Armor > 0) {
+				text += `Armor = ${ship . Armor} [${ship . original . Armor}]`;
+				if (CanRepair && ship . original . Armor > ship . Armor) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Armor', 1, 2); repaint ();"/>`;
+				text += `<br/>`;
+			}
+			if (ship . original . Cannons > 0) {
+				text += `Cannons = ${ship . Cannons} [${ship . original . Cannons}]`;
+				if (CanRepair && ship . original . Cannons > ship . Cannons) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Cannons', 1); repaint ();"/>`;
+				text += `<br/>`;
+			}
+			if (ship . original . Shells > 0) {
+				text += `Shells = ${ship . Shells} [${ship . original . Shells}]`;
+				if (CanRepair && ship . original . Shells > ship . Shells) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Shells', 1, 6); repaint ();"/>`;
+				text += `<br/>`;
+			}
 			if (ship . original . Holds > 0) {
-				text += `Holds = ${ship . Holds} [${ship . original . Holds}]<br/>`;
+				text += `Holds = ${ship . Holds} [${ship . original . Holds}]`;
+				if (CanRepair && ship . original . Holds > ship . Holds) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Holds', 1, 10); repaint ();"/>`;
+				text += `<br/>`;
 				text += `Build Points = ${ship . BuildPoints}<br/>`;
 				if (typeof ship . location === 'string' && galaxy . Phase === 'build') {
 					text += `<input type="button" value="LOAD" onclick="javascript: galaxy . LoadBuildPoints ('${ship . race}', '${ship . name}', 1); repaint ();" style="padding: 0px;"/>`;
@@ -820,6 +838,15 @@ Ship . prototype . Repair = function (attribute, bp, delta) {
 	this . ship [attribute] += delta;
 	if (this . ship [attribute] > this . ship . original [attribute]) this . ship [attribute] = this . ship . original [attribute];
 	this . source . BuildPoints -= bp;
+	return this;
+};
+Ship . prototype . BayRepair = function (ind) {
+	if (! this . source) return this;
+	if (this . source . BuildPoints < 1) return this;
+	if (this . ship . Bays . length <= ind) return this;
+	if (this . ship . Bays [ind] !== 'damage') return this;
+	this . ship . Bays [ind] = null;
+	this . source . BuildPoints --;
 	return this;
 };
 
