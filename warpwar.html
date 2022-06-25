@@ -92,9 +92,22 @@ var UpdateShipSelectDiv = function () {
 			 	if (base . construction < 30) text += ` <${base . construction}>`; else text += ` [${base . BuildPoints}]`;
 			}
 		} else text += `Space [${ship . location . x} : ${ship . location . y}]`;
-		text += `</font>`;
+		text += `</font><br/>`;
 		if (ship . race === galaxy . Turns [0]) {
 			var CanRepair = SelectedShip . CanRepair ();
+			if (CanRepair && ! SelectedShip . source) SelectedShip . Source (CanRepair);
+			if (SelectedShip . source && galaxy . Phase === 'build') {
+				text += `Source: ${SelectedShip . SourceName}`;
+				if (SelectedShip . source . name) {
+					text += ` <select id="SelectSource" onchange="javascript: if (this . value !== 'Select Source') SelectedShip . Source (this . value); repaint ();">`;
+					text += `<option value="Select Source">Select Source</option>`;
+					for (var s in galaxy . races [ship . race] . ships) {
+						var S = galaxy . races [ship . race] . ships [s];
+						if (S . Holds > 0) text += `<option value="${S . name}">${S . name}</option>`;
+					}
+					text += `</select>`;
+				}
+			}
 			text += '<hr/>';
 			if (ship . WarpGenerator) text += 'Warp Generator<br/>';
 			text += `Power Drive = ${ship . PowerDrive} [${ship . original . PowerDrive}]`;
@@ -122,7 +135,7 @@ var UpdateShipSelectDiv = function () {
 					if (ship . Bays [ind] === null) {
 						text += `<td height="48" style="background-color: gray;">EMPTY<br/>`;
 						if (typeof ship . location === 'string') {
-							text += `<select onclick="javascript: SelectedShip . Pick (this . value, '${ind}'); if (this . value !== 'Pick') repaint ();"><option>Pick</option>`;
+							text += `<select onchange="javascript: SelectedShip . Pick (this . value, '${ind}'); if (this . value !== 'Pick') repaint ();"><option>Pick</option>`;
 							for (var s in galaxy . races [ship . race] . ships) {
 								var ss = galaxy . races [ship . race] . ships [s];
 								if (ss . location === ship . location && ! ss . WarpGenerator) text += `<option value="${ss . name}">${ss . name}</option>`;
@@ -167,16 +180,24 @@ var RestoreSelects = function () {
 	for (var star in galaxy . stars) Stars . push (star);
 	Stars . sort ();
 	document . getElementById ('CreateRaceStar') . options . length = 0;
-	document . getElementById ('BuildLocations') . options . length = 0;
 	for (var star of Stars) {
-		document . getElementById ('CreateRaceStar') . add (new Option (star, star));
-		document . getElementById ('BuildLocations') . add (new Option (star, star));
+		document . getElementById ('CreateRaceStar') . add (new Option (`${galaxy . stars [star] . economy}: ${star}`, star));
+		// document . getElementById ('BuildLocations') . add (new Option (`${star} ${galaxy . stars [star] . economy}`, star));
+	}
+	document . getElementById ('BuildLocations') . options . length = 0;
+	if (galaxy . Turns . length > 0) {
+		for (var base in galaxy . races [galaxy . Turns [0]] . bases) {
+			var Base = galaxy . races [galaxy . Turns [0]] . bases [base];
+			var Star = galaxy . stars [base];
+			if (Base . construction < 30) document . getElementById ('BuildLocations') . add (new Option (`${Star . economy}: ${base} <${Base . construction}>`, base));
+			else document . getElementById ('BuildLocations') . add (new Option (`${Star . economy}: ${base} [${Base . BuildPoints}]`, base));
+		}
 	}
 	document . getElementById ('ShipsForSelection') . options . length = 0;
 	document . getElementById ('ShipsForSelection') . add (new Option ('none', 'none'));
 	for (var race in galaxy . races) {
 		for (var ship in galaxy . races [race] . ships) {
-			document . getElementById ('ShipsForSelection') . add (new Option (ship, ship));
+			document . getElementById ('ShipsForSelection') . add (new Option (`${race}: ${ship}`, ship));
 		}
 	}
 	// document . getElementById ('GameStatus') . innerHTML = `Phase: ${galaxy . Phase}; Turn: ${galaxy . Turns [0] || 'none'}; TL: ${galaxy . TechnologyLevel};`;
@@ -234,6 +255,7 @@ var BuildShip = function () {
 	var Bays = Number (document . getElementById ('BuildBays') . value); if (Bays > 0) ship . Bays (Bays);
 	var Holds = Number (document . getElementById ('BuildHolds') . value); if (Holds > 0) ship . Holds (Holds);
 	// console . log (ship);
+	ShipSelect (ship . ship . name);
 	return ship;
 };
 
@@ -313,7 +335,7 @@ Galaxy . prototype . restore = function () {
 Galaxy . prototype . CreateRace = function (name, base, colour) {
 	if (this . races [name] !== undefined) {alert (`Race ${name} already exists.`); return;}
 	for (var race in this . races) {
-		console . log (race, this . races [race]);
+		// console . log (race, this . races [race]);
 		if (this . races [race] . colour === colour) {alert (`Colour ${colour} already taken.`); return;}
 		if (this . races [race] . bases [base] !== undefined) {alert (`Star ${base} already taken.`); return;}
 	}
@@ -643,8 +665,9 @@ Galaxy . prototype . ShipsAt = function (x, y) {
 
 Galaxy . prototype . BaseOrShipAt = function (x, y) {return this . BaseAt (x, y) || this . ShipAt (x, y);};
 
-var Ship = function (galaxy, ship) {this . galaxy = galaxy; this . ship = ship; this . source = null;};
+var Ship = function (galaxy, ship) {this . galaxy = galaxy; this . ship = ship; this . source = null; this . SourceName = null;};
 Ship . prototype . move = function (target) {
+	this . source = null; this . SourceName = null;
 	if (this . ship . move < 1) return this;
 	if (typeof this . ship . location === 'string') {
 		var location = this . galaxy . stars [this . ship . location] . location;
@@ -684,28 +707,29 @@ Ship . prototype . CanRepair = function () {
 	if (typeof location !== 'string') return false;
 	var race = this . ship . race;
 	var Base = this . galaxy . races [race] . bases [location];
-	if (Base && Base . construction >= 30) {this . Source (location); return true;}
+	if (Base && Base . construction >= 30) return location;
 	for (var ship in this . galaxy . races [race] . ships) {
 		var Ship = this . galaxy . races [race] . ships [ship];
-		if (Ship . location === location && Ship . Holds > 0) {this . Source (Ship . name); return true;}
+		if (Ship . location === location && Ship . Holds > 0) return Ship . name;
 	}
 	location = this . galaxy . races [race] . ships [location];
 	if (location) location = location . location;
 	Base = this . galaxy . races [race] . bases [location];
-	if (Base && Base . construction >= 30) {this . Source (location); return true;}
+	if (Base && Base . construction >= 30) return location;
 	for (var ship in this . galaxy . races [race] . ships) {
 		var Ship = this . galaxy . races [race] . ships [ship];
-		if (Ship . location === location && Ship . Holds > 0) {this . Source (Ship . name); return true;}
+		if (Ship . location === location && Ship . Holds > 0) return Ship . name;
 	}
 	return false;
 };
 Ship . prototype . Source = function (ship) {
+	this . source = null; this . SourceName = null;
 	var Base = this . galaxy . races [this . ship . race] . bases [this . ship . location];
-	if (Base && Base . construction >= 30) {this . source = Base; return this;}
+	if (Base && Base . construction >= 30) {this . source = Base; this . SourceName = this . ship . location; return this;}
 	var Ship = this . galaxy . races [this . ship . race] . ships [ship];
-	if (Ship && this . ship . location === Ship . location && Ship . BuildPoints > 0) {this . source = Ship; return this;}
+	if (Ship && this . ship . location === Ship . location && Ship . BuildPoints > 0) {this . source = Ship; this . SourceName = Ship . name; return this;}
 	var Carrier = this . galaxy . races [this . ship . race] . ships [this . ship . location];
-	if (Ship && Carrier && Carrier . location === Ship . location && Ship . BuildPoints > 0) {this . source = Ship; return this;}
+	if (Ship && Carrier && Carrier . location === Ship . location && Ship . BuildPoints > 0) {this . source = Ship; this . SourceName = Ship . name; return this;}
 	return this;
 };
 Ship . prototype . PowerDrive = function (pd) {
