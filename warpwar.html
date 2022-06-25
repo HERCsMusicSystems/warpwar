@@ -94,7 +94,7 @@ var UpdateShipSelectDiv = function () {
 		} else text += `Space [${ship . location . x} : ${ship . location . y}]`;
 		text += `</font>`;
 		if (ship . race === galaxy . Turns [0]) {
-			var CanRepair = galaxy . Phase === 'build';
+			var CanRepair = SelectedShip . CanRepair ();
 			text += '<hr/>';
 			if (ship . WarpGenerator) text += 'Warp Generator<br/>';
 			text += `Power Drive = ${ship . PowerDrive} [${ship . original . PowerDrive}]`;
@@ -677,6 +677,27 @@ Ship . prototype . move = function (target) {
 		return this;
 	}
 	return this;
+};
+Ship . prototype . CanRepair = function () {
+	if (this . galaxy . Phase !== 'build') return false;
+	var location = this . ship . location;
+	if (typeof location !== 'string') return false;
+	var race = this . ship . race;
+	var Base = this . galaxy . races [race] . bases [location];
+	if (Base && Base . construction >= 30) {this . Source (location); return true;}
+	for (var ship in this . galaxy . races [race] . ships) {
+		var Ship = this . galaxy . races [race] . ships [ship];
+		if (Ship . location === location && Ship . Holds > 0) {this . Source (Ship . name); return true;}
+	}
+	location = this . galaxy . races [race] . ships [location];
+	if (location) location = location . location;
+	Base = this . galaxy . races [race] . bases [location];
+	if (Base && Base . construction >= 30) {this . Source (location); return true;}
+	for (var ship in this . galaxy . races [race] . ships) {
+		var Ship = this . galaxy . races [race] . ships [ship];
+		if (Ship . location === location && Ship . Holds > 0) {this . Source (Ship . name); return true;}
+	}
+	return false;
 };
 Ship . prototype . Source = function (ship) {
 	var Base = this . galaxy . races [this . ship . race] . bases [this . ship . location];
