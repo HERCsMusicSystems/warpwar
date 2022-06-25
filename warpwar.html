@@ -58,7 +58,7 @@
 		<input type="button" value="Restore" onclick="javascript: galaxy . restore (); repaint ();"/>
 		<input type="button" value="Next" onclick="javascript: galaxy . Next (); repaint ();"/>
 	</div>
-	<nobr><input type="button" value="Create New Race" onclick="javascript: if (document . getElementById ('CreateRaceName') . value . length > 0) {galaxy . CreateRace (document . getElementById ('CreateRaceName') . value, document . getElementById ('CreateRaceStar') . value, document . getElementById ('CreateRaceColour') . value); RefitRaces (); repaint ();} else alert ('No name for new race.');"/>
+	<nobr><input type="button" value="Create New Race" onclick="javascript: if (document . getElementById ('CreateRaceName') . value . length > 0) {galaxy . CreateRace (document . getElementById ('CreateRaceName') . value, document . getElementById ('CreateRaceStar') . value, document . getElementById ('CreateRaceColour') . value); repaint ();} else alert ('No name for new race.');"/>
 	<input type="text" id="CreateRaceName"/>
 	<select id="CreateRaceStar">
 	</select>
@@ -94,15 +94,22 @@ var UpdateShipSelectDiv = function () {
 		} else text += `Space [${ship . location . x} : ${ship . location . y}]`;
 		text += `</font>`;
 		if (ship . race === galaxy . Turns [0]) {
+			var CanRepair = galaxy . Phase === 'build';
 			text += '<hr/>';
 			if (ship . WarpGenerator) text += 'Warp Generator<br/>';
-			text += `Power Drive = ${ship . PowerDrive} [${ship . original . PowerDrive}]<br/>`;
+			text += `Power Drive = ${ship . PowerDrive} [${ship . original . PowerDrive}]`;
+			if (CanRepair && ship . original . PowerDrive > ship . PowerDrive) text += ` <input type="button" value="REP" style="padding: 0px;"/>`;
+			text += `<br/>`;
 			if (ship . original . Beams > 0) {
 				text += `Beams = ${ship . Beams} [${ship . original . Beams}]`;
-				if (galaxy . Phase === 'build' && ship . original . Beams > ship . Beams) text += ` <input type="button" value="REP" style="padding: 0px;"/>`;
+				if (CanRepair && ship . original . Beams > ship . Beams) text += ` <input type="button" value="REP" style="padding: 0px;"/>`;
 				text += '<br/>';
 			}
-			if (ship . original . Shields > 0) text += `Shields = ${ship . Shields} [${ship . original . Shields}]<br/>`;
+			if (ship . original . Shields > 0) {
+				text += `Shields = ${ship . Shields} [${ship . original . Shields}]`;
+				if (CanRepair && ship . original . Shields > ship . Shields) text += ` <input type="button" value="REP" style="padding: 0px;"/>`;
+				text += `<br/>`;
+			}
 			if (ship . original . Tubes > 0) text += `Tubes = ${ship . Tubes} [${ship . original . Tubes}]<br/>`;
 			if (ship . original . Missiles > 0) {
 				text += `Missiles = ${ship . Missiles} [${ship . original . Missiles}]<br/>`;
@@ -803,6 +810,7 @@ var repaint = function () {
 		ctx . restore ();
 	}
 	RestoreSelects ();
+	RefitRaces ();
 	// ctx . fillRect (0, 0, canvas . width, canvas . height);
 };
 
