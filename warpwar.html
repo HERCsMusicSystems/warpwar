@@ -416,6 +416,26 @@ Galaxy . prototype . StarAround = function (x, y) {
 	return null;
 };
 
+Galaxy . prototype . CombatAt = function (location) {
+	var races = [];
+	for (var race in this . races) {
+		var Race = this . races [race];
+		for (var ship in Race . ships) {
+			var Ship = Race . ships [ship];
+			if (Ship . location === location && races . indexOf (Ship . race) < 0) races . push (Ship . race);
+		}
+	}
+	return races . length > 1;
+};
+
+Galaxy . prototype . Combats = function () {
+	var locations = [];
+	for (var star in this . stars) {
+		if (this . CombatAt (star)) locations . push (star);
+	}
+	return locations;
+};
+
 var distance = function (dx) {
 	if (dx . x >= 0 && dx . y >= 0) return Math . max (dx . x, dx . y);
 	if (dx . x <= 0 && dx . y <= 0) return Math . max (- dx . x, - dx . y);
@@ -511,7 +531,7 @@ Galaxy . prototype . ReMoveShips = function () {
 Galaxy . prototype . Next = function () {
 	switch (this . Phase) {
 	case 'build': this . ReMoveShips (); break;
-	case 'move': this . Combat (); break;
+	case 'move': if (this . Combats () . length > 0) this . Combat (); else this . Phase = 'rearrange'; break;
 	case 'combat': this . Phase = 'rearrange'; break;
 	case 'rearrange': this . Collect (); break;
 	default: break;
