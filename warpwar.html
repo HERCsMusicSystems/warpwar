@@ -183,6 +183,10 @@ var UpdateShipSelectDiv = function () {
 				text += `Cannons = ${ship . Cannons} [${ship . original . Cannons}]`;
 				if (CanRepair && ship . original . Cannons > ship . Cannons) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Cannons', 1); repaint ();"/>`;
 				text += `<br/>`;
+				for (var ind = 0; ind < ship . Cannons; ind ++) {
+					text += ` <img src="cannon.png"/> `;
+				}
+				text += `<br/>`;
 			}
 			if (ship . original . Shells > 0) {
 				text += `Shells = ${ship . Shells} [${ship . original . Shells}]`;
@@ -740,7 +744,12 @@ Ship . prototype . CanRepair = function () {
 	if (Base && Base . construction >= 30) return location;
 	for (var ship in this . galaxy . races [race] . ships) {
 		var Ship = this . galaxy . races [race] . ships [ship];
-		if (Ship . location === location && Ship . Holds > 0) return Ship . name;
+		if (Ship . location === location && Ship . Holds > 0) {
+			for (var rship in this . galaxy . races [race] . ships) {
+				var RShip = this . galaxy . races [race] . ships [rship];
+				if (RShip . location === location && RShip . RepairBay) return Ship . name;
+			}
+		}
 	}
 	location = this . galaxy . races [race] . ships [location];
 	if (location) location = location . location;
@@ -748,7 +757,12 @@ Ship . prototype . CanRepair = function () {
 	if (Base && Base . construction >= 30) return location;
 	for (var ship in this . galaxy . races [race] . ships) {
 		var Ship = this . galaxy . races [race] . ships [ship];
-		if (Ship . location === location && Ship . Holds > 0) return Ship . name;
+		if (Ship . location === location && Ship . Holds > 0) {
+			for (var rship in this . galaxy . races [race] . ships) {
+				var RShip = this . galaxy . races [race] . ships [rship];
+				if (RShip . location === location && RShip . RepairBay) return Ship . name;
+			}
+		}
 	}
 	return false;
 };
