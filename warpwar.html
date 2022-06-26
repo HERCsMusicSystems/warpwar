@@ -29,6 +29,7 @@
 <div id="CombatPanel" style="position: absolute; left: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<div id="CombatLocationDiv" style="float: left;">sputnik</div>
 	<select id="CombatLocation" onchange="javascript: if (this . value !== 'select') galaxy . CombatLocation = this . value; repaint ();"></select>
+	<select id="CombatShip" onchange="javascript: SelectCombatShip (this . value); repaint ();"></select>
 </div>
 <!--<div style="position: absolute; bottom: 8px; left: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<input type="button" value="Collect" onclick="javascript: galaxy . Collect (); repaint ();"/>
@@ -220,6 +221,15 @@ var UpdateCombatPanel = function () {
 	document . getElementById ('CombatLocation') . options . add (new Option ('Select Combat Location', 'select'));
 	for (var ind in combats) {
 		document . getElementById ('CombatLocation') . options . add (new Option (combats [ind], combats [ind]));
+	}
+	document . getElementById ('CombatShip') . options . length = 0;
+	document . getElementById ('CombatShip') . options . add (new Option ('Select Combat Ship', 'select'));
+	for (var race in galaxy . races) {
+		var Race = galaxy . races [race];
+		for (var ship in Race . ships) {
+			var Ship = Race . ships [ship];
+			if (Ship . location === galaxy . CombatLocation) document . getElementById ('CombatShip') . options . add (new Option (ship, ship));
+		}
 	}
 };
 
