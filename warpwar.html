@@ -28,8 +28,10 @@
 </div>
 <div id="CombatPanel" style="position: absolute; left: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<div id="CombatLocationDiv" style="float: left;">sputnik</div>
-	<select id="CombatLocation" onchange="javascript: if (this . value !== 'select') galaxy . CombatLocation = this . value; repaint ();"></select>
-	<select id="CombatShip" onchange="javascript: SelectCombatShip (this . value); repaint ();"></select>
+	<select id="CombatLocation" onchange="javascript: if (this . value !== 'select') galaxy . CombatLocation = this . value; repaint ();"></select><br/>
+	<select id="CombatShip" onchange="javascript: if (this . value !== 'select') galaxy . CombatShip = this . value; repaint ();"></select>
+	<div id="CombatShipData">
+	</div>
 </div>
 <!--<div style="position: absolute; bottom: 8px; left: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<input type="button" value="Collect" onclick="javascript: galaxy . Collect (); repaint ();"/>
@@ -231,6 +233,18 @@ var UpdateCombatPanel = function () {
 			if (Ship . location === galaxy . CombatLocation) document . getElementById ('CombatShip') . options . add (new Option (ship, ship));
 		}
 	}
+	if (galaxy . CombatShip) {
+		var ship = null;
+		for (var race in galaxy . races) {
+			var Race = galaxy . races [race];
+			if (Race . ships [galaxy . CombatShip]) ship = Race . ships [galaxy . CombatShip];
+		}
+		if (ship) {
+			var text = `<img src="${ship . icon}"/><br/>`;
+			text += `<font color="${ship . colour}">${ship . race} ${ship . name}</font>`;
+			document . getElementById ('CombatShipData') . innerHTML = text;
+		}
+	}
 };
 
 var RestoreSelects = function () {
@@ -372,6 +386,8 @@ var Galaxy = function (x, y) {
 	this . Turns = [];
 	this . SelectedShip = null;
 	this . CombatLocation = null;
+	this . CombatShip = null;
+	this . Orders = {};
 };
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "Altair", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Canopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
@@ -467,6 +483,21 @@ Galaxy . prototype . Combats = function () {
 	return locations;
 };
 
+Galaxy . prototype . ResetOrders = function () {
+	var combats = this . Combats ();
+	console . log (combats);
+	for (var location of combats) {
+		console . log (location);
+		for (var race in this . races) {
+			var Race = this . races [race];
+			for (var ship in Race . ships) {
+				var Ship = Race . ships [ship];
+				if (Ship . location === location) this . Orders [ship] = {};
+			}
+		}
+	}
+};
+
 var distance = function (dx) {
 	if (dx . x >= 0 && dx . y >= 0) return Math . max (dx . x, dx . y);
 	if (dx . x <= 0 && dx . y <= 0) return Math . max (- dx . x, - dx . y);
@@ -535,10 +566,11 @@ Galaxy . prototype . Collect = function () {
 };
 
 Galaxy . prototype . Combat = function (CombatLocations) {
+	for (var race in this . races) {for (var ship in this . races [race] . ships) {this . races [race] . ships [ship] . move = 0;}}
 	if (CombatLocations . length < 1) return;
 	if (this . Phase !== 'move') return; this . Phase = 'combat';
 	this . CombatLocation = CombatLocations [0];
-	for (var race in this . races) {for (var ship in this . races [race] . ships) {this . races [race] . ships [ship] . move = 0;}}
+	this . ResetOrders ();
 };
 
 Galaxy . prototype . ShipSelect = function (name) {
