@@ -242,10 +242,53 @@ var UpdateCombatPanel = function () {
 		if (ship) {
 			var text = `<img src="${ship . icon}"/><br/>`;
 			text += `<font color="${ship . colour}">${ship . race} ${ship . name}</font>`;
+			text += `<hr/>`;
+			var order = galaxy . Orders [ship . name];
+			text += `Strategy: ${order . Strategy} `;
+			text += `<select onchange="javascript: if (this . value !== 'select') galaxy . Orders ['${ship . name}'] . Strategy = this . value; repaint ();">`;
+			text += `<option value="select">Select Strategy</option>`;
+			text += `<option value="ATTACK">ATTACK</option>`;
+			text += `<option value="DODGE">DODGE</option>`;
+			text += `<option value="RETREAT">RETREAT</option>`;
+			text += `</select><br/>`;
+			text += `Target: `;
+			if (order . Target) text += `${order . Target} <img src="${galaxy . Ship (order . Target) . icon}" width="64"/> `;
+			text += `<select onchange="javascript: if (this . value !== 'select') galaxy . Orders ['${ship . name}'] . Target = this . value; repaint ();">`;
+			var TargetOptions = `<option value="select">Select Target</option>`;
+			for (var race in galaxy . races) {
+				var Race = galaxy . races [race];
+				for (var ss in Race . ships) {
+					var SS = Race . ships [ss];
+					if (SS . location === ship . location && SS . race !== ship . race)
+						TargetOptions += `<option value="${SS . name}">${SS . race}: ${SS . name}</option>`;
+				}
+			}
+			text += `${TargetOptions}</select><br/>`;
+			text += `Power Drive [${ship . PowerDrive}]: ${order . PowerDrive} `;
+			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'PowerDrive'); repaint ();"/>`;
+			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'PowerDrive'); repaint ();"/><br/>`;
+			text += `Beams [${ship . Beams}]: ${order . Beams} `;
+			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'Beams'); repaint ();"/>`;
+			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'Beams'); repaint ();"/><br/>`;
+			text += `Shields [${ship . Shields}]: ${order . Shields} `;
+			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'Shields'); repaint ();"/>`;
+			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'Shields'); repaint ();"/><br/>`;
 			document . getElementById ('CombatShipData') . innerHTML = text;
 		}
 	}
 };
+
+var OrderTotalPD = function (Order) {
+	var total = Order . PowerDrive + Order . Beams + Order . Shields;
+	return total;
+};
+
+var OrderAttr = function (ship, delta, attr) {
+	var Order = galaxy . Orders [ship];
+	var Ship = galaxy . races [Order . race] . ships [ship];
+	if (OrderTotalPD (Order) + delta > Ship . PowerDrive) return;
+	Order [attr] += delta; if (Order [attr] < 0) Order [attr] = 0; if (Order [attr] > Ship [attr]) Order [attr] = Ship [attr];
+}
 
 var RestoreSelects = function () {
 	var Stars = [];
@@ -485,14 +528,18 @@ Galaxy . prototype . Combats = function () {
 
 Galaxy . prototype . ResetOrders = function () {
 	var combats = this . Combats ();
-	console . log (combats);
+	// console . log (combats);
 	for (var location of combats) {
-		console . log (location);
+		// console . log (location);
 		for (var race in this . races) {
 			var Race = this . races [race];
 			for (var ship in Race . ships) {
 				var Ship = Race . ships [ship];
-				if (Ship . location === location) this . Orders [ship] = {};
+				if (Ship . location === location)
+					this . Orders [ship] = {
+						race: race, ship: ship, Strategy: 'DODGE', PowerDrive: 0, Target: null,
+						Beams: 0, Shields: 0
+					};
 			}
 		}
 	}
@@ -544,6 +591,7 @@ Galaxy . prototype . Collect = function () {
 		while (races . length > 0) this . Turns . push (races . splice (Math . floor (Math . random () * races . length), 1) [0]);
 		this . TechnologyLevel ++;
 	}
+	if (this . TechnologyLevel < 1) return;
 	for (var star in this . stars) {
 		var Star = this . stars [star];
 		var Base = this . BaseAt (Star . location . x, Star . location . y);
@@ -789,6 +837,10 @@ Galaxy . prototype . ShipsAt = function (x, y) {
 		}
 	}
 	return ships;
+};
+
+Galaxy . prototype . Ship = function (name) {
+	for (var race in galaxy . races) {var Race = galaxy . races [race]; for (var ship in Race . ships) if (ship === name) return Race . ships [ship];}
 };
 
 Galaxy . prototype . BaseOrShipAt = function (x, y) {return this . BaseAt (x, y) || this . ShipAt (x, y);};
