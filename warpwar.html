@@ -264,22 +264,27 @@ var UpdateCombatPanel = function () {
 				}
 			}
 			text += `${TargetOptions}</select><br/>`;
-			text += `Power Drive [${ship . PowerDrive}]: ${order . PowerDrive} `;
+			text += `<table>`;
+			text += `<tr><td>Power Drive [${ship . PowerDrive}]: ${order . PowerDrive}</td><td>`;
 			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'PowerDrive'); repaint ();"/>`;
-			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'PowerDrive'); repaint ();"/><br/>`;
-			text += `Beams [${ship . Beams}]: ${order . Beams} `;
+			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'PowerDrive'); repaint ();"/></td></tr>`;
+			text += `<tr><td>Beams [${ship . Beams}]: ${order . Beams}</td><td>`;
 			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'Beams'); repaint ();"/>`;
-			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'Beams'); repaint ();"/><br/>`;
-			text += `Shields [${ship . Shields}]: ${order . Shields} `;
+			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'Beams'); repaint ();"/></td></tr>`;
+			text += `<tr><td>Shields [${ship . Shields}]: ${order . Shields}</td><td>`;
 			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'Shields'); repaint ();"/>`;
-			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'Shields'); repaint ();"/><br/>`;
+			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'Shields'); repaint ();"/></td></tr>`;
+			text += `<tr><td>ECM [${ship . ECM}]: ${order . ECM}</td><td>`;
+			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'ECM'); repaint ();"/>`;
+			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'ECM'); repaint ();"/></td></tr>`;
+			text += `</table>`;
 			document . getElementById ('CombatShipData') . innerHTML = text;
 		}
 	}
 };
 
 var OrderTotalPD = function (Order) {
-	var total = Order . PowerDrive + Order . Beams + Order . Shields;
+	var total = Order . PowerDrive + Order . Beams + Order . Shields + Order . ECM;
 	return total;
 };
 
@@ -535,11 +540,15 @@ Galaxy . prototype . ResetOrders = function () {
 			var Race = this . races [race];
 			for (var ship in Race . ships) {
 				var Ship = Race . ships [ship];
-				if (Ship . location === location)
+				if (Ship . location === location) {
 					this . Orders [ship] = {
 						race: race, ship: ship, Strategy: 'DODGE', PowerDrive: 0, Target: null,
-						Beams: 0, Shields: 0
+						Beams: 0, Shields: 0, Tubes: [], Bays: [], ECM: 0, Cannons: []
 					};
+					for (var tube = 0; tube < Ship . Tubes; tube ++) this . Orders [ship] . Tubes . push ({Target: null, PowerDrive: 0});
+					for (var cannon = 0; cannon < Ship . Cannons; cannon ++) this . Orders [ship] . Cannons . push ({Target: null, Shells: 0});
+					for (var bay = 0; bay < Ship . Bays . length; bay ++) this . Orders [ship] . Bays . push (null);
+				}
 			}
 		}
 	}
