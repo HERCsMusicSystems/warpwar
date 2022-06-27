@@ -278,6 +278,25 @@ var UpdateCombatPanel = function () {
 			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'ECM'); repaint ();"/>`;
 			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'ECM'); repaint ();"/></td></tr>`;
 			text += `</table>`;
+			text += `<hr/>`;
+			text += `Tubes [${ship . original . Tubes}]: ${ship . Tubes}<br/>`;
+			TargetOptions = `<option value="select">Select Target</option>`;
+			TargetOptions += `<option value="null">NO TARGET</option>`;
+			for (var race in galaxy . races) {
+				var Race = galaxy . races [race];
+				for (var ss in Race . ships) {
+					var SS = Race . ships [ss];
+					if (SS . location === ship . location && SS . race !== ship . race)
+						TargetOptions += `<option value="${SS . name}">${SS . race}: ${SS . name}</option>`;
+				}
+			}
+			for (var tube = 0; tube < galaxy . Orders [ship . name] . Tubes . length; tube ++) {
+				var TubeOrder = galaxy . Orders [ship . name] . Tubes [tube];
+				text += `<img src="Harpoon.png" width="128"/> ${TubeOrder . Target} <br/>`;
+				text += `<select>`;
+				text += TargetOptions;
+				text += `</select><br/>`;
+			}
 			document . getElementById ('CombatShipData') . innerHTML = text;
 		}
 	}
