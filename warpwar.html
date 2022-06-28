@@ -191,7 +191,7 @@ var UpdateShipSelectDiv = function () {
 				if (CanRepair && ship . original . Cannons > ship . Cannons) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Cannons', 1); repaint ();"/>`;
 				text += `<br/>`;
 				for (var ind = 0; ind < ship . Cannons; ind ++) {
-					text += ` <img src="cannon.png"/> `;
+					text += ` <img src="Cannon.png"/> `;
 				}
 				text += `<br/>`;
 			}
@@ -216,6 +216,24 @@ var UpdateShipSelectDiv = function () {
 	}
 };
 
+var SelectTarget = function (order, value) {
+	if (value === 'select') return;
+	if (value === 'null') value = null;
+	order . Target = value;
+};
+
+var SelectPDForTube = function (ship, tube, delta) {
+	var Tube = galaxy . Orders [ship] . Tubes [tube];
+	Tube . PowerDrive += delta;
+	if (Tube . PowerDrive < 0) Tube . PowerDrive = 0;
+};
+
+var SelectShipForPickup = function (Warship, Bay, Systemship) {
+	if (Systemship === 'select') return;
+	if (Systemship === 'null') Systemship = null;
+	galaxy . Orders [Warship] . Bays [Bay] = Systemship;
+};
+
 var UpdateCombatPanel = function () {
 	var combats = galaxy . Combats ();
 	document . getElementById ('CombatLocationDiv') . innerHTML = galaxy . CombatLocation;
@@ -230,7 +248,7 @@ var UpdateCombatPanel = function () {
 		var Race = galaxy . races [race];
 		for (var ship in Race . ships) {
 			var Ship = Race . ships [ship];
-			if (Ship . location === galaxy . CombatLocation) document . getElementById ('CombatShip') . options . add (new Option (ship, ship));
+			if (Ship . location === galaxy . CombatLocation) document . getElementById ('CombatShip') . options . add (new Option (`${race}: ${ship}`, ship));
 		}
 	}
 	if (galaxy . CombatShip) {
@@ -240,7 +258,7 @@ var UpdateCombatPanel = function () {
 			if (Race . ships [galaxy . CombatShip]) ship = Race . ships [galaxy . CombatShip];
 		}
 		if (ship) {
-			var text = `<img src="${ship . icon}"/><br/>`;
+			var text = `<div style="float: left;"><img src="${ship . icon}"/><br/>`;
 			text += `<font color="${ship . colour}">${ship . race} ${ship . name}</font>`;
 			text += `<hr/>`;
 			var order = galaxy . Orders [ship . name];
@@ -253,8 +271,10 @@ var UpdateCombatPanel = function () {
 			text += `</select><br/>`;
 			text += `Target: `;
 			if (order . Target) text += `${order . Target} <img src="${galaxy . Ship (order . Target) . icon}" width="64"/> `;
-			text += `<select onchange="javascript: if (this . value !== 'select') galaxy . Orders ['${ship . name}'] . Target = this . value; repaint ();">`;
+			text += `<br/>`;
+			text += `<select onchange="javascript: SelectTarget (galaxy . Orders ['${ship . name}'], this . value); repaint ();">`;
 			var TargetOptions = `<option value="select">Select Target</option>`;
+			TargetOptions += `<option value="null">NO TARGET</option>`;
 			for (var race in galaxy . races) {
 				var Race = galaxy . races [race];
 				for (var ss in Race . ships) {
@@ -278,25 +298,110 @@ var UpdateCombatPanel = function () {
 			text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', 1, 'ECM'); repaint ();"/>`;
 			text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: OrderAttr ('${ship . name}', -1, 'ECM'); repaint ();"/></td></tr>`;
 			text += `</table>`;
-			text += `<hr/>`;
-			text += `Tubes [${ship . original . Tubes}]: ${ship . Tubes}<br/>`;
-			TargetOptions = `<option value="select">Select Target</option>`;
-			TargetOptions += `<option value="null">NO TARGET</option>`;
-			for (var race in galaxy . races) {
-				var Race = galaxy . races [race];
-				for (var ss in Race . ships) {
-					var SS = Race . ships [ss];
-					if (SS . location === ship . location && SS . race !== ship . race)
-						TargetOptions += `<option value="${SS . name}">${SS . race}: ${SS . name}</option>`;
+			if (order . Bays . length > 0) {
+				text += `<hr/>`;
+				text += `<table><tr>`;
+				var Systemships = `<option value="select">Pickup</option>`;
+				Systemships += `<option value="null">NO PICKUP</option>`;
+				for (var shipname in galaxy . races [ship . race] . ships) {
+					var Systemship = galaxy . races [ship . race] . ships [shipname];
+					if (Systemship . location === ship . location && ! Systemship . WarpGenerator)
+						Systemships += `<option value="${shipname}">${shipname}</option>`;
 				}
+				for (var ind = 0; ind < order . Bays . length; ind ++) {
+					if (ship . Bays [ind] === null) {
+						text += `<td style="background-color: gray;" align="center">EMPTY<br/>`;
+						if (order . Bays [ind] !== null) text += `${order . Bays [ind]}<br/>`;
+						text += `<select onchange="javascript: SelectShipForPickup ('${ship . name}', ${ind}, this . value); repaint ();">`;
+						text += Systemships;
+						text += `</select>`;
+						text += `</td>`;
+					} else if (ship . Bays [ind] === 'damage') {
+						text += `<td style="background-color: gray;" align="center">DAMAGED</td>`;
+					} else {
+						var Docked = galaxy . Ship (ship . Bays [ind]);
+						text += `<td style="background-color: red;" align="center"><img src="${Docked . icon}" width="64"/><br/>${Docked . name}`;
+						text += `<input type="checkbox" ${order . Bays [ind] === 'drop' ? 'checked' : ''} onchange="javascript: galaxy . Orders ['${ship . name}'] . Bays [${ind}] = this . checked ? 'drop' : null; repaint ();"/></td>`;
+					}
+				}
+				// if (ship . original . Bays > 0) {
+				// 	text += `Bays = ${ship . Bays . length} [${ship . original . Bays}]<br/>`;
+				// 	text += `<table><tr>`;
+				// 	for (var ind in ship . Bays) {
+				// 		if (ship . Bays [ind] === null) {
+				// 			text += `<td style="background-color: gray;">EMPTY<br/>`;
+				// 			if (typeof ship . location === 'string') {
+				// 				if (galaxy . Phase !== 'combat') {
+				// 					text += `<select onchange="javascript: SelectedShip . Pick (this . value, '${ind}'); if (this . value !== 'Pick') repaint ();"><option>Pick</option>`;
+				// 					for (var s in galaxy . races [ship . race] . ships) {
+				// 						var ss = galaxy . races [ship . race] . ships [s];
+				// 						if (ss . location === ship . location && ! ss . WarpGenerator) text += `<option value="${ss . name}">${ss . name}</option>`;
+				// 					}
+				// 					text += `</select>`;
+				// 				}
+				// 			}
+				// 			text += `</td>`;
+				// 		} else if (ship . Bays [ind] === 'damage') {
+				// 			text += `<td style="background-color: gray;" align="center">DAMAGED`;
+				// 			if (CanRepair) text += `<br/><input type="button" value="REPAIR" onclick="javascript: SelectedShip . BayRepair (${ind}); repaint();"/>`;
+				// 			text += `</td>`;
+				// 		} else {
+				// 			var Docked = galaxy . races [ship . race] . ships [ship . Bays [ind]];
+				// 			text += `<td style="background-color: red; text-align: center;"><img src="${Docked . icon}" width="64"/><br/>`;
+				// 			if (typeof ship . location === 'string') {
+				// 				if (galaxy . Phase === 'combat') text += Docked . name;
+				// 				else text += `<input type="button" value="${Docked . name}" onclick="javascript: SelectedShip . Drop (${ind}); repaint ();"/>`;
+				// 			} else text += `${Docked . name}`;
+				// 			text += `</td>`;
+				// 		}
+				// 	}
+				// 	text += `</table></tr>`;
+				// }
+				text += `</tr></table>`;
 			}
-			for (var tube = 0; tube < galaxy . Orders [ship . name] . Tubes . length; tube ++) {
-				var TubeOrder = galaxy . Orders [ship . name] . Tubes [tube];
-				text += `<img src="Harpoon.png" width="128"/> ${TubeOrder . Target} <br/>`;
-				text += `<select>`;
+			text += `</div>`;
+			text += `<div style="float: right;">`;
+			text += `<hr/>`;
+			text += `Cannons [${ship . original . Cannons}]: ${ship . Cannons}<br/>`;
+			text += `<table>`;
+			for (var cannon = 0; cannon < galaxy . Orders [ship . name] . Cannons . length; cannon ++) {
+				var CannonOrder = galaxy . Orders [ship . name] . Cannons [cannon];
+				var TargetShip = galaxy . Ship (CannonOrder . Target);
+				text += `<tr><td align="bottom">`;
+				text += `<img src="Cannon.png"/> ${CannonOrder . Shells}`;
+				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 1 ? 'checked' : ''} onchange="javascript: galaxy . Orders ['${ship . name}'] . Cannons [${cannon}] . Shells = 1; repaint ();"/>`;
+				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 2 ? 'checked' : ''} onchange="javascript: galaxy . Orders ['${ship . name}'] . Cannons [${cannon}] . Shells = 2; repaint ();"/>`;
+				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 3 ? 'checked' : ''} onchange="javascript: galaxy . Orders ['${ship . name}'] . Cannons [${cannon}] . Shells = 3; repaint ();"/>`;
+				text += `<br/>`;
+				text += `<select onchange="javascript: SelectTarget (galaxy . Orders ['${ship . name}'] . Cannons [${cannon}], this . value); repaint ();">`;
 				text += TargetOptions;
 				text += `</select><br/>`;
+				text += `</td><td valign="bottom">`;
+				if (TargetShip) text += `<img src="${TargetShip . icon}" width="64"/><br/>${CannonOrder . Target}<br/>`;
+				text += `</td></tr>`;
 			}
+			text += `</table>`;
+			text += `<hr/>`;
+			text += `Tubes [${ship . original . Tubes}]: ${ship . Tubes}<br/>`;
+			text += `<table>`;
+			for (var tube = 0; tube < galaxy . Orders [ship . name] . Tubes . length; tube ++) {
+				var TubeOrder = galaxy . Orders [ship . name] . Tubes [tube];
+				var TargetShip = galaxy . Ship (TubeOrder . Target);
+				text += `<tr><td valign="bottom">`;
+				text += `<img src="Harpoon.png" width="128"/> `;
+				text += `<br/>`;
+				text += `<select onchange="javascript: SelectTarget (galaxy . Orders ['${ship . name}'] . Tubes [${tube}], this . value); repaint ();">`;
+				text += TargetOptions;
+				text += `</select><br/>`;
+				text += `Drive: ${TubeOrder . PowerDrive} `;
+				text += `<input type="button" value="▲" style="padding: 0px;" onclick="javascript: SelectPDForTube ('${ship . name}', ${tube}, 1); repaint ();"/>`;
+				text += `<input type="button" value="▼" style="padding: 0px;" onclick="javascript: SelectPDForTube ('${ship . name}', ${tube}, -1); repaint ();"/>`;
+				text += `</td><td valign="bottom">`;
+				if (TargetShip) text +=  `<img src="${TargetShip . icon}" width="64"/><br/>${TubeOrder . Target}<br/>`;
+				text += `</td></tr>`;
+			}
+			text += `</table>`;
+			text += `</div>`;
 			document . getElementById ('CombatShipData') . innerHTML = text;
 		}
 	}
@@ -565,7 +670,7 @@ Galaxy . prototype . ResetOrders = function () {
 						Beams: 0, Shields: 0, Tubes: [], Bays: [], ECM: 0, Cannons: []
 					};
 					for (var tube = 0; tube < Ship . Tubes; tube ++) this . Orders [ship] . Tubes . push ({Target: null, PowerDrive: 0});
-					for (var cannon = 0; cannon < Ship . Cannons; cannon ++) this . Orders [ship] . Cannons . push ({Target: null, Shells: 0});
+					for (var cannon = 0; cannon < Ship . Cannons; cannon ++) this . Orders [ship] . Cannons . push ({Target: null, Shells: 1});
 					for (var bay = 0; bay < Ship . Bays . length; bay ++) this . Orders [ship] . Bays . push (null);
 				}
 			}
