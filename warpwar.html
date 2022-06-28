@@ -793,6 +793,16 @@ Galaxy . prototype . Next = function () {
 	}
 };
 
+Galaxy . prototype . ColourForStar = function (star) {
+	for (var race in this . races) {
+		var Race = this . races [race];
+		for (var base in Race . bases) {
+			if (base === star) return Race . colour;
+		}
+	}
+	return '#000033';
+};
+
 Galaxy . prototype . draw = function () {
 	var radius = this . size . radius;
 	var size = radius + radius;
@@ -874,6 +884,11 @@ Galaxy . prototype . draw = function () {
 		var st = this . stars [star];
 		var dx = this . shift . x + st . location . x * hhh - st . location . y * hh + radius;
 		var dy = this . shift . y + st . location . y * ll + radius;
+		var W = ctx . measureText (star) . width * 0.5;
+		ctx . beginPath ();
+		ctx . moveTo (dx - W, dy - 10); ctx . lineTo (dx + W, dy - 10); ctx . lineTo (dx + W, dy + 2); ctx . lineTo (dx - W, dy + 2);
+		ctx . fillStyle = this . ColourForStar (star); ctx . fill ();
+		ctx . fillStyle = 'white';
 		ctx . fillText (star, dx, dy);
 		ctx . fillText (star, dx - this . size . width * hhh, dy);
 		ctx . fillText (star, dx + this . size . width * hhh, dy);
