@@ -235,6 +235,10 @@ var SelectPDForTube = function (ship, tube, delta) {
 var SelectShipForPickup = function (Warship, Bay, Systemship) {
 	if (Systemship === 'select') return;
 	if (Systemship === 'null') Systemship = null;
+	else {
+		galaxy . Orders [Warship] . PowerDrive = 0; galaxy . Orders [Warship] . Shields = 0;
+		if (galaxy . Orders [Warship] . Strategy === 'ATTACK') galaxy . Orders [Warship] . Strategy = 'DODGE';
+	}
 	galaxy . Orders [Warship] . Bays [Bay] = Systemship;
 };
 
@@ -322,7 +326,7 @@ var UpdateCombatPanel = function () {
 				for (var ind = 0; ind < order . Bays . length; ind ++) {
 					if (ship . Bays [ind] === null) {
 						text += `<td style="background-color: gray;" align="center">EMPTY<br/>`;
-						if (order . Bays [ind] !== null) text += `${order . Bays [ind]}<br/>`;
+						if (order . Bays [ind] !== null) text += `<img src="${galaxy . Ship (order . Bays [ind]) . icon}" width="64"/><br/>${order . Bays [ind]}<br/>`;
 						text += `<select onchange="javascript: SelectShipForPickup ('${ship . name}', ${ind}, this . value); repaint ();">`;
 						text += Systemships;
 						text += `</select>`;
