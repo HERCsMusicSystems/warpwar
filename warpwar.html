@@ -239,7 +239,10 @@ var SelectShipForPickup = function (Warship, Bay, Systemship) {
 };
 
 var DropShip = function (ship, bay, value) {
-	galaxy . Orders [ship] . Bays [bay] = value ? 'drop' : null;
+	var Order = galaxy . Orders [ship];
+	if (value) {Order . PowerDrive = 0; Order . Shields = 0; if (Order . Strategy === 'ATTACK') Order . Strategy = 'DODGE';}
+	// if (OrderTotalPD (Order) + 1 > galaxy . races [Order . races] . ships [Order . ship] . PowerDrive) return;
+	Order . Bays [bay] = value ? 'drop' : null;
 };
 
 var UpdateCombatPanel = function () {
@@ -394,6 +397,10 @@ var OrderTotalPD = function (Order) {
 var OrderAttr = function (ship, delta, attr) {
 	var Order = galaxy . Orders [ship];
 	var Ship = galaxy . races [Order . race] . ships [ship];
+	if (attr === 'Beams' || attr === 'Shields') {
+		for (var ind = 0; ind < Order . Tubes . length; ind ++) Order . Tubes [ind] . Target = null;
+		for (var ind = 0; ind < Order . Cannons . length; ind ++) Order . Cannons [ind] . Target = null;
+	}
 	if (OrderTotalPD (Order) + delta > Ship . PowerDrive) return;
 	Order [attr] += delta; if (Order [attr] < 0) Order [attr] = 0; if (Order [attr] > Ship [attr]) Order [attr] = Ship [attr];
 }
