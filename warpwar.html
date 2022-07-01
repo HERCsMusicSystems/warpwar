@@ -220,9 +220,15 @@ var SelectTarget = function (Order, order, value) {
 	if (value === 'select') return;
 	if (value === 'null') value = null;
 	else {
-		if (Order !== order) {Order . Beams = 0; Order . Shields = 0;}
+		if (Order !== order) {
+			var count = 0;
+			for (var ind = 0; ind < Order . Tubes . length; ind ++) {if (Order . Tubes [ind] . Target) count ++;}
+			if (count + 1 > galaxy . Ship (Order . ship) . Missiles) return;
+			Order . Beams = 0; Order . Shields = 0;
+		}
 		if (OrderTotalPD (Order) + 1 > galaxy . races [Order . race] . ships [Order . ship] . PowerDrive) return;
 	}
+	CancelPotentialPickUpOrder (Order . ship);
 	order . Target = value;
 };
 
@@ -234,19 +240,57 @@ var SelectPDForTube = function (ship, tube, delta) {
 
 var SelectShipForPickup = function (Warship, Bay, Systemship) {
 	if (Systemship === 'select') return;
+	var Order = galaxy . Orders [Warship];
 	if (Systemship === 'null') Systemship = null;
 	else {
-		galaxy . Orders [Warship] . PowerDrive = 0; galaxy . Orders [Warship] . Shields = 0;
-		if (galaxy . Orders [Warship] . Strategy === 'ATTACK') galaxy . Orders [Warship] . Strategy = 'DODGE';
+		Order . PowerDrive = 0; Order . Shields = 0;
+		if (Order . Strategy === 'ATTACK') Order . Strategy = 'DODGE';
+		for (var ind = 0; ind < Order . Tubes . length; ind ++) Order . Tubes [ind] . Target = null;
+		for (var ind = 0; ind < Order . Cannons . length; ind ++) Order . Cannons [ind] . Target = null;
+		var SOrder = galaxy . Orders [Systemship];
+		SOrder . Target = null; SOrder . Beams = 0;
+		for (var ind = 0; ind < SOrder . Tubes . length; ind ++) SOrder . Tubes [ind] . Target = null;
+		for (var ind = 0; ind < SOrder . Cannons . length; ind ++) SOrder . Cannons [ind] . Target = null;
 	}
-	galaxy . Orders [Warship] . Bays [Bay] = Systemship;
+	Order . Bays [Bay] = Systemship;
 };
 
 var DropShip = function (ship, bay, value) {
 	var Order = galaxy . Orders [ship];
 	if (value) {Order . PowerDrive = 0; Order . Shields = 0; if (Order . Strategy === 'ATTACK') Order . Strategy = 'DODGE';}
+	for (var ind = 0; ind < Order . Tubes . length; ind ++) Order . Tubes [ind] . Target = null;
+	for (var ind = 0; ind < Order . Cannons . length; ind ++) Order . Cannons [ind] . Target = null;
 	// if (OrderTotalPD (Order) + 1 > galaxy . races [Order . races] . ships [Order . ship] . PowerDrive) return;
 	Order . Bays [bay] = value ? 'drop' : null;
+};
+
+var SelectStrategy = function (ship, value) {
+	if (value === 'select') return;
+	var Order = galaxy . Orders [ship];
+	if (value === 'ATTACK') {
+		for (var ind = 0; ind < Order . Bays . length; ind ++) Order . Bays [ind] = null;
+	}
+	Order . Strategy = value;
+};
+
+var CancelPotentialPickUpOrder = function (ship) {
+	var Ship = galaxy . Ship (ship);
+	for (var order in galaxy . Orders) {
+		var Order = galaxy . Orders [order];
+		for (var ind = 0; ind < Order . Bays . length; ind ++) {
+			if (Order . Bays [ind] === Ship . name) {
+				Order . Bays [ind] = null;
+			}
+		}
+	}
+};
+
+var SelectShells = function (ship, cannon, shells) {
+	var Order = galaxy . Orders [ship];
+	var count = 0;
+	for (var ind = 0; ind < Order . Cannons . length; ind ++) count += ind === cannon ? shells : Order . Cannons [ind] . Shells;
+	if (count > galaxy . Ship (ship) . Shells) return;
+	Order . Cannons [cannon] . Shells = shells;
 };
 
 var UpdateCombatPanel = function () {
@@ -278,7 +322,7 @@ var UpdateCombatPanel = function () {
 			text += `<hr/>`;
 			var order = galaxy . Orders [ship . name];
 			text += `Strategy: ${order . Strategy} `;
-			text += `<select onchange="javascript: if (this . value !== 'select') galaxy . Orders ['${ship . name}'] . Strategy = this . value; repaint ();">`;
+			text += `<select onchange="javascript: SelectStrategy ('${ship . name}', this . value); repaint ();">`;
 			text += `<option value="select">Select Strategy</option>`;
 			text += `<option value="ATTACK">ATTACK</option>`;
 			text += `<option value="DODGE">DODGE</option>`;
@@ -351,9 +395,9 @@ var UpdateCombatPanel = function () {
 				var TargetShip = galaxy . Ship (CannonOrder . Target);
 				text += `<tr><td align="bottom">`;
 				text += `<img src="Cannon.png"/> ${CannonOrder . Shells}`;
-				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 1 ? 'checked' : ''} onchange="javascript: galaxy . Orders ['${ship . name}'] . Cannons [${cannon}] . Shells = 1; repaint ();"/>`;
-				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 2 ? 'checked' : ''} onchange="javascript: galaxy . Orders ['${ship . name}'] . Cannons [${cannon}] . Shells = 2; repaint ();"/>`;
-				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 3 ? 'checked' : ''} onchange="javascript: galaxy . Orders ['${ship . name}'] . Cannons [${cannon}] . Shells = 3; repaint ();"/>`;
+				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 1 ? 'checked' : ''} onchange="javascript: SelectShells ('${ship . name}', ${cannon}, 1); repaint ();"/>`;
+				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 2 ? 'checked' : ''} onchange="javascript: SelectShells ('${ship . name}', ${cannon}, 2); repaint ();"/>`;
+				text += `<input name="Cannon ${cannon}" type="radio" ${CannonOrder . Shells === 3 ? 'checked' : ''} onchange="javascript: SelectShells ('${ship . name}', ${cannon}, 3); repaint ();"/>`;
 				text += `<br/>`;
 				text += `<select onchange="javascript: SelectTarget (galaxy . Orders ['${ship . name}'], galaxy . Orders ['${ship . name}'] . Cannons [${cannon}], this . value); repaint ();">`;
 				text += TargetOptions;
@@ -392,7 +436,7 @@ var UpdateCombatPanel = function () {
 
 var OrderTotalPD = function (Order) {
 	var total = Order . PowerDrive + Order . Beams + Order . Shields + Order . ECM;
-	for (var ind = 0; ind < Order . Bays . length; ind ++) {if (Order . Bays [ind]) total ++;}
+	// for (var ind = 0; ind < Order . Bays . length; ind ++) {if (Order . Bays [ind]) total ++;}
 	for (var ind = 0; ind < Order . Tubes . length; ind ++) {if (Order . Tubes [ind] . Target) total ++;}
 	for (var ind = 0; ind < Order . Cannons . length; ind ++) {if (Order . Cannons [ind] . Target) total ++;}
 	return total;
@@ -405,6 +449,10 @@ var OrderAttr = function (ship, delta, attr) {
 		for (var ind = 0; ind < Order . Tubes . length; ind ++) Order . Tubes [ind] . Target = null;
 		for (var ind = 0; ind < Order . Cannons . length; ind ++) Order . Cannons [ind] . Target = null;
 	}
+	if (attr === 'PowerDrive' || attr === 'Shields') {
+		for (var ind = 0; ind < Order . Bays . length; ind ++) Order . Bays [ind] = null;
+	}
+	if (attr === 'Beams' && delta > 0) CancelPotentialPickUpOrder (ship);
 	if (OrderTotalPD (Order) + delta > Ship . PowerDrive) return;
 	Order [attr] += delta; if (Order [attr] < 0) Order [attr] = 0; if (Order [attr] > Ship [attr]) Order [attr] = Ship [attr];
 }
