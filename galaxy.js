@@ -145,7 +145,7 @@ Galaxy . prototype . ResetOrders = function () {
 					this . Orders [ship] = {
 						race: race, ship: ship, Strategy: 'DODGE', PowerDrive: 0, Target: null,
 						Beams: 0, Shields: 0, Tubes: [], Bays: [], ECM: 0, Cannons: [],
-						Damage: 0
+						Damage: 0, CanEscape: true, TechnologyLevel: Ship . TechnologyLevel
 					};
 					for (var tube = 0; tube < Ship . Tubes; tube ++) this . Orders [ship] . Tubes . push ({Target: null, PowerDrive: 0});
 					for (var cannon = 0; cannon < Ship . Cannons; cannon ++) this . Orders [ship] . Cannons . push ({Target: null, Shells: 1});
@@ -261,7 +261,7 @@ Galaxy . prototype . Next = function () {
 		else this . Phase = 'rearrange';
 		break;
 	case 'combat':
-		if (this . Combats () . length > 0) break;
+		if (this . Combats () . length > 0) {this . ProcessOrders (); this . ResetOrders (); break;}
 		this . Phase = 'rearrange';
 		break;
 	case 'rearrange': this . Collect (); break;
@@ -487,10 +487,67 @@ Galaxy . prototype . CreateShip = function (base, name) {
 	return new Ship (this, ship) . Source (base);
 };
 
+var CombatResultTable = function (AttackStrategy, AttackPowerDrive, TargetStrategy, TargetPowerDrive, hits) {
+	var delta = AttackPowerDrive - TargetPowerDrive;
+	switch (AttackStrategy) {
+	case 'ATTACK':
+		switch (TargetStrategy) {
+		case 'ATTACK': switch (delta) {case -2: case -1: return hits; break; case 0: case 1: return hits + 2; break; case 2: return hits + 1; break; default: return 0; break;} break;
+		case 'DODGE': switch (delta) {case 2: return hits + 1; break; case 3: case 4: return hits; break; default: return 0; break;} break;
+		case 'RETREAT': if (delta < 0) return null; if (delta === 3 || delta === 4) return hits; return 0; break;
+		default: return null; break;
+		} break;
+	case 'DODGE':
+		switch (TargetStrategy) {
+		case 'ATTACK': if (delta < -1 || delta < 2) return 0; return hits; break;
+		case 'DODGE': if (delta < -3 || delta > 0) return 0; return hits; break;
+		case 'RETREAT': return null; break;
+		default: return null; break;
+		} break;
+	case 'RETREAT':
+		switch (TargetStrategy) {
+		case 'ATTACK': if (delta >= -1 && delta <= 0) return hits; return 0; break;
+		case 'DODGE': return 0; break;
+		case 'RETREAT': return null; break;
+		default: return null; break;
+		} break;
+	default: break;
+	}
+}
+
 Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 	if (Order . Target) {
 		var TargetOrder = this . Orders [Order . Target];
-		console . log (TargetOrder, Order);
+		var damage = CombatResultTable (Order . Strategy, Order . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, Order . Beams);
+		if (damage !== null) {TargetOrder . Damage += damage; TargetOrder . CanEscape = false;}
+	}
+	for (var ind = 0; ind < Order . Tubes . length; ind ++) {
+		var Tube = Order . Tubes [ind];
+		if (Tube . Target) {
+			var TargetOrder = this . Orders [Tube . Target];
+			var ECM = TargetOrder . ECM + Math . floor ((Order . TechnologyLevel - TargetOrder . TechnologyLevel) / this . TechnologyStep);
+			// console . log (Order . TechnologyLevel, TargetOrder . TechnologyLevel, ECM, TargetOrder);
+			var damage1 = CombatResultTable ('ATTACK', Tube . PowerDrive + ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
+			var damage2 = CombatResultTable ('ATTACK', Tube . PowerDrive - ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
+			var damage = null;
+			if (damage1 !== null && damage2 !== null) damage = Math . min (damage1, damage2);
+			else if (damage1 !== null) damage = damage1; else damage = damage2;
+			if (damage !== null) {
+				TargetOrder . Damage += damage;
+				// TargetOrder . CanEscape = false;
+			}
+			Ship . Missiles --;
+			// console . log (TargetOrder . Damage, damage, damage1, damage2);
+		}
+	}
+	for (var ind = 0; ind < Order . Cannons . length; ind ++) {
+		var Cannon = Order . Cannons [ind];
+		if (Cannon . Target) {
+			var TargetOrder = this . Orders [Cannon . Target];
+			var damage = CombatResultTable (Order . Strategy, Order . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, Cannon . Shells);
+			if (damage !== null) {TargetOrder . Damage += damage; TargetOrder . CanEscape = false;}
+			Ship . Shells -= Cannon . Shells;
+		}
 	}
 };
 
@@ -500,3 +557,5 @@ Galaxy . prototype . ProcessOrdersFor = function (star) {
 		if (Ship . location === star) this . ProcessOrder (Ship, this . Orders [ship]);
 	}
 };
+
+Galaxy . prototype . ProcessOrders = function () {for (var ship in this . Orders) this . ProcessOrder (this . Ship (ship), this . Orders [ship]);};
