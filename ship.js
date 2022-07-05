@@ -198,4 +198,20 @@ Ship . prototype . BayRepair = function (ind) {
 	this . source . BuildPoints --;
 	return this;
 };
+Ship . prototype . DamageCost = function () {
+	var cost = ship . PowerDrive + ship . Beams + ship . Shields + ship . ECM + ship . Tubes + Math . ceil (ship . Missiles / 3) + ship . Cannons + Math . ceil (ship . Shells / 6) + ship . Armor + Math . ceil (ship . Holds / 10);
+	for (var ind = 0; ind < ship . Bays . length; ind ++) if (ship . Bays [ind] !== 'damage') cost ++;
+	return cost;
+};
+Ship . prototype . ApplyDamage = function (damage) {
+	var damages = ['PowerDrive', 'Beams', 'Shields', 'ECM', 'Tubes', 'Missiles', 'Cannons', 'Shells', 'Bays', 'Holds'];
+	while (damage > 0) {
+		if (this . DamageCost () <= 0) {delete galaxy . races [this . race] . ships [this . name]; return;}
+		var Damage = damages [Math . floor (Math . random () * damages . length)];
+		switch (Damage) {
+		case 'PowerDrive': break;
+		default: break;
+		}
+	}
+};
 

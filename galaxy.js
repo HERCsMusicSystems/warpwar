@@ -442,6 +442,7 @@ Galaxy . prototype . draw = function () {
 		var angle = Math . PI * 1.5;
 		ctx . font = '18px arial';
 		ctx . textBaseline = 'top';
+		var sectors = this . ShipsAt (this . stars [this . CombatLocation] . location . x, this . stars [this . CombatLocation] . location . y) . length;
 		for (var ind = 0; ind < races . length; ind ++) {
 			var Race = this . races [races [ind]];
 			for (var ship in Race . ships) {
@@ -459,7 +460,7 @@ Galaxy . prototype . draw = function () {
 					ctx . drawImage (IC, x, y);
 					ctx . fillStyle = Ship . colour;
 					ctx . fillText (Ship . name, x + IC . width * 0.5, y + IC . height);
-					angle += Math . PI * 2 / 12;
+					angle += Math . PI * 2 / sectors;
 					// console . log (races [ind], ship);
 					ctx . restore ();
 				}
@@ -634,7 +635,17 @@ Galaxy . prototype . DropShips = function () {
 	}
 };
 
-Galaxy . prototype . ApplyDamages = function () {};
+Galaxy . prototype . ApplyDamages = function () {
+	for (var order in this . Orders) {
+		var Order = this . Orders [order];
+		if (Order . Damage > 0) {
+			// console . log (order, 'DAMAGE', Order . Damage, Order . Shields, Order);
+			var damage = Order . Damage - Order . Shields;
+			console . log (`${Order . race} ${Order . ship} takes ${Order . Damage} - ${Order . Shields} = ${damage}.`);
+		}
+	}
+};
+
 Galaxy . prototype . PickUpShips = function () {};
 Galaxy . prototype . RetreatShips = function () {};
 
