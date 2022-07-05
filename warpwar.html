@@ -27,8 +27,8 @@
 	Holds: <input type="number" min="0" value="0" style="width: 5em;" id="BuildHolds"/><br/>
 </div>
 <div id="CombatPanel" style="position: absolute; left: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
-	<div id="CombatLocationDiv" style="float: left;">sputnik</div>
-	<select id="CombatLocation" onchange="javascript: if (this . value !== 'select') galaxy . CombatLocation = this . value; repaint ();"></select><br/>
+	<div id="CombatLocationDiv" style="float: left;">sputnik</div>&nbsp;
+	<select id="CombatLocation" onchange="javascript: if (this . value !== 'select') galaxy . CombatLocation = this . value; repaint ();"></select>
 	<select id="CombatShip" onchange="javascript: if (this . value !== 'select') galaxy . CombatShip = this . value; repaint ();"></select>
 	<div id="CombatShipData">
 	</div>
@@ -565,7 +565,8 @@ var repaint = function () {
 		ctx . fillStyle = galaxy . races [galaxy . Turns [0]] . colour;
 		ctx . font = '24px arial';
 		ctx . textAlign = 'left';
-		ctx . fillText (`${galaxy . Turns [0]} ${galaxy . Phase} TL = [${galaxy . TechnologyLevel}]`, 400, 32);
+		ctx . textAlign = 'center';
+		ctx . fillText (`${galaxy . Turns [0]} ${galaxy . Phase} TL = [${galaxy . TechnologyLevel}]`, canvas . width * 0.5, 32);
 		ctx . restore ();
 	}
 	RestoreSelects ();

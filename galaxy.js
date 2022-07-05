@@ -112,7 +112,7 @@ Galaxy . prototype . StarAround = function (x, y) {
 	return null;
 };
 
-Galaxy . prototype . CombatAt = function (location) {
+Galaxy . prototype . RacesAt = function (location) {
 	var races = [];
 	for (var race in this . races) {
 		var Race = this . races [race];
@@ -121,8 +121,10 @@ Galaxy . prototype . CombatAt = function (location) {
 			if (Ship . location === location && races . indexOf (Ship . race) < 0) races . push (Ship . race);
 		}
 	}
-	return races . length > 1;
+	return races;
 };
+
+Galaxy . prototype . CombatAt = function (location) {return this . RacesAt (location) . length > 1;};
 
 Galaxy . prototype . Combats = function () {
 	var locations = [];
@@ -261,7 +263,15 @@ Galaxy . prototype . Next = function () {
 		else this . Phase = 'rearrange';
 		break;
 	case 'combat':
-		if (this . Combats () . length > 0) {this . ProcessOrders (); this . ResetOrders (); break;}
+		if (this . Combats () . length > 0) {
+			this . ProcessOrders ();
+			this . DropShips ();
+			this . ApplyDamages ();
+			this . PickUpShips ();
+			this . RetreatShips ();
+			this . ResetOrders ();
+			break;
+		}
 		this . Phase = 'rearrange';
 		break;
 	case 'rearrange': this . Collect (); break;
@@ -415,6 +425,48 @@ Galaxy . prototype . draw = function () {
 			}
 		}
 	}
+	if (this . CombatLocation && this . Phase === 'combat') {
+		ctx . save ();
+		ctx . translate (canvas . width * 0.5, canvas . height * 0.5);
+		ctx . beginPath ();
+		ctx . arc (0, 0, 256, 0, Math . PI * 2);
+		ctx . stroke ();
+		ctx . fillStyle = 'gold';
+		ctx . fill ();
+		ctx . fillStyle = 'blue';
+		ctx . font = 'bold 48px arial';
+		ctx . textBaseline = 'middle';
+		ctx . fillText (this . CombatLocation . toUpperCase (), 0, 0);
+		var races = this . RacesAt (this . CombatLocation);
+		// console . log ('RACES', this . RacesAt (this . CombatLocation));
+		var angle = Math . PI * 1.5;
+		ctx . font = '18px arial';
+		ctx . textBaseline = 'top';
+		for (var ind = 0; ind < races . length; ind ++) {
+			var Race = this . races [races [ind]];
+			for (var ship in Race . ships) {
+				var Ship = Race . ships [ship];
+				if (Ship . location === this . CombatLocation) {
+					var IC = Icons [Ship . icon];
+					ctx . save ();
+					ctx . scale (0.75, 0.75);
+					ctx . translate (IC . width * -0.5, IC . height * -0.5);
+					// var angle = Math . random () * Math . PI * 2;
+					var dist = Math . random () * 256;
+					dist = 256;
+					var y = Math . sin (angle) * dist;
+					var x = Math . cos (angle) * dist;
+					ctx . drawImage (IC, x, y);
+					ctx . fillStyle = Ship . colour;
+					ctx . fillText (Ship . name, x + IC . width * 0.5, y + IC . height);
+					angle += Math . PI * 2 / 12;
+					// console . log (races [ind], ship);
+					ctx . restore ();
+				}
+			}
+		}
+		ctx . restore ();
+	}
 };
 
 Galaxy . prototype . RaceFromBase = function (base) {
@@ -515,17 +567,24 @@ var CombatResultTable = function (AttackStrategy, AttackPowerDrive, TargetStrate
 	}
 }
 
+Galaxy . prototype . Damage = function (damage, AttackerTL, TargetTL) {
+	if (damage > 0) damage = damage + Math . floor ((AttackerTL - TargetTL) / this . TechnologyStep);
+	if (damage < 0) damage = 0;
+	return damage;
+};
+
 Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 	if (Order . Target) {
 		var TargetOrder = this . Orders [Order . Target];
 		var damage = CombatResultTable (Order . Strategy, Order . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, Order . Beams);
-		if (damage !== null) {TargetOrder . Damage += damage; TargetOrder . CanEscape = false;}
+		if (damage !== null) {TargetOrder . Damage += this . Damage (damage, TargetOrder . TechnologyLevel, Order . TechnologyLevel); TargetOrder . CanEscape = false;}
 	}
 	for (var ind = 0; ind < Order . Tubes . length; ind ++) {
 		var Tube = Order . Tubes [ind];
 		if (Tube . Target) {
 			var TargetOrder = this . Orders [Tube . Target];
 			var ECM = TargetOrder . ECM + Math . floor ((Order . TechnologyLevel - TargetOrder . TechnologyLevel) / this . TechnologyStep);
+			if (ECM < 0) ECM = 0;
 			// console . log (Order . TechnologyLevel, TargetOrder . TechnologyLevel, ECM, TargetOrder);
 			var damage1 = CombatResultTable ('ATTACK', Tube . PowerDrive + ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
 			var damage2 = CombatResultTable ('ATTACK', Tube . PowerDrive - ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
@@ -533,7 +592,7 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 			if (damage1 !== null && damage2 !== null) damage = Math . min (damage1, damage2);
 			else if (damage1 !== null) damage = damage1; else damage = damage2;
 			if (damage !== null) {
-				TargetOrder . Damage += damage;
+				TargetOrder . Damage += this . Damage (damage, TargetOrder . TechnologyLevel, Order . TechnologyLevel);
 				// TargetOrder . CanEscape = false;
 			}
 			Ship . Missiles --;
@@ -545,7 +604,7 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 		if (Cannon . Target) {
 			var TargetOrder = this . Orders [Cannon . Target];
 			var damage = CombatResultTable (Order . Strategy, Order . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, Cannon . Shells);
-			if (damage !== null) {TargetOrder . Damage += damage; TargetOrder . CanEscape = false;}
+			if (damage !== null) {TargetOrder . Damage += this . Damage (damage, TargetOrder . TechnologyLevel, Order . TechnologyLevel); TargetOrder . CanEscape = false;}
 			Ship . Shells -= Cannon . Shells;
 		}
 	}
@@ -559,3 +618,23 @@ Galaxy . prototype . ProcessOrdersFor = function (star) {
 };
 
 Galaxy . prototype . ProcessOrders = function () {for (var ship in this . Orders) this . ProcessOrder (this . Ship (ship), this . Orders [ship]);};
+
+Galaxy . prototype . DropShips = function () {
+	for (var order in this . Orders) {
+		var Order = this . Orders [order];
+		for (var ind = 0; ind < Order . Bays . length; ind ++) {
+			var Bay = Order . Bays [ind];
+			if (Bay === 'drop') {
+				var Carrier = this . Ship (order);
+				var SS = this . Ship (Carrier . Bays [ind]);
+				SS . location = Carrier . location;
+				Carrier . Bays [ind] = null;
+			}
+		}
+	}
+};
+
+Galaxy . prototype . ApplyDamages = function () {};
+Galaxy . prototype . PickUpShips = function () {};
+Galaxy . prototype . RetreatShips = function () {};
+
