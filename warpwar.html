@@ -226,8 +226,13 @@ var SelectTarget = function (Order, order, value) {
 		if (Order !== order) {
 			var count = 0;
 			for (var ind = 0; ind < Order . Tubes . length; ind ++) {if (Order . Tubes [ind] . Target) count ++;}
-			if (count + 1 > galaxy . Ship (Order . ship) . Missiles) return;
+			if (order . Shells >= 0 && count + 1 > galaxy . Ship (Order . ship) . Missiles) return;
+			count = 0;
+			for (var ind = 0; ind < Order . Cannons . length; ind ++) {if (Order . Cannons [ind] . Target) count += Order . Cannons [ind] . Shells;}
+			if (order . PowerDrive >= 0 && count + 1 > galaxy . Ship (Order . ship) . Shells) return;
 			Order . Beams = 0; Order . Shields = 0;
+			for (var ind = 0; ind < Order . Bays . length; ind ++) Order . Bays [ind] = null;
+			// CancelPotentialPickUpOrder (Order . ship);
 		}
 		if (OrderTotalPD (Order) + 1 > galaxy . races [Order . race] . ships [Order . ship] . PowerDrive) return;
 	}

@@ -206,11 +206,36 @@ Ship . prototype . DamageCost = function () {
 Ship . prototype . ApplyDamage = function (damage) {
 	var damages = ['PowerDrive', 'Beams', 'Shields', 'ECM', 'Tubes', 'Missiles', 'Cannons', 'Shells', 'Bays', 'Holds'];
 	while (damage > 0) {
-		if (this . DamageCost () <= 0) {delete galaxy . races [this . race] . ships [this . name]; return;}
+		if (this . DamageCost () <= 0) {delete this . galaxy . races [this . race] . ships [this . name]; return;}
 		var Damage = damages [Math . floor (Math . random () * damages . length)];
+		console . log ('Apply Damage', Damage, this);
 		switch (Damage) {
-		case 'PowerDrive': break;
-		default: break;
+		case 'Shells':
+			if (this . ship . Shells > 0) {this . ship . Shells -= 6; damage --;}
+			if (this . ship . Shelss < 0) this . ship . Shells = 0;
+			break;
+		case 'Missiles':
+			if (this . ship . Missiles > 0) {this . ship . Missiles -= 3; damage --;}
+			if (this . ship . Missiles < 0) this . ship . Missiles = 0;
+			break;
+		case 'Holds':
+			if (this . ship . Holds > 0) {this . ship . Holds -= 10; damage --;}
+			if (this . ship . Holds < 0) this . ship . Holds = 0;
+			if (this . ship . BuildPoints > this . ship . Holds) this . ship . BuildPoints = this . ship . Holds;
+			break;
+		case 'Bays':
+			var ind = Math . floor (Math . random () * this . ship . Bays . length);
+			if (ind > 0) {
+				var Bay = this . ship . Bays [ind];
+				if (Bay !== 'damage') {
+					if (Bay !== null) {
+						delete this . galaxy . races [this . race] . ships [this . name];
+						this . ship . Bays [ind] = 'damage';
+					}
+				}
+			}
+			break;
+		default: if (this . ship [Damage] > 0) {this . ship [Damage] --; damage --;} break;
 		}
 	}
 };
