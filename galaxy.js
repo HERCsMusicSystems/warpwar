@@ -650,6 +650,21 @@ Galaxy . prototype . ApplyDamages = function () {
 	}
 };
 
-Galaxy . prototype . PickUpShips = function () {};
+Galaxy . prototype . PickUpShips = function () {
+	for (var order in this . Orders) {
+		var Order = this . Orders [order];
+		var Ship = this . Ship (order);
+		for (var ind = 0; ind < Order . Bays . length; ind ++) {
+			if (Order . Bays [ind] !== null && Order . Bays [ind] !== 'drop' && Ship . Bays [ind] === null) {
+				var ss = this . Ship (Order . Bays [ind]);
+				if (ss . location === Ship . location) {
+					Ship . Bays [ind] = Order . Bays [ind];
+					ss . location = Ship . name;
+				}
+			}
+		}
+	}
+};
+
 Galaxy . prototype . RetreatShips = function () {};
 
