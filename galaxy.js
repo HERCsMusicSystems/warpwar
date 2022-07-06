@@ -569,7 +569,9 @@ var CombatResultTable = function (AttackStrategy, AttackPowerDrive, TargetStrate
 }
 
 Galaxy . prototype . Damage = function (damage, AttackerTL, TargetTL) {
-	if (damage > 0) damage = damage + Math . floor ((AttackerTL - TargetTL) / this . TechnologyStep);
+	var tld = (AttackerTL - TargetTL) / this . TechnologyStep;
+	tld = tld >= 0 ? Math . floor (tld) : Math . ceil (tld);
+	if (damage > 0) damage = damage + tld;
 	if (damage < 0) damage = 0;
 	return damage;
 };
@@ -642,6 +644,8 @@ Galaxy . prototype . ApplyDamages = function () {
 			// console . log (order, 'DAMAGE', Order . Damage, Order . Shields, Order);
 			var damage = Order . Damage - Order . Shields;
 			console . log (`${Order . race} ${Order . ship} takes ${Order . Damage} - ${Order . Shields} = ${damage}.`);
+			var SP = new Ship (this, this . races [Order . race] . ships [Order . ship]);
+			SP . ApplyDamage (damage);
 		}
 	}
 };

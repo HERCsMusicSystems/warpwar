@@ -199,6 +199,7 @@ Ship . prototype . BayRepair = function (ind) {
 	return this;
 };
 Ship . prototype . DamageCost = function () {
+	var ship = this . ship;
 	var cost = ship . PowerDrive + ship . Beams + ship . Shields + ship . ECM + ship . Tubes + Math . ceil (ship . Missiles / 3) + ship . Cannons + Math . ceil (ship . Shells / 6) + ship . Armor + Math . ceil (ship . Holds / 10);
 	for (var ind = 0; ind < ship . Bays . length; ind ++) if (ship . Bays [ind] !== 'damage') cost ++;
 	return cost;
