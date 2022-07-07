@@ -666,5 +666,23 @@ Galaxy . prototype . PickUpShips = function () {
 	}
 };
 
-Galaxy . prototype . RetreatShips = function () {};
+Galaxy . prototype . RetreatShips = function () {
+	for (var order in this . Orders) {
+		var Order = this . Orders [order];
+		if (Order . Strategy === 'RETREAT' && Order . CanEscape) {
+			var Ship = this . Ship (order);
+			var Location = Ship . location;
+			if (typeof Location === 'string') {
+				Location = this . stars [Location] . location;
+				var shift = [{x: 1, y: 0}, {x: 0, y: 1}, {x: -1, y: 0}, {x: 0, y: -1}, {x: 1, y: 1}, {x: -1, y: -1}];
+				shift = shift [Math . floor (Math . random () * shift . length)];
+				Ship . location = {x: Location . x + shift . x, y: Location . y + shift . y};
+				for (var star in this . stars) {
+					if (this . stars [star] . location . x === Ship . location . x && this . stars [star] . location . y === Ship . location . y) Ship . location = star;
+				}
+			}
+		}
+	}
+			
+};
 
