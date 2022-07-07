@@ -220,6 +220,7 @@ var UpdateShipSelectDiv = function () {
 };
 
 var SelectTarget = function (Order, order, value) {
+	// console . log ('selecting target');
 	if (value === 'select') return;
 	if (value === 'null') value = null;
 	else {
@@ -234,7 +235,7 @@ var SelectTarget = function (Order, order, value) {
 			for (var ind = 0; ind < Order . Bays . length; ind ++) Order . Bays [ind] = null;
 			// CancelPotentialPickUpOrder (Order . ship);
 		}
-		if (OrderTotalPD (Order) + 1 > galaxy . races [Order . race] . ships [Order . ship] . PowerDrive) return;
+		// if (OrderTotalPD (Order) + 1 > galaxy . races [Order . race] . ships [Order . ship] . PowerDrive) return;
 	}
 	CancelPotentialPickUpOrder (Order . ship);
 	order . Target = value;
@@ -440,7 +441,7 @@ var UpdateCombatPanel = function () {
 			text += `</div>`;
 			document . getElementById ('CombatShipData') . innerHTML = text;
 		}
-	}
+	} else document . getElementById ('CombatShipData') . innerHTML = '';
 };
 
 var OrderTotalPD = function (Order) {

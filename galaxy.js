@@ -643,7 +643,7 @@ Galaxy . prototype . ApplyDamages = function () {
 		if (Order . Damage > 0) {
 			// console . log (order, 'DAMAGE', Order . Damage, Order . Shields, Order);
 			var damage = Order . Damage - Order . Shields;
-			console . log (`${Order . race} ${Order . ship} takes ${Order . Damage} - ${Order . Shields} = ${damage}.`);
+			// console . log (`${Order . race} ${Order . ship} takes ${Order . Damage} - ${Order . Shields} = ${damage}.`);
 			var SP = new Ship (this, this . races [Order . race] . ships [Order . ship]);
 			SP . ApplyDamage (damage);
 		}
@@ -680,9 +680,20 @@ Galaxy . prototype . RetreatShips = function () {
 				for (var star in this . stars) {
 					if (this . stars [star] . location . x === Ship . location . x && this . stars [star] . location . y === Ship . location . y) Ship . location = star;
 				}
+				this . CombatShip = null;
 			}
 		}
 	}
 			
 };
 
+Galaxy . prototype . DeleteShip = function (race, ship) {
+	// console . log (race, ship, this . races [race] . ships);
+	var Bays = this . races [race] . ships [ship] . Bays;
+	for (var ind = 0; ind < Bays . length; ind ++) if (Bays [ind] && Bays [ind] !== 'damage') this . DeleteShip (race, Bays [ind]);
+	if (this . SelectedShip === ship) this . SelectedShip = null;
+	if (this . CombatShip === ship) this . CombatShip = null;
+	if (SelectedShip && SelectedShip . ship === this . races [race] . ships [ship]) SelectedShip = null;
+	delete this . races [race] . ships [ship];
+	// console . log (SelectedShip . ship, this . races [race] . ships [ship], SelectedShip . ship === this . races [race] . ships [ship], this . SelectedShip, SelectedShip);
+};
