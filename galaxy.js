@@ -270,6 +270,7 @@ Galaxy . prototype . Next = function () {
 			this . PickUpShips ();
 			this . RetreatShips ();
 			this . ResetOrders ();
+			this . ProcessIneffectiveRounds ();
 			break;
 		}
 		this . Phase = 'rearrange';
@@ -699,4 +700,8 @@ Galaxy . prototype . DeleteShip = function (race, ship) {
 	if (SelectedShip && SelectedShip . ship === this . races [race] . ships [ship]) SelectedShip = null;
 	delete this . races [race] . ships [ship];
 	// console . log (SelectedShip . ship, this . races [race] . ships [ship], SelectedShip . ship === this . races [race] . ships [ship], this . SelectedShip, SelectedShip);
+};
+
+Galaxy . prototype . ProcessIneffectiveRounds = function () {
+	for (var star in this . stars) this . stars [star] . ineffective ++;
 };
