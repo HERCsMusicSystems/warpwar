@@ -26,7 +26,7 @@ var Galaxy = function (x, y) {
 	for (var ind = 0; ind < NumberOfStars; ind ++) {
 		var location = GenerateLocation (x, y);
 		while (this . StarAround (location . x, location . y) !== null) location = GenerateLocation (x, y);
-		this . stars [GetName (this . names)] = {location: location, economy: economies [Math . floor (Math . random () * economies . length)]};
+		this . stars [GetName (this . names)] = {location: location, economy: economies [Math . floor (Math . random () * economies . length)], ineffective: 0};
 	}
 	this . warps = [];
 	for (var star in this . stars) {
@@ -147,7 +147,7 @@ Galaxy . prototype . ResetOrders = function () {
 					this . Orders [ship] = {
 						race: race, ship: ship, Strategy: 'DODGE', PowerDrive: 0, Target: null,
 						Beams: 0, Shields: 0, Tubes: [], Bays: [], ECM: 0, Cannons: [],
-						Damage: 0, CanEscape: true, TechnologyLevel: Ship . TechnologyLevel
+						Damage: 0, CanEscape: true, TechnologyLevel: Ship . TechnologyLevel, location: location
 					};
 					for (var tube = 0; tube < Ship . Tubes; tube ++) this . Orders [ship] . Tubes . push ({Target: null, PowerDrive: 0});
 					for (var cannon = 0; cannon < Ship . Cannons; cannon ++) this . Orders [ship] . Cannons . push ({Target: null, Shells: 1});
@@ -646,6 +646,9 @@ Galaxy . prototype . ApplyDamages = function () {
 			// console . log (`${Order . race} ${Order . ship} takes ${Order . Damage} - ${Order . Shields} = ${damage}.`);
 			var SP = new Ship (this, this . races [Order . race] . ships [Order . ship]);
 			SP . ApplyDamage (damage);
+			this . stars [Order . location] . ineffective = 0;
+			// this . stars [this . Ship (Order . ship) . location] . ineffective = 0;
+			// console . log ('DAMAGE', this . stars [this . Ship (Order . ship) . location], this . stars [this . Ship (Order . ship) . location] . ineffective);
 		}
 	}
 };
