@@ -26,7 +26,7 @@ var Galaxy = function (x, y) {
 	for (var ind = 0; ind < NumberOfStars; ind ++) {
 		var location = GenerateLocation (x, y);
 		while (this . StarAround (location . x, location . y) !== null) location = GenerateLocation (x, y);
-		this . stars [GetName (this . names)] = {location: location, economy: economies [Math . floor (Math . random () * economies . length)], ineffective: 0};
+		this . stars [GetName (this . names)] = {location: location, economy: economies [Math . floor (Math . random () * economies . length)]};
 	}
 	this . warps = [];
 	for (var star in this . stars) {
@@ -647,7 +647,7 @@ Galaxy . prototype . ApplyDamages = function () {
 			// console . log (`${Order . race} ${Order . ship} takes ${Order . Damage} - ${Order . Shields} = ${damage}.`);
 			var SP = new Ship (this, this . races [Order . race] . ships [Order . ship]);
 			SP . ApplyDamage (damage);
-			this . stars [Order . location] . ineffective = 0;
+			// this . stars [Order . location] . ineffective = 0;
 			// this . stars [this . Ship (Order . ship) . location] . ineffective = 0;
 			// console . log ('DAMAGE', this . stars [this . Ship (Order . ship) . location], this . stars [this . Ship (Order . ship) . location] . ineffective);
 		}
