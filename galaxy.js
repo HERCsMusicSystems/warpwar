@@ -47,6 +47,7 @@ var Galaxy = function (x, y) {
 	this . CombatLocation = null;
 	this . CombatShip = null;
 	this . Orders = {};
+	this . Conflicts = {};
 };
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "Altair", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Canopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
@@ -228,9 +229,11 @@ Galaxy . prototype . Collect = function () {
 
 Galaxy . prototype . Combat = function (CombatLocations) {
 	for (var race in this . races) {for (var ship in this . races [race] . ships) {this . races [race] . ships [ship] . move = 0;}}
+	this . Conflicts = {};
 	if (CombatLocations . length < 1) return;
 	if (this . Phase !== 'move') return; this . Phase = 'combat';
 	this . CombatLocation = CombatLocations [0];
+	for (var combat in CombatLocations) this . Conflicts [CombatLocations [combat]] = {races: this . RacesAt (CombatLocations [combat])};
 	this . ResetOrders ();
 };
 
@@ -263,17 +266,21 @@ Galaxy . prototype . Next = function () {
 		else this . Phase = 'rearrange';
 		break;
 	case 'combat':
-		if (this . Combats () . length > 0) {
-			this . ProcessOrders ();
-			this . DropShips ();
-			this . ApplyDamages ();
-			this . PickUpShips ();
-			this . RetreatShips ();
-			this . ResetOrders ();
-			this . ProcessIneffectiveRounds ();
-			break;
+		var conflict = this . Conflicts [this . CombatLocation];
+		if (conflict . races . length > 0) conflict . races . shift ();
+		else {
+			if (this . Combats () . length > 0) {
+				this . ProcessOrders ();
+				this . DropShips ();
+				this . ApplyDamages ();
+				this . PickUpShips ();
+				this . RetreatShips ();
+				this . ResetOrders ();
+				this . ProcessIneffectiveRounds ();
+				break;
+			}
+			this . Phase = 'rearrange';
 		}
-		this . Phase = 'rearrange';
 		break;
 	case 'rearrange': this . Collect (); break;
 	default: break;
@@ -621,7 +628,10 @@ Galaxy . prototype . ProcessOrdersFor = function (star) {
 	}
 };
 
-Galaxy . prototype . ProcessOrders = function () {for (var ship in this . Orders) this . ProcessOrder (this . Ship (ship), this . Orders [ship]);};
+// Galaxy . prototype . ProcessOrders = function () {for (var ship in this . Orders) this . ProcessOrder (this . Ship (ship), this . Orders [ship]);};
+Galaxy . prototype . ProcessOrders = function () {
+	for (var ship in this . Orders) console . log (this . Orders [ship]);
+};
 
 Galaxy . prototype . DropShips = function () {
 	for (var order in this . Orders) {
