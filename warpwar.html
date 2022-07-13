@@ -311,13 +311,16 @@ var UpdateCombatPanel = function () {
 		document . getElementById ('CombatLocation') . options . add (new Option (combats [ind], combats [ind]));
 	}
 	document . getElementById ('CombatShip') . options . length = 0;
-	document . getElementById ('CombatShip') . options . add (new Option ('Select Combat Ship', 'select'));
+	var CompareRace = galaxy . Conflicts [galaxy . CombatLocation];
+	if (CompareRace) CompareRace = CompareRace . races;
+	if (CompareRace && CompareRace . length > 0) CompareRace = CompareRace [0];
+	document . getElementById ('CombatShip') . options . add (new Option (`Select ${CompareRace ? (CompareRace === 'process' ? '----' : CompareRace) : '----'} Combat Ship`, 'select'));
 	for (var race in galaxy . races) {
 		var Race = galaxy . races [race];
-		var CompareRace = galaxy . Conflicts [galaxy . CombatLocation];
+		CompareRace = galaxy . Conflicts [galaxy . CombatLocation];
 		if (CompareRace) {
 			CompareRace = CompareRace . races;
-			console . log (CompareRace [0], race);
+			// console . log (CompareRace [0], race);
 			if (CompareRace . length > 0 && CompareRace [0] === race) {
 				for (var ship in Race . ships) {
 					var Ship = Race . ships [ship];
@@ -342,7 +345,7 @@ var UpdateCombatPanel = function () {
 			text += `<option value="select">Select Strategy</option>`;
 			text += `<option value="ATTACK">ATTACK</option>`;
 			text += `<option value="DODGE">DODGE</option>`;
-			text += `<option value="RETREAT">RETREAT</option>`;
+			if (ship . WarpGenerator) text += `<option value="RETREAT">RETREAT</option>`;
 			text += `</select><br/>`;
 			text += `Target: `;
 			if (order . Target) text += `${order . Target} <img src="${galaxy . Ship (order . Target) . icon}" width="64"/> `;
@@ -584,9 +587,23 @@ var repaint = function () {
 			ctx . fillText (`Conflict at ${galaxy . CombatLocation}`, canvas . width * 0.5, 64);
 			var conflict = galaxy . Conflicts [galaxy . CombatLocation];
 			// console . log (galaxy . Conflicts, galaxy . CombatLoc);
-			if (conflict . races . length > 0) {
+			if (conflict . races . length > 1) {
 				ctx . fillStyle = galaxy . races [conflict . races [0]] . colour;
 				ctx . fillText (`Orders for ${galaxy . Conflicts [galaxy . CombatLocation] . races [0]}`, canvas . width * 0.5, 96);
+			} else {
+				ctx . fillStyle = galaxy . races [galaxy . Turns [0]] . colour;
+				ctx . fillText (`Process orders for ${galaxy . CombatLocation}.`, canvas . width * 0.5, 96);
+				ctx . textAlign = 'left';
+				ctx . textBaseline = 'top';
+				ctx . font = '18px arial';
+				for (var ind = 0; ind < galaxy . Report . length; ind ++) {
+					var W = ctx . measureText (galaxy . Report [ind] . text);
+					var X = 64; var Y = 128 + ind * 22;
+					ctx . beginPath (); ctx . moveTo (X, Y); ctx . lineTo (X + W . width, Y); ctx . lineTo (X + W . width, Y + 22); ctx . lineTo (X, Y + 22);
+					ctx . fillStyle = galaxy . BackgroundColour; ctx . fill ();
+					ctx . fillStyle = galaxy . Report [ind] . colour;
+					ctx . fillText (galaxy . Report [ind] . text, X, Y);
+				}
 			}
 		}
 	}
