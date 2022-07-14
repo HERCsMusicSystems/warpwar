@@ -291,6 +291,7 @@ Galaxy . prototype . Next = function () {
 			this . RetreatShips ();
 			this . ResetOrders ();
 			this . ProcessIneffectiveRounds ();
+			this . PotentiallyDestroyBase ();
 		}
 		break;
 	case 'rearrange': this . Collect (); break;
@@ -744,3 +745,19 @@ Galaxy . prototype . DeleteShip = function (race, ship) {
 Galaxy . prototype . ProcessIneffectiveRounds = function () {
 	// for (var star in this . stars) this . stars [star] . ineffective ++;
 };
+
+Galaxy . prototype . PotentiallyDestroyBase = function () {
+	var races = this . RacesAt (this . CombatLocation);
+	if (races && races . length === 1) {
+		for (var race in this . races) {
+			for (var base in this . races [race] . bases) {
+				console . log (races, race, base, this . races [race] . bases [base]);
+				if (races [0] !== race) {
+					this . Report . push ({text: `${base} base destroyed.`, colour: this . races [race] . colour});
+					delete this . races [race] . bases [base];
+				}
+			}
+		}
+	}
+};
+
