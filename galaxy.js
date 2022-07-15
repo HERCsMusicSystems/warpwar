@@ -758,6 +758,8 @@ Galaxy . prototype . PotentiallyDestroyBase = function () {
 				}
 			}
 		}
+		this . Report . push ({text: `Combat at ${this . CombatLocation} completed. ${races [0]} is the winner.`, colour: 'white'});
+		if (races [0] === this . Turns [0]) this . Report . push ({text: `${this . Turns [0]} can now rearrange ships at ${this . CombatLocation}.`, colour: this . races [this . Turns [0]] . colour});
 	}
 };
 
