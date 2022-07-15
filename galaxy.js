@@ -50,6 +50,7 @@ var Galaxy = function (x, y) {
 	this . Conflicts = {};
 	this . Report = [];
 	this . BackgroundColour = '#000033';
+	this . NumberOfIneffectiveRounds = 3;
 };
 
 Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens", "Adara", "Adhafera", "Adhil", "Agena", "Ain al Rami", "Ain", "Al Anz", "Al Kalb al Rai", "Al Minliar al Asad", "Al Minliar al Shuja", "Aladfar", "Alathfar", "Albaldah", "Albali", "Albireo", "Alchiba", "Alcor", "Alcyone", "Aldebaran", "Alderamin", "Aldhibah", "Alfecca Meridiana", "Alfirk", "Agenib", "Aalgiea", "Algol", "Algorab", "Alhena", "Alioth", "Alkaid", "Alkalurops", "Alkes", "Alkurhah", "Almaak", "Alnair", "Alnath", "Alnilam", "Alnitak", "Alniyat", "Alphard", "Alphekka", "Alpheratz", "Alrai", "Alrisha", "Alsafi", "Alsciaukat", "Alshain", "Alshat", "Alsuhail", "Altair", "Altarf", "Alterf", "Aludra", "Alula Australis", "Alula Borealis", "Alya", "Alzirr", "Ancha", "Angetenar", "Ankaa", "Anser", "Antares", "Arcturus", "Arkab Posterior", "Arkab Prior", "Arneb", "Arrakis", "Ascella", "Asellus Australis", "Asellus Borealis", "Asellus Primus", "Asellus Secondus", "Asellus Tertius", "Asterope", "Atik", "Atlas", "Auva", "Avior", "Azelfafage", "Azha", "Azmidiske", "Baham", "Baten Kaitos", "Becrux", "Beid", "Bellatrix", "Betelgeuse", "Botein", "Brachium", "Canopus", "Capella", "Caph", "Castor", "Cebalrai", "Celaeno", "Chara", "Chort", "Cor Caroli", "Cursa", "Dabih", "Deneb Algedi", "Deneb Dulfim", "Deneb el Okab", "Deneb Kaitos Shemali", "Deneb", "Denebola", "Dheneb", "Diadem", "Diphda", "Dschubba", "Dsiban", "Dubhe", "Ed Asich", "Electra", "Elnath", "Enif", "Etamin", "Formalhaut", "Fornacis", "Fum al Samakah", "Furud", "Gacrux", "Gianfar", "Gienah Cygni", "Gienah Ghurab", "Gomeisa", "Gorgonea Quarta", "Gorgonea Secunda", "Gorgonea Tertia", "Graffias", "Grafias", "Grumium", "Hadar", "Haedi", "Hamal", "Hassaleh", "Head of Hydrus", "Heze", "Hoedus II", "Homam", "Hyadum I", "Hyadum II", "Izar", "Jabbah", "Kaffaljidhma", "Kajam", "Kaus Australis", "Kaus Borealis", "Kaus Meridionalis", "Keid", "Kitalpha", "Kocab", "Kornephoros", "Kraz", "Kuma", "Lesath", "Maasym", "Maia", "Marfak", "Marfic", "Marfik", "Markab", "Matar", "Mebsuta", "Megrez", "Meissa", "Mekbuda", "Menkalinan", "Menkar", "Menkent", "Menkib", "Merak", "Merga", "Merope", "Mesarthim", "Metallah", "Miaplacidus", "Minkar", "Mintaka", "Mira", "Mirach", "Miram", "Mirphak", "Mizar", "Mufrid", "Muliphen", "Murzim", "Muscida", "Nair al Saif", "Naos", "Nash", "Nashira", "Nekkar", "Nihal", "Nodus Secundus", "Nunki", "Nusakan", "Peacock", "Phad", "Phaet", "Pherkad Minor", "Pherkad", "Pleione", "Polaris Australis", "Polaris", "Pollux", "Porrima", "Praecipua", "Prima Giedi", "Procyon", "Propus", "Rana", "Ras Elased Australis", "Ras Elased Borealis", "Rasalgethi", "Rasalhague", "Rastaban", "Regulus", "Rigel Kentaurus", "Rigel", "Rijl al Awwa", "Rotanev", "Ruchba", "Ruchbah", "Rukbat", "Sabik", "Sadalachbia", "Sadalmelik", "Sadalsuud", "Sadr", "Saiph", "Salm", "Sargas", "Sarin", "Sceptrum", "Scheat", "Secunda Giedi", "Segin", "Seginus", "Sham", "Sharatan", "Shaula", "Sheidr", "Sheliak", "Sirius", "Situla", "Skat", "Spica", "Sterope II", "Sualocin", "Subra", "Suhail al Muhlif", "Sulafat", "Syrma", "Tabit", "Talitha", "Tania Australis", "Tania Borealis", "Tarazed", "Taygeta", "Tegmen", "Tejat Posterior", "Terebellum", "Thabit", "Theemim", "Thuban", "Torcularis Septentrionalis", "Turais", "Tyl", "Unukalhai", "Vega", "Vindemiatrix", "Wasat", "Wezen", "Wezn", "Yed Posterior", "Yed Prior", "Yildun", "Zaniah", "Zaurak", "Zavijah", "Zibal", "Zosma", "Zuben Elakrab", "Zuben Elakribi", "Zuben Elgenubi", "Zuben Elschemali"];
@@ -237,7 +238,7 @@ Galaxy . prototype . Combat = function (CombatLocations) {
 	this . CombatLocation = CombatLocations [0];
 	for (var combat in CombatLocations) {
 		var races = this . RacesAt (CombatLocations [combat]); races . push ('process');
-		this . Conflicts [CombatLocations [combat]] = {races: races};
+		this . Conflicts [CombatLocations [combat]] = {races: races, ineffective: 0};
 		this . CombatShip = null;
 	}
 	this . ResetOrders ();
@@ -602,7 +603,6 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 		var damage = CombatResultTable (Order . Strategy, Order . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, Order . Beams);
 		if (damage !== null) {TargetOrder . Damage += this . Damage (damage, TargetOrder . TechnologyLevel, Order . TechnologyLevel); TargetOrder . CanEscape = false;}
 		this . Report . push ({text: `${Ship . name} [${Order . PowerDrive}/${Order . Strategy . toLowerCase ()}] beam fire ${Order . Beams} at ${Order . Target} [${this . Orders [Order . Target] . PowerDrive}/${this . Orders [Order . Target] . Strategy . toLowerCase ()}] => inflicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
-		console . log ('PUSHING ORDER', this . Report [this . Report . length - 1]);
 	}
 	for (var ind = 0; ind < Order . Tubes . length; ind ++) {
 		var Tube = Order . Tubes [ind];
@@ -647,7 +647,7 @@ Galaxy . prototype . ProcessOrdersFor = function (star) {
 Galaxy . prototype . ProcessOrders = function () {
 	for (var ship in this . Orders) {
 		if (this . Orders [ship] . location === this . CombatLocation) {
-			console . log (this . Orders [ship]);
+			// console . log (this . Orders [ship]);
 			this . ProcessOrder (this . Ship (ship), this . Orders [ship]);
 		}
 	}
@@ -680,8 +680,10 @@ Galaxy . prototype . ApplyDamages = function () {
 				// console . log (`${Order . race} ${Order . ship} takes ${Order . Damage} - ${Order . Shields} = ${damage}.`);
 				var SP = new Ship (this, this . races [Order . race] . ships [Order . ship]);
 				SP . ApplyDamage (damage);
-				console . log ('ORDER', Order);
+				// console . log ('ORDER', Order);
 				this . Report . push ({text: `${damage} to ${SP . ship . name}.`, colour: SP . ship . colour});
+				console . log ('Reset ineffective', this . CombatLocation);
+				this . Conflicts [this . CombatLocation] . ineffective = 0;
 				// this . stars [Order . location] . ineffective = 0;
 				// this . stars [this . Ship (Order . ship) . location] . ineffective = 0;
 				// console . log ('DAMAGE', this . stars [this . Ship (Order . ship) . location], this . stars [this . Ship (Order . ship) . location] . ineffective);
@@ -742,16 +744,14 @@ Galaxy . prototype . DeleteShip = function (race, ship) {
 	// console . log (SelectedShip . ship, this . races [race] . ships [ship], SelectedShip . ship === this . races [race] . ships [ship], this . SelectedShip, SelectedShip);
 };
 
-Galaxy . prototype . ProcessIneffectiveRounds = function () {
-	// for (var star in this . stars) this . stars [star] . ineffective ++;
-};
+Galaxy . prototype . ProcessIneffectiveRounds = function () {if (this . CombatLocation) if (this . Conflicts [this . CombatLocation] . ineffective ++ >= this . NumberOfIneffectiveRounds) this . Exodus ();};
 
 Galaxy . prototype . PotentiallyDestroyBase = function () {
 	var races = this . RacesAt (this . CombatLocation);
 	if (races && races . length === 1) {
 		for (var race in this . races) {
 			for (var base in this . races [race] . bases) {
-				console . log (races, race, base, this . races [race] . bases [base]);
+				// console . log (races, race, base, this . races [race] . bases [base]);
 				if (races [0] !== race && base === this . CombatLocation) {
 					this . Report . push ({text: `${base} base destroyed.`, colour: this . races [race] . colour});
 					delete this . races [race] . bases [base];
@@ -763,3 +763,48 @@ Galaxy . prototype . PotentiallyDestroyBase = function () {
 	}
 };
 
+Galaxy . prototype . Exodus = function () {
+	// console . log (`Exodus at ${this . CombatLocation}.`);
+	for (var ship in this . races [this . Turns [0]]. ships) {
+		var Ship = this . races [this . Turns [0]] . ships [ship];
+		if (Ship . location === this . CombatLocation) {
+			if (! Ship . WarpGenerator) {
+				for (var carrier in this . races [this . Turns [0]] . ships) {
+					if (Ship . location === this . CombatLocation) {
+						var Carrier = this . races [this . Turns [0]] . ships [carrier];
+						if (Carrier . WarpGenerator && Carrier . location === this . CombatLocation) {
+							for (var ind in Carrier . Bays) {
+								if (Ship . location === this . CombatLocation) {
+									this . Report . push ({text: `${Ship . name} picked up by ${Carrier . name}.`, colour: Ship . colour});
+									Carrier . Bays [ind] = Ship . name;
+									Ship . location = Carrier . name;
+								}
+							}
+						}
+					}
+				}
+				if (Ship . location === this . CombatLocation) {
+					this . Report . push ({text: `${Ship . name} destroyed during Exodus.`, colour: Ship . colour});
+					this . DeleteShip (this . Turns [0], ship);
+				}
+			}
+		}
+	}
+	for (var ship in this . races [this . Turns [0]] . ships) {
+		var Ship = this . races [this . Turns [0]] . ships [ship];
+		if (Ship . location === this . CombatLocation) {
+			// console . log (`${Ship . name} for exodus.`);
+			if (Ship . WarpGenerator) {
+				var Location = this . stars [this . CombatLocation] . location;
+				var shift = [{x: 1, y: 0}, {x: 0, y: 1}, {x: -1, y: 0}, {x: 0, y: -1}, {x: 1, y: 1}, {x: -1, y: -1}];
+				shift = shift [Math . floor (Math . random () * shift . length)];
+				Ship . location = {x: pmod (Location . x + shift . x, this . size . width), y: pmod (Location . y + shift . y, this . size . height)};
+				for (var star in this . stars) {
+					var SL = this . stars [star] . location;
+					if (SL . x === Ship . location . x && SL . y === Ship . location . y) Ship . location = star;
+				}
+			}
+		}
+	}
+	this . CombatShip = null;
+};

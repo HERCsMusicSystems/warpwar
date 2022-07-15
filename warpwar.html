@@ -28,7 +28,7 @@
 </div>
 <div id="CombatPanel" style="position: absolute; left: 8px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<div id="CombatLocationDiv" style="float: left;">sputnik</div>&nbsp;
-	<select id="CombatLocation" onchange="javascript: if (this . value !== 'select') galaxy . CombatLocation = this . value; repaint ();"></select>
+	<select id="CombatLocation" onchange="javascript: if (this . value !== 'select') {galaxy . CombatLocation = this . value; galaxy . CombatShip = null;} repaint ();"></select>
 	<select id="CombatShip" onchange="javascript: if (this . value !== 'select') galaxy . CombatShip = this . value; repaint ();"></select>
 	<div id="CombatShipData">
 	</div>
@@ -187,7 +187,7 @@ var UpdateShipSelectDiv = function () {
 			text += `<table><tr>`;
 			for (var ind in ship . Bays) {
 				var racesAt = null; if (galaxy . CombatLocation === ship . location) racesAt = galaxy . RacesAt (galaxy . CombatLocation);
-				console . log ('RACES:', racesAt);
+				// console . log ('RACES:', racesAt);
 				racesAt = racesAt && racesAt . length === 1 && racesAt [0] === ship . race;
 				if (ship . Bays [ind] === null) {
 					text += `<td style="background-color: gray;">EMPTY<br/>`;
