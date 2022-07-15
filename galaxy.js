@@ -269,14 +269,14 @@ Galaxy . prototype . Next = function () {
 	case 'move':
 		var combats = this . Combats ();
 		if (combats . length > 0) this . Combat (combats);
-		else this . Phase = 'rearrange';
+		else this . Collect ();
 		break;
 	case 'combat':
-		if (this . CombatLocation && this . RacesAt (this . CombatLocation) . length < 2) {if (this . Combats () . length < 1) this . Phase = 'rearrange'; this . CombatLocation = null; break;}
+		if (this . CombatLocation && this . RacesAt (this . CombatLocation) . length < 2) {if (this . Combats () . length < 1) this . Collect (); this . CombatLocation = null; break;}
 		var conflict = this . Conflicts [this . CombatLocation];
-		if (! conflict) {if (this . Combats () . length < 1) this . Phase = 'rearrange'; break;}
+		if (! conflict) {if (this . Combats () . length < 1) this . Collect (); break;}
 		if (conflict . races . length < 2) {
-			if (this . Combats () . length < 1) {this . Phase = 'rearrange'; break;}
+			if (this . Combats () . length < 1) {this . Collect (); break;}
 			var races = this . RacesAt (this . CombatLocation); races . push ('process');
 			if (races . length > 1) conflict . races = races;
 			break;
