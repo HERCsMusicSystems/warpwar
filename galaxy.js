@@ -752,7 +752,7 @@ Galaxy . prototype . PotentiallyDestroyBase = function () {
 		for (var race in this . races) {
 			for (var base in this . races [race] . bases) {
 				console . log (races, race, base, this . races [race] . bases [base]);
-				if (races [0] !== race) {
+				if (races [0] !== race && base === this . CombatLocation) {
 					this . Report . push ({text: `${base} base destroyed.`, colour: this . races [race] . colour});
 					delete this . races [race] . bases [base];
 				}
