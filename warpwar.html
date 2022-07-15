@@ -142,7 +142,7 @@ var UpdateShipSelectDiv = function () {
 				text += `Missiles = ${ship . Missiles} [${ship . original . Missiles}]`;
 				if (CanRepair && ship . original . Missiles > ship . Missiles) text += ` <input type="button" value="REFILL" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Missiles', 1, 3); repaint ();"/>`;
 				text += `<br/>`;
-				for (var ind = 0; ind < ship . Missiles; ind ++) text += `<img src="Harpoon.png" width="128px;"/><br/>`;
+				for (var ind = 0; ind < ship . Missiles; ind ++) text += `<img src="HarpoonV.png" height="128px;"/>`;
 			}
 			text += '<hr/>';
 			if (ship . RepairBay) text += 'Repair Bay<br/>';
@@ -186,10 +186,13 @@ var UpdateShipSelectDiv = function () {
 			text += `Bays = ${ship . Bays . length} [${ship . original . Bays}]<br/>`;
 			text += `<table><tr>`;
 			for (var ind in ship . Bays) {
+				var racesAt = null; if (galaxy . CombatLocation === ship . location) racesAt = galaxy . RacesAt (galaxy . CombatLocation);
+				console . log ('RACES:', racesAt);
+				racesAt = racesAt && racesAt . length === 1 && racesAt [0] === ship . race;
 				if (ship . Bays [ind] === null) {
 					text += `<td style="background-color: gray;">EMPTY<br/>`;
 					if (typeof ship . location === 'string') {
-						if (galaxy . Phase !== 'combat') {
+						if (galaxy . Phase !== 'combat' || racesAt) {
 							text += `<select onchange="javascript: SelectedShip . Pick (this . value, '${ind}'); if (this . value !== 'Pick') repaint ();"><option>Pick</option>`;
 							for (var s in galaxy . races [ship . race] . ships) {
 								var ss = galaxy . races [ship . race] . ships [s];
@@ -207,7 +210,7 @@ var UpdateShipSelectDiv = function () {
 					var Docked = galaxy . races [ship . race] . ships [ship . Bays [ind]];
 					text += `<td style="background-color: red; text-align: center;"><img src="${Docked . icon}" width="64"/><br/>`;
 					if (typeof ship . location === 'string') {
-						if (galaxy . Phase === 'combat') text += Docked . name;
+						if (galaxy . Phase === 'combat' && ! racesAt) text += Docked . name;
 						else text += `<input type="button" value="${Docked . name}" onclick="javascript: SelectedShip . Drop (${ind}); repaint ();"/>`;
 					} else text += `${Docked . name}`;
 					text += `</td>`;
@@ -446,7 +449,7 @@ var UpdateCombatPanel = function () {
 				text += `</td></tr>`;
 			}
 			text += `</table>`;
-			for (var ind = 0; ind < ship . Missiles; ind ++) text += `<img src="Harpoon.png" width="96"/><br/>`;
+			for (var ind = 0; ind < ship . Missiles; ind ++) text += `<img src="HarpoonV.png" height="96"/>`;
 			text += `<hr/>`;
 			text += `</div>`;
 			document . getElementById ('CombatShipData') . innerHTML = text;
