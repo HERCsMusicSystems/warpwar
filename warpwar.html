@@ -58,8 +58,10 @@
 	<div id="ShipData"/></div>
 </div>
 
-<div id="JSON" style="position: absolute; left: 256px; top: 208px; padding: 8px; border-radius: 8px, background-color: gold; font-family: arial;">
-	<textarea id="JSONArea" rows="14" cols="132"></textarea>
+<div id="JSON" style="position: absolute; left: 256px; top: 208px; padding: 8px; border-radius: 8px; background-color: gold; font-family: arial;">
+	<textarea id="JSONArea" rows="14" cols="132"></textarea><br/>
+	<input type="button" value="Store" onclick="javascript: galaxy . store ('galaxy/PBEM.txt'); document . getElementById ('JSON') . style . visibility = 'hidden';"/>
+	<input type="button" value="Close" onclick="javascript: document . getElementById ('JSON') . style . visibility = 'hidden';"/>
 </div>
 
 <div id="CreateRace" style="position: absolute; bottom: 8px; right: 256px; background-color: gold; border-radius: 8px; font-family: arial; padding: 8px;">
@@ -76,7 +78,7 @@
 			<option value="GALAXY 7">GALAXY 7</option>
 			<option value="GALAXY 8">GALAXY 8</option>
 		</select>
-		<input type="button" value="Store" onclick="javascript: galaxy . store (document . getElementById ('FileName') . value);"/>
+		<input type="button" value="Store" onclick="javascript: var FN = document . getElementById ('FileName') . value; galaxy . store (FN); if (FN === 'PBEM') {document . getElementById ('JSON') . style . visibility = 'visible'; document . getElementById ('JSONArea') . value = localStorage . getItem ('galaxy/PBEM.txt');}"/>
 		<input type="button" value="Restore" onclick="javascript: galaxy . restore (document . getElementById ('FileName') . value); repaint ();"/>
 		<input type="button" value="Next" onclick="javascript: galaxy . Next (); repaint ();"/>
 	</div>

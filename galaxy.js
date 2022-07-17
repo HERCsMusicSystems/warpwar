@@ -60,7 +60,7 @@ Galaxy . prototype . constellations = ["Andromeda", "Antlia", "Apus", "Aquarius"
 Galaxy . prototype . store = function (FileName) {
 	var json = JSON . parse (JSON . stringify (this));
 	delete json . names; delete json . constellations;
-	localStorage . setItem (`galaxy/${FileName}.txt`, JSON . stringify (json));
+	localStorage . setItem (FileName, JSON . stringify (json));
 };
 Galaxy . prototype . restore = function (FileName) {
 	var json = localStorage . getItem (`galaxy/${FileName}.txt`);
