@@ -57,13 +57,29 @@ Galaxy . prototype . names = ["Acamar", "Achernar", "Achird", "Acrux", "Acubens"
 
 Galaxy . prototype . constellations = ["Andromeda", "Antlia", "Apus", "Aquarius", "Aquila", "Ara", "Aries", "Auriga", "Boötes", "Caelum", "Camelopardalis", "Cancer", "Canes Venatici", "Canis Major", "Canis Minor", "Capricornus", "Carina", "Cassiopeia", "Centaurus", "Cepheus", "Cetus", "Chamaeleon", "Circinus", "Columba", "Coma Berenices", "Corona Austrina", "Corona Borealis", "Corvus", "Crater", "Crux", "Cygnus", "Delphinus", "Dorado", "Draco", "Equuleus", "Eridanus", "Fornax", "Gemini", "Grus", "Hercules", "Horologium", "Hydra", "Hydrus", "Indus", "Lacerta", "Leo", "Leo Minor", "Lepus", "Libra", "Lupus", "Lynx", "Lyra", "Mensa", "Microscopium", "Monoceros", "Musca", "Norma", "Octans", "Ophiuchus", "Orion", "Pavo", "Pegasus", "Perseus", "Phoenix", "Pictor", "Pisces", "Piscis Austrinus", "Puppis", "Pyxis", "Reticulum", "Sagitta", "Sagittarius", "Scorpius", "Sculptor", "Scutum", "Serpens", "Sextans", "Taurus", "Telescopium", "Triangulum", "Triangulum Australe", "Tucana", "Ursa Major", "Ursa Minor", "Vela", "Virgo", "Volans", "Vulpecula"];
 
-Galaxy . prototype . store = function () {localStorage . setItem ('galaxy', JSON . stringify (this));};
-Galaxy . prototype . restore = function () {
-	var json = localStorage . getItem ('galaxy');
+Galaxy . prototype . store = function (FileName) {
+	var json = JSON . parse (JSON . stringify (this));
+	delete json . names; delete json . constellations;
+	localStorage . setItem (`galaxy/${FileName}.txt`, JSON . stringify (json));
+};
+Galaxy . prototype . restore = function (FileName) {
+	var json = localStorage . getItem (`galaxy/${FileName}.txt`);
 	if (json === null) return;
 	json = JSON . parse (json);
 	for (var key in json) this [key] = json [key];
 	SelectedShip = null; if (this . SelectedShip) SelectedShip = this . ShipSelect (this . SelectedShip);
+	for (var star in this . stars) {
+		var ind = this . names . indexOf (star);
+		if (ind >= 0) this . names . splice (ind, 1);
+	}
+	for (var race in this . races) {
+		var Race = this . races [race];
+		for (var ship in Race . ships) {
+			var Ship = Race . ships [ship];
+			var ind = this . constellations . indexOf (ship);
+			if (ind >= 0) this . constellations . splice (ind, 1);
+		}
+	}
 };
 
 Galaxy . prototype . CreateRace = function (name, base, colour) {
