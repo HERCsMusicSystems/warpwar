@@ -58,16 +58,17 @@
 	<div id="ShipData"/></div>
 </div>
 
-<div id="JSON" style="position: absolute; left: 256px; top: 208px; padding: 8px; border-radius: 8px; background-color: gold; font-family: arial;">
+<div id="JSON" style="position: absolute; left: 256px; top: 208px; padding: 8px; border-radius: 8px; background-color: gold; font-family: arial; visibility: hidden;">
 	<textarea id="JSONArea" rows="14" cols="132"></textarea><br/>
-	<input type="button" value="Store" onclick="javascript: galaxy . store ('galaxy/PBEM.txt'); document . getElementById ('JSON') . style . visibility = 'hidden';"/>
+	<input type="button" value="Import" onclick="javascript: localStorage . setItem ('galaxy/PBEM.txt', document . getElementById ('JSONArea') . value); galaxy . restore ('galaxy/PBEM.txt'); document . getElementById ('JSON') . style . visibility = 'hidden'; repaint ();"/>
+	<input type="button" value="Export" onclick="javascript: galaxy . store ('galaxy/PBEM.txt'); document . getElementById ('JSONArea') . value = localStorage . getItem ('galaxy/PBEM.txt');"/>
 	<input type="button" value="Close" onclick="javascript: document . getElementById ('JSON') . style . visibility = 'hidden';"/>
 </div>
 
-<div id="CreateRace" style="position: absolute; bottom: 8px; right: 256px; background-color: gold; border-radius: 8px; font-family: arial; padding: 8px;">
+<div id="CreateRace" style="position: absolute; bottom: 8px; right: 256px; background-color: gold; border-radius: 8px; font-family: arial; padding: 8px;"><nobr>
 	<div id="CreateRaces" style="float: left;"><table><tr><td>RACES:</td></tr></table></div>
 	<div align="right" style="background-color: gold;">
-		<select id="FileName">
+		<nobr><select id="FileName">
 			<option value="PBEM">PBEM</option>
 			<option value="GALAXY 1">GALAXY 1</option>
 			<option value="GALAXY 2">GALAXY 2</option>
@@ -78,9 +79,10 @@
 			<option value="GALAXY 7">GALAXY 7</option>
 			<option value="GALAXY 8">GALAXY 8</option>
 		</select>
-		<input type="button" value="Store" onclick="javascript: var FN = document . getElementById ('FileName') . value; galaxy . store (FN); if (FN === 'PBEM') {document . getElementById ('JSON') . style . visibility = 'visible'; document . getElementById ('JSONArea') . value = localStorage . getItem ('galaxy/PBEM.txt');}"/>
-		<input type="button" value="Restore" onclick="javascript: galaxy . restore (document . getElementById ('FileName') . value); repaint ();"/>
+		<input type="button" value="Store" onclick="javascript: galaxy . store (`galaxy/${document . getElementById ('FileName') . value}.txt`; repaint ();"/>
+		<input type="button" value="Restore" onclick="javascript: galaxy . restore (`galaxy/${document . getElementById ('FileName') . value}.txt`); repaint ();"/>
 		<input type="button" value="Next" onclick="javascript: galaxy . Next (); repaint ();"/>
+		<input type="button" value="I/O" onclick="javascript: document . getElementById ('JSON') . style . visibility = 'visible';"/></nobr>
 	</div>
 	<nobr><input type="button" value="Create New Race" onclick="javascript: if (document . getElementById ('CreateRaceName') . value . length > 0) {galaxy . CreateRace (document . getElementById ('CreateRaceName') . value, document . getElementById ('CreateRaceStar') . value, document . getElementById ('CreateRaceColour') . value); repaint ();} else alert ('No name for new race.');"/>
 	<input type="text" id="CreateRaceName"/>
@@ -93,7 +95,11 @@
 		<option value="green" style="background-color: green;">Green</option>
 		<option value="sienna" style="background-color: sienna;">Sienna</option>
 		<option value="olive" style="background-color: olive;">Olive</option>
-	</select></nobr>
+	</select>
+	<input type="number" min="1" value="4" style="width: 5em;" id="Galaxy Width"/>
+	<input type="number" min="1" value="4" style="width: 5em;" id="Galaxy Height"/>
+	<input type="button" value="New Map" onclick="javascript: galaxy = new Galaxy (Number (document . getElementById ('Galaxy Width') . value), Number (document . getElementById ('Galaxy Height') . value)); repaint ();"/>
+	</nobr></nobr>
 </div>
 
 <canvas id="canvas" onmousedown="javascript: return OnMouseDown (event);" onmousemove="javascript: OnMouseMove (event);" onmouseup="javascript: OnMouseUp (event);" oncontextmenu="javascript: event . preventDefault ();" width="400" height="200"/>
