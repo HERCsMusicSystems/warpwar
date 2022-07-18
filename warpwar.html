@@ -98,7 +98,7 @@
 	</select>
 	<input type="number" min="1" value="4" style="width: 5em;" id="Galaxy Width"/>
 	<input type="number" min="1" value="4" style="width: 5em;" id="Galaxy Height"/>
-	<input type="button" value="New Map" onclick="javascript: galaxy = new Galaxy (Number (document . getElementById ('Galaxy Width') . value), Number (document . getElementById ('Galaxy Height') . value)); repaint ();"/>
+	<input type="button" value="New Map" onclick="javascript: galaxy . store ('galaxy/PBEM.txt'); galaxy = new Galaxy (Number (document . getElementById ('Galaxy Width') . value), Number (document . getElementById ('Galaxy Height') . value)); repaint ();"/>
 	</nobr></nobr>
 </div>
 
@@ -694,7 +694,7 @@ for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
 }
 
 var galaxy = new Galaxy (28, 14);
-// galaxy . restore ();
+galaxy . restore ('galaxy/PBEM.txt');
 repaint ();
 
 </script>

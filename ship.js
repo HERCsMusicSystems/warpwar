@@ -5,7 +5,8 @@ var In = ['g1.png', 'g2.png', 'g3.png', 'g4.png', 'g5.png', 'g6.png', 'g7.png', 
 		's1.png', 's2.png', 's3.png', 's4.png', 's5.png', 's6.png', 's7.png', 's8.png', 's9.png',
 		's10.png', 's11.png', 's12.png', 's13.png', 's14.png', 's15.png', 's16.png', 's17.png', 's18.png',
 		's21.png', 's22.png', 's23.png', 's24.png', 's25.png', 's26.png', 's27.png', 's28.png', 's29.png',
-		's30.png', 's31.png', 's32.png', 's33.png', 's34.png', 's35.png', 's36.png', 's37.png', 's38.png'
+		's30.png', 's31.png', 's32.png', 's33.png', 's34.png', 's35.png', 's36.png', 's37.png', 's38.png',
+		'b0.png', 'b1.png', 'b2.png', 'b3.png', 'b4.png', 'b5.png', 'b6.png', 'b7.png', 'b8.png', 'b9.png'
 	];
 for (var name of In) {Icons [name] = new Image (); Icons [name] . src = name;}
 
