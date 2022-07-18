@@ -63,7 +63,7 @@ Galaxy . prototype . store = function (FileName) {
 	localStorage . setItem (FileName, JSON . stringify (json));
 };
 Galaxy . prototype . restore = function (FileName) {
-	var json = localStorage . getItem (`galaxy/${FileName}.txt`);
+	var json = localStorage . getItem (FileName);
 	if (json === null) return;
 	json = JSON . parse (json);
 	for (var key in json) this [key] = json [key];
