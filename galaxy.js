@@ -620,7 +620,7 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 		var TargetOrder = this . Orders [Order . Target];
 		var damage = CombatResultTable (Order . Strategy, Order . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, Order . Beams);
 		if (damage !== null) {TargetOrder . Damage += this . Damage (damage, TargetOrder . TechnologyLevel, Order . TechnologyLevel); TargetOrder . CanEscape = false;}
-		this . Report . push ({text: `${Ship . name} [${Ship . TechnologyLevel}] [${Order . PowerDrive}/${Order . Strategy . toLowerCase ()}] beam fire ${Order . Beams} at ${Order . Target} [${TargetOrder . TechnologyLevel}] [${this . Orders [Order . Target] . PowerDrive}/${this . Orders [Order . Target] . Strategy . toLowerCase ()}] => inflicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
+		this . Report . push ({text: `${Ship . name} [${Ship . TechnologyLevel}] [${Order . PowerDrive} / ${Order . Strategy . toLowerCase ()}] beam fire ${Order . Beams} at ${Order . Target} [${TargetOrder . TechnologyLevel}] [${this . Orders [Order . Target] . PowerDrive} / ${this . Orders [Order . Target] . Strategy . toLowerCase ()}] => inflicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
 	}
 	for (var ind = 0; ind < Order . Tubes . length; ind ++) {
 		var Tube = Order . Tubes [ind];
@@ -640,6 +640,7 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 			}
 			Ship . Missiles --;
 			// console . log (TargetOrder . Damage, damage, damage1, damage2);
+			this . Report . push ({text: `${Ship . name} [${Ship . TechnologyLevel}] fired missile [${Tube . PowerDrive}] at ${Tube . Target} [${TargetOrder . TechnologyLevel}] [${TargetOrder . PowerDrive} / ${TargetOrder . Strategy}] => infclicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
 		}
 	}
 	for (var ind = 0; ind < Order . Cannons . length; ind ++) {
@@ -649,7 +650,7 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 			var damage = CombatResultTable (Order . Strategy, Order . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, Cannon . Shells);
 			if (damage !== null) {TargetOrder . Damage += this . Damage (damage, TargetOrder . TechnologyLevel, Order . TechnologyLevel); TargetOrder . CanEscape = false;}
 			Ship . Shells -= Cannon . Shells;
-			this . Report . push ({text: `${Ship . name} [${Order . PowerDrive} / ${Order . Strategy}] cannon fire ${Cannon . Shells} at ${Cannon . Target} [${this . Orders [Cannon . Target] . PowerDrive} / ${this . Orders [Cannon . Target] . Strategy}] => inflicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
+			this . Report . push ({text: `${Ship . name} [${Ship . TechnologyLevel}] [${Order . PowerDrive} / ${Order . Strategy}] cannon fire ${Cannon . Shells} at ${Cannon . Target} [${TargetOrder . TechnologyLevel}] [${this . Orders [Cannon . Target] . PowerDrive} / ${this . Orders [Cannon . Target] . Strategy}] => inflicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
 		}
 	}
 };
@@ -682,6 +683,7 @@ Galaxy . prototype . DropShips = function () {
 					var SS = this . Ship (Carrier . Bays [ind]);
 					SS . location = Carrier . location;
 					Carrier . Bays [ind] = null;
+					this . Report . push ({text: `${order} dropped ${SS . name}.`, colour: this . races [Order . race] . colour});
 				}
 			}
 		}
@@ -700,7 +702,7 @@ Galaxy . prototype . ApplyDamages = function () {
 				SP . ApplyDamage (damage);
 				// console . log ('ORDER', Order);
 				this . Report . push ({text: `${damage} to ${SP . ship . name}.`, colour: SP . ship . colour});
-				console . log ('Reset ineffective', this . CombatLocation);
+				// console . log ('Reset ineffective', this . CombatLocation);
 				this . Conflicts [this . CombatLocation] . ineffective = 0;
 				// this . stars [Order . location] . ineffective = 0;
 				// this . stars [this . Ship (Order . ship) . location] . ineffective = 0;
@@ -721,6 +723,7 @@ Galaxy . prototype . PickUpShips = function () {
 					if (ss . location === Ship . location) {
 						Ship . Bays [ind] = Order . Bays [ind];
 						ss . location = Ship . name;
+						this . Report . push ({text: `${order} picked up ${ss . name}.`, colour: this . races [Order . race] . colour});
 					}
 				}
 			}
