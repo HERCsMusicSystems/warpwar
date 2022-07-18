@@ -79,7 +79,7 @@
 			<option value="GALAXY 7">GALAXY 7</option>
 			<option value="GALAXY 8">GALAXY 8</option>
 		</select>
-		<input type="button" value="Store" onclick="javascript: galaxy . store (`galaxy/${document . getElementById ('FileName') . value}.txt`; repaint ();"/>
+		<input type="button" value="Store" onclick="javascript: galaxy . store (`galaxy/${document . getElementById ('FileName') . value}.txt`); repaint ();"/>
 		<input type="button" value="Restore" onclick="javascript: galaxy . restore (`galaxy/${document . getElementById ('FileName') . value}.txt`); repaint ();"/>
 		<input type="button" value="Next" onclick="javascript: galaxy . Next (); repaint ();"/>
 		<input type="button" value="I/O" onclick="javascript: document . getElementById ('JSON') . style . visibility = 'visible';"/></nobr>
@@ -98,7 +98,7 @@
 	</select>
 	<input type="number" min="1" value="4" style="width: 5em;" id="Galaxy Width"/>
 	<input type="number" min="1" value="4" style="width: 5em;" id="Galaxy Height"/>
-	<input type="button" value="New Map" onclick="javascript: galaxy . store ('galaxy/PBEM.txt'); galaxy = new Galaxy (Number (document . getElementById ('Galaxy Width') . value), Number (document . getElementById ('Galaxy Height') . value)); repaint ();"/>
+	<input type="button" value="New Map" onclick="javascript: SelectedShip = null; galaxy . store ('galaxy/PBEM.txt'); galaxy = new Galaxy (Number (document . getElementById ('Galaxy Width') . value), Number (document . getElementById ('Galaxy Height') . value)); repaint ();"/>
 	</nobr></nobr>
 </div>
 
@@ -200,7 +200,7 @@ var UpdateShipSelectDiv = function () {
 				text += `Build Points = ${ship . BuildPoints}<br/>`;
 				if (typeof ship . location === 'string' && galaxy . Phase === 'build') {
 					text += `<input type="button" value="LOAD" onclick="javascript: galaxy . LoadBuildPoints ('${ship . race}', '${ship . name}', 1); repaint ();" style="padding: 0px;"/>`;
-					text += `<input type="button" value="UNLOAD" onclick="javascript: galaxy . LoadBuildPoints ('${ship . race}', '${ship . name}', -1); repaint ();" style="padding: 0px;"/>`;
+					text += `<input type="button" value="UNLOAD" onclick="javascript: galaxy . LoadBuildPoints ('${ship . race}', '${ship . name}', -1); repaint ();" style="padding: 0px;"/><br/>`;
 				}
 			}
 			
@@ -602,6 +602,7 @@ var repaint = function () {
 	canvas . width = window . innerWidth;
 	canvas . height = window . innerHeight;
 	ctx . save ();
+	// ctx . drawImage (Icons ['b8.png'], 200, 200);
 	galaxy . draw ();
 	if (Object . keys (galaxy . races) . length > 0) {
 		ctx . fillStyle = galaxy . races [galaxy . Turns [0]] . colour;
@@ -611,7 +612,7 @@ var repaint = function () {
 		ctx . fillText (`${galaxy . Turns [0]} ${galaxy . Phase} TL = [${galaxy . TechnologyLevel}]`, canvas . width * 0.5, 32);
 		if (galaxy . Phase === 'combat' && galaxy . CombatLocation) {
 			ctx . fillText (`Conflict at ${galaxy . CombatLocation}`, canvas . width * 0.5, 64);
-			console . log (galaxy . Conflicts);
+			// console . log (galaxy . Conflicts);
 			var conflict = galaxy . Conflicts [galaxy . CombatLocation];
 			if (conflict . races . length > 1) {
 				ctx . fillStyle = galaxy . races [conflict . races [0]] . colour;

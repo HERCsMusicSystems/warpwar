@@ -620,7 +620,7 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 		var TargetOrder = this . Orders [Order . Target];
 		var damage = CombatResultTable (Order . Strategy, Order . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, Order . Beams);
 		if (damage !== null) {TargetOrder . Damage += this . Damage (damage, TargetOrder . TechnologyLevel, Order . TechnologyLevel); TargetOrder . CanEscape = false;}
-		this . Report . push ({text: `${Ship . name} [${Order . PowerDrive}/${Order . Strategy . toLowerCase ()}] beam fire ${Order . Beams} at ${Order . Target} [${this . Orders [Order . Target] . PowerDrive}/${this . Orders [Order . Target] . Strategy . toLowerCase ()}] => inflicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
+		this . Report . push ({text: `${Ship . name} [${Ship . TechnologyLevel}] [${Order . PowerDrive}/${Order . Strategy . toLowerCase ()}] beam fire ${Order . Beams} at ${Order . Target} [${TargetOrder . TechnologyLevel}] [${this . Orders [Order . Target] . PowerDrive}/${this . Orders [Order . Target] . Strategy . toLowerCase ()}] => inflicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
 	}
 	for (var ind = 0; ind < Order . Tubes . length; ind ++) {
 		var Tube = Order . Tubes [ind];
