@@ -759,6 +759,7 @@ Galaxy . prototype . DeleteShip = function (race, ship) {
 	if (this . CombatShip === ship) this . CombatShip = null;
 	if (SelectedShip && SelectedShip . ship === this . races [race] . ships [ship]) SelectedShip = null;
 	delete this . races [race] . ships [ship];
+	this . constellations . push (ship);
 	// console . log (SelectedShip . ship, this . races [race] . ships [ship], SelectedShip . ship === this . races [race] . ships [ship], this . SelectedShip, SelectedShip);
 };
 
