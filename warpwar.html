@@ -452,6 +452,10 @@ var UpdateCombatPanel = function () {
 				text += `</td></tr>`;
 			}
 			text += `</table>`;
+			for (var ind = 0; ind < ship . Shells; ind += 16) {
+				for (var sub = 0; sub < 16 && sub + ind < ship . Shells; sub ++) text += `<img src="shell.png" height="32"/>`;
+				text += '<br/>';
+			}
 			text += `<hr/>`;
 			text += `Tubes [${ship . original . Tubes}]: ${ship . Tubes}<br/>`;
 			text += `<table>`;
