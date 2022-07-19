@@ -336,6 +336,15 @@ Galaxy . prototype . draw = function () {
 	var ll = radius * 1.5;
 	var l = radius * 0.5;
 	var hhx = hh * 1;
+	// if (this . CombatLocation && this . Phase === 'combat') {
+	// 	ctx . save ();
+	// 	ctx . translate (canvas . width * 0.5, canvas . height * 0.5);
+	// 	ctx . scale (1, 1);
+	// 	var ic = Icons ['protuberancja.png'];
+	// 	ctx . translate (ic . width * -0.5, ic . height * -0.5);
+	// 	ctx . drawImage (ic, 0, 0);
+	// 	ctx . restore ();
+	// }
 	ctx . strokeStyle = 'gray';
 	// for (var sub = - Math . floor (this . size . height * 0.5); sub < Math . floor (this . size . height * 1.5); sub ++) {
 	for (var sub = 0; sub < this . size . height; sub ++) {
@@ -349,7 +358,6 @@ Galaxy . prototype . draw = function () {
 			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh - hhx * 0.9, this . shift . y + sub * ll + radius - l);
 			ctx . lineTo (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius * 0.1);
 			ctx . closePath ();
-			// ctx . arc (this . shift . x - sub * hh + radius + ind * hhh, this . shift . y + sub * ll + radius, radius, 0, Math . PI * 2);
 			ctx . stroke ();
 			var Base = this . BaseOrShipAt (ind, sub);
 			if (Base !== null) {
@@ -701,7 +709,7 @@ Galaxy . prototype . ApplyDamages = function () {
 				var SP = new Ship (this, this . races [Order . race] . ships [Order . ship]);
 				SP . ApplyDamage (damage);
 				// console . log ('ORDER', Order);
-				this . Report . push ({text: `${damage} to ${SP . ship . name}.`, colour: SP . ship . colour});
+				this . Report . push ({text: `${damage} damage points to ${SP . ship . name}.`, colour: SP . ship . colour});
 				// console . log ('Reset ineffective', this . CombatLocation);
 				this . Conflicts [this . CombatLocation] . ineffective = 0;
 				// this . stars [Order . location] . ineffective = 0;

@@ -257,7 +257,7 @@ var SelectTarget = function (Order, order, value) {
 			count = 0;
 			for (var ind = 0; ind < Order . Cannons . length; ind ++) {if (Order . Cannons [ind] . Target) count += Order . Cannons [ind] . Shells;}
 			if (order . PowerDrive >= 0 && count + 1 > galaxy . Ship (Order . ship) . Shells) return;
-			Order . Beams = 0; Order . Shields = 0;
+			Order . Beams = 0; Order . Shields = 0; Order . Target = null;
 			for (var ind = 0; ind < Order . Bays . length; ind ++) Order . Bays [ind] = null;
 			// CancelPotentialPickUpOrder (Order . ship);
 		}
@@ -283,7 +283,7 @@ var SelectShipForPickup = function (Warship, Bay, Systemship) {
 		for (var ind = 0; ind < Order . Tubes . length; ind ++) Order . Tubes [ind] . Target = null;
 		for (var ind = 0; ind < Order . Cannons . length; ind ++) Order . Cannons [ind] . Target = null;
 		var SOrder = galaxy . Orders [Systemship];
-		SOrder . Target = null; SOrder . Beams = 0;
+		SOrder . Target = null; SOrder . Beams = 0; SOrder . Target = null;
 		for (var ind = 0; ind < SOrder . Tubes . length; ind ++) SOrder . Tubes [ind] . Target = null;
 		for (var ind = 0; ind < SOrder . Cannons . length; ind ++) SOrder . Cannons [ind] . Target = null;
 	}
@@ -452,8 +452,8 @@ var UpdateCombatPanel = function () {
 				text += `</td></tr>`;
 			}
 			text += `</table>`;
-			for (var ind = 0; ind < ship . Shells; ind += 16) {
-				for (var sub = 0; sub < 16 && sub + ind < ship . Shells; sub ++) text += `<img src="shell.png" height="32"/>`;
+			for (var ind = 0; ind < ship . Shells; ind += 24) {
+				for (var sub = 0; sub < 24 && sub + ind < ship . Shells; sub ++) text += `<img src="shell.png" height="32"/>`;
 				text += '<br/>';
 			}
 			text += `<hr/>`;
