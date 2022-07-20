@@ -390,8 +390,30 @@ Galaxy . prototype . draw = function () {
 		ctx . beginPath ();
 		ctx . moveTo (this . shift . x + from . x * hhh - from . y * hh + radius, this . shift . y + from . y * ll + radius);
 		ctx . lineTo (this . shift . x + to . x * hhh - to . y * hh + radius, this . shift . y + to . y * ll + radius);
+		ctx . strokeStyle = 'blue';
 		ctx . stroke ();
 		// console . log (from, to);
+	}
+	// ctx . strokeStyle = 'lime';
+	for (var ind in this . warps) {
+		var warp = this . warps [ind];
+		var from = this . stars [warp . to] . location; var to = this . stars [warp . from] . location; var toa = [];
+		toa . push (to);
+		toa . push ({x: to . x - this . size . width, y: to . y});
+		toa . push ({x: to . x - this . size . width, y: to . y - this . size . height});
+		toa . push ({x: to . x, y: to . y - this . size . height});
+		toa . push ({x: to . x + this . size . width, y: to . y - this . size . height});
+		toa . push ({x: to . x + this . size . width, y: to . y});
+		toa . push ({x: to . x + this . size . width, y: to . y + this . size . height});
+		toa . push ({x: to . x, y: to . y + this . size . height});
+		toa . push ({x: to . x - this . size . width, y: to . y + this . size . height});
+		for (var t in toa) toa [t] . distance = distance ({x: toa [t] . x - from . x, y: toa [t] . y - from . y});
+		toa . sort (function (a, b) {return a . distance < b . distance ? -1 : a . distance > b . distance ? 1 : 0;});
+		to = toa [0];
+		ctx . beginPath ();
+		ctx . moveTo (this . shift . x + from . x * hhh - from . y * hh + radius, this . shift . y + from . y * ll + radius);
+		ctx . lineTo (this . shift . x + to . x * hhh - to . y * hh + radius, this . shift . y + to . y * ll + radius);
+		ctx . stroke ();
 	}
 	for (var race in this . races) {
 		for (var ship in this . races [race] . ships) {
