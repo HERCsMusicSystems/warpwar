@@ -484,6 +484,20 @@ Galaxy . prototype . draw = function () {
 		ctx . font = 'bold 48px arial';
 		ctx . textBaseline = 'middle';
 		ctx . fillText (this . CombatLocation . toUpperCase (), 0, 0);
+		ctx . restore ();
+	}
+	if (this . CombatLocation && this . Phase === 'combat') {
+		ctx . save ();
+		ctx . translate (canvas . width * 0.5, canvas . height * 0.5);
+		// ctx . beginPath ();
+		// ctx . arc (0, 0, 256, 0, Math . PI * 2);
+		// ctx . stroke ();
+		// ctx . fillStyle = 'gold';
+		// ctx . fill ();
+		// ctx . fillStyle = 'blue';
+		// ctx . font = 'bold 48px arial';
+		// ctx . textBaseline = 'middle';
+		// ctx . fillText (this . CombatLocation . toUpperCase (), 0, 0);
 		var races = this . RacesAt (this . CombatLocation);
 		// console . log ('RACES', this . RacesAt (this . CombatLocation));
 		var angle = Math . PI * 1.5;
