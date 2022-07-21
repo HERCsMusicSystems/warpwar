@@ -50,6 +50,8 @@ var Galaxy = function (x, y) {
 	this . Conflicts = {};
 	this . Report = [];
 	this . BackgroundColour = '#000033';
+	this . BackgroundColour = '#000011';
+	this . BackgroundColour = 'black';
 	this . NumberOfIneffectiveRounds = 3;
 };
 
@@ -336,15 +338,15 @@ Galaxy . prototype . draw = function () {
 	var ll = radius * 1.5;
 	var l = radius * 0.5;
 	var hhx = hh * 1;
-	// if (this . CombatLocation && this . Phase === 'combat') {
-	// 	ctx . save ();
-	// 	ctx . translate (canvas . width * 0.5, canvas . height * 0.5);
-	// 	ctx . scale (1, 1);
-	// 	var ic = Icons ['protuberancja.png'];
-	// 	ctx . translate (ic . width * -0.5, ic . height * -0.5);
-	// 	ctx . drawImage (ic, 0, 0);
-	// 	ctx . restore ();
-	// }
+	if (this . CombatLocation && this . Phase === 'combat') {
+		ctx . save ();
+		ctx . translate (canvas . width * 0.5, canvas . height * 0.5);
+		ctx . scale (1, 1);
+		var ic = Icons ['protuberancja.png'];
+		ctx . translate (ic . width * -0.5, ic . height * -0.5);
+		ctx . drawImage (ic, 0, 0);
+		ctx . restore ();
+	}
 	ctx . strokeStyle = 'gray';
 	// for (var sub = - Math . floor (this . size . height * 0.5); sub < Math . floor (this . size . height * 1.5); sub ++) {
 	for (var sub = 0; sub < this . size . height; sub ++) {
@@ -831,6 +833,7 @@ Galaxy . prototype . PotentiallyDestroyBase = function () {
 
 Galaxy . prototype . Exodus = function () {
 	// console . log (`Exodus at ${this . CombatLocation}.`);
+	this . Report . push ({text: `Exodus of ${this . Turns [0]}.`, colour: this . races [this . Turns [0]] . colour});
 	for (var ship in this . races [this . Turns [0]]. ships) {
 		var Ship = this . races [this . Turns [0]] . ships [ship];
 		if (Ship . location === this . CombatLocation) {
@@ -840,7 +843,7 @@ Galaxy . prototype . Exodus = function () {
 						var Carrier = this . races [this . Turns [0]] . ships [carrier];
 						if (Carrier . WarpGenerator && Carrier . location === this . CombatLocation) {
 							for (var ind in Carrier . Bays) {
-								if (Ship . location === this . CombatLocation) {
+								if (Ship . location === this . CombatLocation && Carrier . Bays [ind] === null) {
 									this . Report . push ({text: `${Ship . name} picked up by ${Carrier . name}.`, colour: Ship . colour});
 									Carrier . Bays [ind] = Ship . name;
 									Ship . location = Carrier . name;

@@ -192,6 +192,10 @@ var UpdateShipSelectDiv = function () {
 				text += `Shells = ${ship . Shells} [${ship . original . Shells}]`;
 				if (CanRepair && ship . original . Shells > ship . Shells) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Shells', 1, 6); repaint ();"/>`;
 				text += `<br/>`;
+				for (var ind = 0; ind < ship . Shells; ind += 24) {
+					for (var sub = 0; sub < 24 && ind + sub < ship . Shells; sub ++) text += `<img src="shell.png" height="32"/>`;
+					text += `<br/>`;
+				}
 			}
 			if (ship . original . Holds > 0) {
 				text += `Holds = ${ship . Holds} [${ship . original . Holds}]`;
@@ -699,6 +703,7 @@ for (var ind = 0; ind < Galaxy . prototype . names . length; ind ++) {
 }
 
 var galaxy = new Galaxy (28, 14);
+document . body . style ['background-color'] = galaxy . BackgroundColour;
 galaxy . restore ('galaxy/PBEM.txt');
 repaint ();
 
