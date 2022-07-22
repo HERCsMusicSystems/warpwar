@@ -33,6 +33,28 @@
 	<div id="CombatShipData">
 	</div>
 </div>
+<div id="Combat Result Table" style="position: absolute; right: 512px; top: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
+	<table>
+		<tr><td><input type="button" value="CLOSE" onclick="javascript: document . getElementById ('Combat Result Table') . style . visibility = 'hidden';"/></td><td><b>DIFF</b></td><td><b>ATTACK</b></td><td><b>DODGE</b></td><td><b>RETREAT</b></td></tr>
+		<tr><td colspan="5"><hr/></td></tr>
+		<tr><td rowspan="6"><b>ATTACK</b></td><td>-3 or less</td><td></td><td></td><td>ESCAPE</td></tr>
+		<tr><td>-2, -1</td><td>HIT</td><td></td><td>ESCAPE</td></tr>
+		<tr><td>0, 1</td><td>HIT + 2</td><td></td><td></td></tr>
+		<tr><td>2</td><td>HIT + 1</td><td>HIT + 1</td><td></td></tr>
+		<tr><td>3, 4</td><td></td><td>HIT</td><td>HIT</td></tr>
+		<tr><td>5 or more</td><td></td><td></td><td></td></tr>
+		<tr><td colspan="5"><hr/></td></tr>
+		<tr><td rowspan="5"><b>DODGE</b></td><td>-4 or less</td><td></td><td></td><td>ESCAPE</td></tr>
+		<tr><td>-3, -2</td><td></td><td>HIT</td><td>ESCAPE</td></tr>
+		<tr><td>-1, 0</td><td>HIT</td><td>HIT</td><td>ESCAPE</td></tr>
+		<tr><td>1, 2</td><td>HIT</td><td></td><td>ESCAPE</td></tr>
+		<tr><td>3 or more</td><td></td><td></td><td>ESCAPE</td></tr>
+		<tr><td colspan="5"><hr/></td></tr>
+		<tr><td rowspan="3"><b>RETREAT</b></td><td>-2 or less</td><td></td><td></td><td>ESCAPE</td></tr>
+		<tr><td>-1, 0</td><td>HIT</td><td></td><td>ESCAPE</td></tr>
+		<tr><td>1 or more</td><td></td><td></td><td>ESCAPE</td></tr>
+	</table>
+</div>
 <!--<div style="position: absolute; bottom: 8px; left: 8px; border-radius: 8px; padding: 8px; background-color: gold; font-family: arial;">
 	<input type="button" value="Collect" onclick="javascript: galaxy . Collect (); repaint ();"/>
 	<input type="button" value="ReMove" onclick="javascript: galaxy . ReMoveShips (); repaint ();"/>
@@ -68,7 +90,9 @@
 <div id="CreateRace" style="position: absolute; bottom: 8px; right: 256px; background-color: gold; border-radius: 8px; font-family: arial; padding: 8px;"><nobr>
 	<div id="CreateRaces" style="float: left;"><table><tr><td>RACES:</td></tr></table></div>
 	<div align="right" style="background-color: gold;">
-		<nobr><select id="FileName">
+		<nobr>
+			<input type="button" value="CRT" onclick="javascript: document . getElementById ('Combat Result Table') . style . visibility = 'visible';"/>
+			<select id="FileName">
 			<option value="PBEM">PBEM</option>
 			<option value="GALAXY 1">GALAXY 1</option>
 			<option value="GALAXY 2">GALAXY 2</option>
