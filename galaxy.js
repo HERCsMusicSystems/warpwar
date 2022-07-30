@@ -851,6 +851,11 @@ Galaxy . prototype . PotentiallyDestroyBase = function () {
 };
 
 Galaxy . prototype . PotentiallyDestroyBasesAfterMove = function () {
+	for (var race in this . races) {
+		for (var base in this . races [race] . bases) {
+			console . log (race, base, this . RacesAt (base));
+		}
+	}
 	console . log ('BASES', this . Turns);
 	this . Report . push ({text: `Potentially destroy bases by ${this . Turns [0]}.`, colour: 'white'});
 	return true;
