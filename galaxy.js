@@ -285,9 +285,11 @@ Galaxy . prototype . ReMoveShips = function () {
 
 Galaxy . prototype . Next = function () {
 	if (this . Turns . length < 1) return;
+	this . Report = [];
 	switch (this . Phase) {
 	case 'build': this . ReMoveShips (); break;
 	case 'move':
+		if (this . PotentiallyDestroyBasesAfterMove ()) break;
 		var combats = this . Combats ();
 		if (combats . length > 0) this . Combat (combats);
 		else this . Collect ();
@@ -304,7 +306,7 @@ Galaxy . prototype . Next = function () {
 		}
 		if (conflict . races . length > 1) {conflict . races . shift (); this . CombatShip = null;}
 		if (conflict . races . length < 2) {
-			this . Report = [];
+			// this . Report = [];
 			this . ProcessOrders ();
 			this . DropShips ();
 			this . ApplyDamages ();
@@ -328,6 +330,22 @@ Galaxy . prototype . ColourForStar = function (star) {
 		}
 	}
 	return this . BackgroundColour;
+};
+
+Galaxy . prototype . DrawReport = function () {
+	ctx . save ();
+	ctx . textAlign = 'left';
+	ctx . textBaseline = 'top';
+	ctx . font = '18px arial';
+	for (var ind = 0; ind < this . Report . length; ind ++) {
+		var W = ctx . measureText (this . Report [ind] . text);
+		var X = 64, Y = 128 + ind * 22;
+		ctx . beginPath (); ctx . moveTo (X, Y); ctx . lineTo (X + W . width, Y); ctx . lineTo (X + W . width, Y + 22); ctx . lineTo (X, Y + 22);
+		ctx . fillStyle = this . BackgroundColour; ctx . fill ();
+		ctx . fillStyle = this . Report [ind] . colour;
+		ctx . fillText (this . Report [ind] . text, X, Y);
+	}
+	ctx . restore ();
 };
 
 Galaxy . prototype . draw = function () {
@@ -553,6 +571,7 @@ Galaxy . prototype . draw = function () {
 		}
 		ctx . restore ();
 	}
+	this . DrawReport ();
 };
 
 Galaxy . prototype . RaceFromBase = function (base) {
@@ -829,6 +848,12 @@ Galaxy . prototype . PotentiallyDestroyBase = function () {
 		this . Report . push ({text: `Combat at ${this . CombatLocation} completed. ${races [0]} is the winner.`, colour: 'white'});
 		if (races [0] === this . Turns [0]) this . Report . push ({text: `${this . Turns [0]} can now rearrange ships at ${this . CombatLocation}.`, colour: this . races [this . Turns [0]] . colour});
 	}
+};
+
+Galaxy . prototype . PotentiallyDestroyBasesAfterMove = function () {
+	console . log ('BASES', this . Turns);
+	this . Report . push ({text: `Potentially destroy bases by ${this . Turns [0]}.`, colour: 'white'});
+	return true;
 };
 
 Galaxy . prototype . Exodus = function () {

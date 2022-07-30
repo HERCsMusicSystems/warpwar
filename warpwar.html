@@ -657,17 +657,7 @@ var repaint = function () {
 			} else {
 				ctx . fillStyle = galaxy . races [galaxy . Turns [0]] . colour;
 				ctx . fillText (`Process orders for ${galaxy . CombatLocation}.`, canvas . width * 0.5, 96);
-				ctx . textAlign = 'left';
-				ctx . textBaseline = 'top';
-				ctx . font = '18px arial';
-				for (var ind = 0; ind < galaxy . Report . length; ind ++) {
-					var W = ctx . measureText (galaxy . Report [ind] . text);
-					var X = 64; var Y = 128 + ind * 22;
-					ctx . beginPath (); ctx . moveTo (X, Y); ctx . lineTo (X + W . width, Y); ctx . lineTo (X + W . width, Y + 22); ctx . lineTo (X, Y + 22);
-					ctx . fillStyle = galaxy . BackgroundColour; ctx . fill ();
-					ctx . fillStyle = galaxy . Report [ind] . colour;
-					ctx . fillText (galaxy . Report [ind] . text, X, Y);
-				}
+				// galaxy . DrawReport ();
 			}
 		}
 	}
