@@ -859,7 +859,7 @@ Galaxy . prototype . PotentiallyDestroyBasesAfterMove = function () {
 //			console . log (race, bases [base], races);
 			if (races . length > 0 && races . indexOf (race) < 0) {
 				delete this . races [race] . bases [bases [base]];
-				this . Report . push ({text: `${bases [base]} abandoned by ${race} was destroyed by ${races [0]}.`, colour: this . races [races [0]] . colour});
+				this . Report . push ({text: `The base at ${bases [base]} abandoned by ${race} was destroyed by ${races [0]}.`, colour: this . races [races [0]] . colour});
 				ret = true;
 			}
 		}
