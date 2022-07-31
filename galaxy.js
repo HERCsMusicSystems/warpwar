@@ -339,11 +339,11 @@ Galaxy . prototype . DrawReport = function () {
 	ctx . font = '18px arial';
 	for (var ind = 0; ind < this . Report . length; ind ++) {
 		var W = ctx . measureText (this . Report [ind] . text);
-		var X = 64, Y = 128 + ind * 22;
+		var X = 64, Y = 128 + ind * 22 - 2;
 		ctx . beginPath (); ctx . moveTo (X, Y); ctx . lineTo (X + W . width, Y); ctx . lineTo (X + W . width, Y + 22); ctx . lineTo (X, Y + 22);
 		ctx . fillStyle = this . BackgroundColour; ctx . fill ();
 		ctx . fillStyle = this . Report [ind] . colour;
-		ctx . fillText (this . Report [ind] . text, X, Y);
+		ctx . fillText (this . Report [ind] . text, X, Y + 2);
 	}
 	ctx . restore ();
 };
@@ -851,14 +851,21 @@ Galaxy . prototype . PotentiallyDestroyBase = function () {
 };
 
 Galaxy . prototype . PotentiallyDestroyBasesAfterMove = function () {
+	var ret = false;
 	for (var race in this . races) {
-		for (var base in this . races [race] . bases) {
-			console . log (race, base, this . RacesAt (base));
+		var bases = Object . keys (this . races [race] . bases);
+		for (var base in bases) {
+			var races = this . RacesAt (bases [base]);
+//			console . log (race, bases [base], races);
+			if (races . length > 0 && races . indexOf (race) < 0) {
+				delete this . races [race] . bases [bases [base]];
+				this . Report . push ({text: `${bases [base]} abandoned by ${race} was destroyed by ${races [0]}.`, colour: this . races [races [0]] . colour});
+				ret = true;
+			}
 		}
 	}
-	console . log ('BASES', this . Turns);
-	this . Report . push ({text: `Potentially destroy bases by ${this . Turns [0]}.`, colour: 'white'});
-	return true;
+//	console . log ('BASES', this . Turns, ret);
+	return ret;
 };
 
 Galaxy . prototype . Exodus = function () {
