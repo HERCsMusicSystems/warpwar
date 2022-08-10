@@ -279,7 +279,7 @@ Galaxy . prototype . ReMoveShips = function () {
 	if (this . Turns . length < 1) return this;
 	for (var ship in this . races [this . Turns [0]] . ships) {
 		var Ship = this . races [this . Turns [0]] . ships [ship];
-		if (Ship . WarpGenerator) Ship . move = Ship . PowerDrive;
+		if (Ship . WarpGenerator) Ship . move = this . TechnologyLevel < 1 ? 0 : Ship . PowerDrive;
 	}
 };
 
