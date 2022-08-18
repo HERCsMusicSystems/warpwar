@@ -722,16 +722,13 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 
 Galaxy . prototype . ProcessOrdersFor = function (star) {
 	for (var ship in this . Orders) {
-		var Ship = this . Ship (ship);
-		if (Ship . location === star) this . ProcessOrder (Ship, this . Orders [ship]);
+		if (Ship . location === star) this . ProcessOrder (this . Ship (ship), this . Orders [ship]);
 	}
 };
 
-// Galaxy . prototype . ProcessOrders = function () {for (var ship in this . Orders) this . ProcessOrder (this . Ship (ship), this . Orders [ship]);};
 Galaxy . prototype . ProcessOrders = function () {
 	for (var ship in this . Orders) {
 		if (this . Orders [ship] . location === this . CombatLocation) {
-			// console . log (this . Orders [ship]);
 			this . ProcessOrder (this . Ship (ship), this . Orders [ship]);
 		}
 	}

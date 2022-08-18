@@ -279,17 +279,17 @@ var UpdateShipSelectDiv = function () {
 };
 
 var SelectTarget = function (Order, order, value) {
-	// console . log ('selecting target');
 	if (value === 'select') return;
 	if (value === 'null') value = null;
 	else {
 		if (Order !== order) {
 			var count = 0;
 			for (var ind = 0; ind < Order . Tubes . length; ind ++) {if (Order . Tubes [ind] . Target) count ++;}
-			if (order . Shells >= 0 && count + 1 > galaxy . Ship (Order . ship) . Missiles) return;
+			if (order . PowerDrive >= 0 && count > galaxy . Ship (Order . ship) . Missiles) return;
 			count = 0;
 			for (var ind = 0; ind < Order . Cannons . length; ind ++) {if (Order . Cannons [ind] . Target) count += Order . Cannons [ind] . Shells;}
-			if (order . PowerDrive >= 0 && count + 1 > galaxy . Ship (Order . ship) . Shells) return;
+			// console . log ('selecting target', Order, order, value, order . PowerDrive, count, galaxy . Ship (Order . ship) . Shells);
+			if (order . Shells >= 0 && count > galaxy . Ship (Order . ship) . Shells) return;
 			Order . Beams = 0; Order . Shields = 0; Order . Target = null;
 			for (var ind = 0; ind < Order . Bays . length; ind ++) Order . Bays [ind] = null;
 			// CancelPotentialPickUpOrder (Order . ship);
