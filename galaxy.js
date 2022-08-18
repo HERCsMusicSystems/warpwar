@@ -695,10 +695,13 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 			var ecm = 0;
 			while (damage !== null && damage > 0 && ecm < TargetOrder . ECM) {
 				ecm ++;
-				var ECM = ecm + Math . floor ((Order . TecnhonolyLevel - TargetOrder . TechnologyLevel) / this . TechnologyStep);
+				var ECM = ecm + Math . floor ((Order . TechnologyLevel - TargetOrder . TechnologyLevel) / this . TechnologyStep);
 				if (ECM < 0) ECM = 0;
+				console . log ('ECM', ecm, ECM);
 				var damage1 = CombatResultTable ('ATTACK', Tube . PowerDrive + ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
+				console . log ('ATTACK', Tube . PowerDrive + ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, damage1);
 				var damage2 = CombatResultTable ('ATTACK', Tube . PowerDrive - ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
+				console . log ('ATTACK', Tube . PowerDrive - ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, damage2);
 				if (damage1 !== null && damage2 == null) damage = Math . min (damage1, damage2);
 				else if (damage1 !== null) damage = damage1; else damage = damage2;
 				console . log (ecm, damage, damage1, damage2, TargetOrder);
