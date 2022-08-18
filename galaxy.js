@@ -691,20 +691,24 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 		var Tube = Order . Tubes [ind];
 		if (Tube . Target) {
 			var TargetOrder = this . Orders [Tube . Target];
-			var ECM = TargetOrder . ECM + Math . floor ((Order . TechnologyLevel - TargetOrder . TechnologyLevel) / this . TechnologyStep);
-			if (ECM < 0) ECM = 0;
-			// console . log (Order . TechnologyLevel, TargetOrder . TechnologyLevel, ECM, TargetOrder);
-			var damage1 = CombatResultTable ('ATTACK', Tube . PowerDrive + ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
-			var damage2 = CombatResultTable ('ATTACK', Tube . PowerDrive - ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
-			var damage = null;
-			if (damage1 !== null && damage2 !== null) damage = Math . min (damage1, damage2);
-			else if (damage1 !== null) damage = damage1; else damage = damage2;
+			var damage = CombatResultTable ('ATTACK', Tube . PowerDrive, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
+			var ecm = 0;
+			while (damage !== null && damage > 0 && ecm < TargetOrder . ECM) {
+				ecm ++;
+				var ECM = ecm + Math . floor ((Order . TecnhonolyLevel - TargetOrder . TechnologyLevel) / this . TechnologyStep);
+				if (ECM < 0) ECM = 0;
+				var damage1 = CombatResultTable ('ATTACK', Tube . PowerDrive + ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
+				var damage2 = CombatResultTable ('ATTACK', Tube . PowerDrive - ECM, TargetOrder . Strategy, TargetOrder . PowerDrive, 2);
+				if (damage1 !== null && damage2 == null) damage = Math . min (damage1, damage2);
+				else if (damage1 !== null) damage = damage1; else damage = damage2;
+				console . log (ecm, damage, damage1, damage2, TargetOrder);
+			}
 			if (damage !== null) {
 				TargetOrder . Damage += this . Damage (damage, TargetOrder . TechnologyLevel, Order . TechnologyLevel);
 				// TargetOrder . CanEscape = false;
 			}
+			TargetOrder . ECM -= ecm;
 			Ship . Missiles --;
-			// console . log (TargetOrder . Damage, damage, damage1, damage2);
 			this . Report . push ({text: `${Ship . name} [${Ship . TechnologyLevel}] fired missile [${Tube . PowerDrive}] at ${Tube . Target} [${TargetOrder . TechnologyLevel}] [${TargetOrder . PowerDrive} / ${TargetOrder . Strategy}] => infclicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
 		}
 	}
