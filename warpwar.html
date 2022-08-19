@@ -189,12 +189,13 @@ var UpdateShipSelectDiv = function () {
 				text += `Tubes = ${ship . Tubes} [${ship . original . Tubes}]`;
 				if (CanRepair && ship . original . Tubes > ship . Tubes) text += ` <input type="button" value="REPAIR" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Tubes', 1); repaint ();"/>`;
 				text += `<br/>`;
+				for (var ind = 0; ind < ship . Tubes; ind ++) text += `<img src="Tube.png" width="128px;"/><br/>`;
 			}
 			if (ship . original . Missiles > 0) {
 				text += `Missiles = ${ship . Missiles} [${ship . original . Missiles}]`;
 				if (CanRepair && ship . original . Missiles > ship . Missiles) text += ` <input type="button" value="REFILL" style="padding: 0px;" onclick="javascript: SelectedShip . Repair ('Missiles', 1, 3); repaint ();"/>`;
 				text += `<br/>`;
-				for (var ind = 0; ind < ship . Missiles; ind ++) text += `<img src="HarpoonV.png" height="128px;"/>`;
+				for (var ind = 0; ind < ship . Missiles; ind ++) text += `<img src="HarpoonV.png" height="96px;"/>`;
 			}
 			text += '<hr/>';
 			if (ship . RepairBay) text += 'Repair Bay<br/>';
@@ -496,7 +497,7 @@ var UpdateCombatPanel = function () {
 				var TubeOrder = galaxy . Orders [ship . name] . Tubes [tube];
 				var TargetShip = galaxy . Ship (TubeOrder . Target);
 				text += `<tr><td valign="bottom">`;
-				text += `<img src="Harpoon.png" width="128"/> `;
+				text += `<img src="Tube.png" width="128"/> `;
 				text += `<br/>`;
 				text += `<select onchange="javascript: SelectTarget (galaxy . Orders ['${ship . name}'], galaxy . Orders ['${ship . name}'] . Tubes [${tube}], this . value); repaint ();">`;
 				text += TargetOptions;

@@ -712,7 +712,7 @@ Galaxy . prototype . ProcessOrder = function (Ship, Order) {
 			}
 			TargetOrder . ECM -= ecm;
 			Ship . Missiles --;
-			this . Report . push ({text: `${Ship . name} [${Ship . TechnologyLevel}] fired missile [${Tube . PowerDrive}] at ${Tube . Target} [${TargetOrder . TechnologyLevel}] [${TargetOrder . PowerDrive} / ${TargetOrder . Strategy}] => infclicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
+			this . Report . push ({text: `${Ship . name} [${Ship . TechnologyLevel}] fired missile PD [${Tube . PowerDrive}] at ${Tube . Target} [${TargetOrder . TechnologyLevel}] ECM [${ecm}] [${TargetOrder . PowerDrive} / ${TargetOrder . Strategy}] => infclicts ${damage} damage.`, colour: galaxy . races [Order . race] . colour});
 		}
 	}
 	for (var ind = 0; ind < Order . Cannons . length; ind ++) {
