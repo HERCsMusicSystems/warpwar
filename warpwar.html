@@ -155,7 +155,7 @@ var UpdateShipSelectDiv = function () {
 			}
 		} else text += `Space [${ship . location . x} : ${ship . location . y}]`;
 		text += `</font><br/>`;
-		if (ship . race === galaxy . Turns [0]) {
+		if ((! galaxy . CombatLocation && ship . race === galaxy . Turns [0]) || (galaxy . CombatLocation && ship . race === galaxy . Conflicts [galaxy . CombatLocation] . races [0])) {
 			var CanRepair = SelectedShip . CanRepair ();
 			if (CanRepair && ! SelectedShip . source) SelectedShip . Source (CanRepair);
 			if (SelectedShip . source && galaxy . Phase === 'build') {
@@ -239,7 +239,7 @@ var UpdateShipSelectDiv = function () {
 			}
 			
 		}
-		if (ship . race === galaxy . Turns [0] && ship . original . Bays > 0) {
+		if (((! galaxy . CombatLocation && ship . race === galaxy . Turns [0]) || (galaxy . CombatLocation && ship . race === galaxy . Conflicts [galaxy . CombatLocation] . races [0])) && ship . original . Bays > 0) {
 			text += `Bays = ${ship . Bays . length} [${ship . original . Bays}]<br/>`;
 			text += `<table><tr>`;
 			for (var ind in ship . Bays) {
